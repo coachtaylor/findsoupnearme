@@ -1,0 +1,52 @@
+{
+    "name": "findsoupnearme",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "build": "next build",
+        "start": "next start",
+        "lint": "next lint",
+        "format": "prettier --write .",
+        "migrate": "node scripts/data-migration/run-migrations.js",
+        "seed": "node scripts/data-migration/seed-database.js",
+        "scrape": "node scripts/data-collection/scrape-google-maps.js",
+        "enrich": "node scripts/data-collection/enrich-data.js",
+        "import": "node scripts/data-collection/import-to-supabase.js"
+    },
+    "dependencies": {
+        "@headlessui/react": "^1.7.15",
+        "@heroicons/react": "^2.0.18",
+        "@stripe/stripe-js": "^1.54.1",
+        "@supabase/auth-helpers-nextjs": "^0.7.2",
+        "@supabase/auth-helpers-react": "^0.4.0",
+        "@supabase/supabase-js": "^2.52.1",
+        "@tailwindcss/forms": "^0.5.3",
+        "axios": "^1.10.0",
+        "date-fns": "^2.30.0",
+        "dotenv": "^17.2.1",
+        "google-map-react": "^2.2.1",
+        "next": "13.4.10",
+        "node-fetch": "^3.3.2",
+        "react": "18.2.0",
+        "react-dom": "18.2.0",
+        "react-hot-toast": "^2.4.1",
+        "react-icons": "^4.10.1",
+        "sharp": "^0.32.3",
+        "slugify": "^1.6.6",
+        "stripe": "^12.13.0",
+        "swr": "^2.2.0",
+        "uuid": "^11.1.0",
+        "yargs": "^18.0.0"
+    },
+    "devDependencies": {
+        "autoprefixer": "^10.4.14",
+        "eslint": "8.45.0",
+        "eslint-config-next": "13.4.10",
+        "eslint-config-prettier": "^8.8.0",
+        "postcss": "^8.4.26",
+        "prettier": "^3.0.0",
+        "tailwindcss": "^3.3.3"
+    },
+    "type": "module"
+}

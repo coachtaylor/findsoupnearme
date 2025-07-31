@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Merriweather:wght@400;700&family=Playfair+Display:wght@400;500;600;700&display=swap');
+
+/* Custom base styles */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply font-sans text-gray-800 antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display;
+  }
+  
+  /* Focus styles for accessibility */
+  a:focus, button:focus, input:focus, textarea:focus, select:focus {
+    @apply outline-none ring-2 ring-soup-red ring-opacity-50;
+  }
+}
+
+/* Custom component classes */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors;
+  }
+  
+  .btn-primary {
+    @apply bg-soup-red text-white hover:bg-red-700 focus:ring-soup-red;
+  }
+  
+  .btn-secondary {
+    @apply bg-white text-soup-red border border-soup-red hover:bg-soup-cream focus:ring-soup-red;
+  }
+  
+  .btn-ghost {
+    @apply bg-transparent text-gray-700 hover:bg-gray-100 focus:ring-gray-300;
+  }
+  
+  .card {
+    @apply bg-white rounded-lg shadow overflow-hidden;
+  }
+  
+  .card-hover {
+    @apply transition-transform hover:scale-105 hover:shadow-lg;
+  }
+  
+  .input {
+    @apply block w-full px-4 py-2 rounded-md border border-gray-300 focus:border-soup-red focus:ring-2 focus:ring-soup-red focus:ring-opacity-30;
+  }
+  
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+  
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .badge-red {
+    @apply bg-red-100 text-red-800;
+  }
+  
+  .badge-green {
+    @apply bg-green-100 text-green-800;
+  }
+  
+  .badge-yellow {
+    @apply bg-yellow-100 text-yellow-800;
+  }
+  
+  .badge-gray {
+    @apply bg-gray-100 text-gray-800;
+  }
+  
+  /* Navigation */
+  .nav-link {
+    @apply inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium;
+  }
+  
+  .nav-link-active {
+    @apply border-soup-red text-gray-900;
+  }
+  
+  .nav-link-inactive {
+    @apply border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700;
+  }
+  
+  /* Form elements */
+  .form-group {
+    @apply mb-4;
+  }
+  
+  .error-message {
+    @apply mt-1 text-sm text-red-600;
+  }
+  
+  /* Section styling */
+  .section {
+    @apply py-12 px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Container with max width */
+  .container-tight {
+    @apply max-w-7xl mx-auto;
+  }
+  
+  /* Restaurant rating stars */
+  .star-rating {
+    @apply flex items-center;
+  }
+  
+  /* Steam animation for soup icons */
+  .steam {
+    @apply animate-steam;
+  }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .text-shadow-lg {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  }
+  
+  .rotate-hover:hover {
+    transform: rotate(3deg);
+  }
+  
+  .filter-grayscale {
+    filter: grayscale(100%);
+  }
+  
+  .filter-grayscale-hover:hover {
+    filter: grayscale(0%);
+  }
+}
+
+/* Print styles */
+@media print {
+  .no-print {
+    display: none;
+  }
+  
+  .print-only {
+    display: block;
+  }
+  
+  body {
+    font-size: 12pt;
+  }
+}
