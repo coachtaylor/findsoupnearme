@@ -3,8 +3,11 @@ import { useState, useEffect } from 'react';
 import useRestaurants from '../../hooks/useRestaurants';
 import RestaurantCard from './RestaurantCard';
 import SkeletonLoader from '../ui/SkeletonLoader';
+import MobileFilterDrawer from './MobileFilterDrawer';
+import Breadcrumbs from '../ui/Breadcrumbs';
 import Link from 'next/link';
 import Head from 'next/head';
+import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 
 export default function RestaurantListingPage({
   title = 'Soup Restaurants',
@@ -17,6 +20,7 @@ export default function RestaurantListingPage({
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [selectedSoupType, setSelectedSoupType] = useState(null);
   const [selectedRating, setSelectedRating] = useState(null);
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   
   // Fetch restaurants with the given filters
   const { 
@@ -76,25 +80,28 @@ export default function RestaurantListingPage({
     pageTitle = `${selectedSoupType} ${pageTitle}`;
   }
   
-  // Generate breadcrumb items
-  const breadcrumbItems = [
-    { label: 'Home', href: '/' },
-    { label: 'Restaurants', href: '/restaurants' },
-  ];
-  
-  if (state) {
-    breadcrumbItems.push({
-      label: state,
-      href: `/${state.toLowerCase()}/restaurants`,
-    });
-  }
-  
-  if (city && state) {
-    breadcrumbItems.push({
-      label: city,
-      href: `/${state.toLowerCase()}/${city.toLowerCase().replace(/\s+/g, '-')}/restaurants`,
-    });
-  }
+  // Generate custom breadcrumbs
+  const generateBreadcrumbs = () => {
+    const crumbs = [{ href: '/', label: 'Home' }];
+    
+    crumbs.push({ href: '/restaurants', label: 'Restaurants' });
+    
+    if (state) {
+      crumbs.push({
+        href: `/${state.toLowerCase()}/restaurants`,
+        label: state
+      });
+    }
+    
+    if (city && state) {
+      crumbs.push({
+        href: `/${state.toLowerCase()}/${city.toLowerCase().replace(/\s+/g, '-')}/restaurants`,
+        label: city
+      });
+    }
+    
+    return crumbs;
+  };
   
   return (
     <>
@@ -105,30 +112,44 @@ export default function RestaurantListingPage({
       
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumbs */}
-        <nav className="text-sm mb-6">
-          <ol className="flex flex-wrap">
-            {breadcrumbItems.map((item, index) => (
-              <li key={item.href} className="flex items-center">
-                {index > 0 && <span className="mx-2 text-soup-brown-400">/</span>}
-                {index === breadcrumbItems.length - 1 ? (
-                  <span className="text-soup-brown-600">{item.label}</span>
-                ) : (
-                  <Link href={item.href} className="text-soup-red-600 hover:text-soup-red-700">
-                    {item.label}
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
+        <Breadcrumbs customCrumbs={generateBreadcrumbs()} />
         
         {/* Page Title */}
-        <h1 className="text-3xl font-bold text-soup-brown-900 mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-soup-brown-900 mb-6">
           {pageTitle}
         </h1>
         
-        {/* Filters Section */}
-        <div className="bg-soup-orange-50 p-4 rounded-lg mb-8">
+        {/* Mobile Filter Button */}
+        <div className="md:hidden mb-4">
+          <button
+            onClick={() => setIsFilterDrawerOpen(true)}
+            className="w-full flex items-center justify-center gap-2 bg-soup-orange-50 py-3 px-4 rounded-lg text-soup-brown-800"
+          >
+            <AdjustmentsHorizontalIcon className="h-5 w-5" />
+            <span>Filter Restaurants</span>
+          </button>
+        </div>
+        
+        {/* Mobile Filter Drawer */}
+        <MobileFilterDrawer
+          isOpen={isFilterDrawerOpen}
+          onClose={() => setIsFilterDrawerOpen(false)}
+          soupTypes={soupTypes}
+          selectedSoupType={selectedSoupType}
+          onSoupTypeChange={(type) => {
+            setSelectedSoupType(type);
+            // Don't close drawer yet to allow multiple selections
+          }}
+          ratingOptions={ratingOptions}
+          selectedRating={selectedRating}
+          onRatingChange={(rating) => {
+            setSelectedRating(rating);
+            // Don't close drawer yet to allow multiple selections
+          }}
+        />
+        
+        {/* Desktop Filters Section */}
+        <div className="hidden md:block bg-soup-orange-50 p-4 rounded-lg mb-8">
           <h2 className="text-lg font-semibold text-soup-brown-800 mb-3">Filter Restaurants</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -207,6 +228,7 @@ export default function RestaurantListingPage({
               Found <span className="font-semibold">{totalCount}</span> 
               {selectedSoupType ? ` ${selectedSoupType}` : ''} restaurants
               {city ? ` in ${city}` : ''}
+              {state && !city ? ` in ${state}` : ''}
               {selectedRating ? ` with ${selectedRating}+ stars` : ''}
             </p>
           )}
@@ -226,7 +248,7 @@ export default function RestaurantListingPage({
             </button>
           </div>
         ) : restaurants.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {restaurants.map((restaurant) => (
               <RestaurantCard key={restaurant.id} restaurant={restaurant} />
             ))}
@@ -251,7 +273,7 @@ export default function RestaurantListingPage({
         {/* Pagination */}
         {!loading && !error && totalPages > 1 && (
           <div className="mt-8 flex justify-center">
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap justify-center gap-2">
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
@@ -260,41 +282,54 @@ export default function RestaurantListingPage({
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     : 'bg-soup-red-600 text-white hover:bg-soup-red-700'
                 }`}
+                aria-label="Previous page"
               >
-                Previous
+                <span className="sr-only md:not-sr-only">Previous</span>
               </button>
               
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                // Calculate page numbers to show
-                let pageNum;
-                if (totalPages <= 5) {
-                  // Show all pages if 5 or fewer
-                  pageNum = i + 1;
-                } else if (currentPage <= 3) {
-                  // Show first 5 pages
-                  pageNum = i + 1;
-                } else if (currentPage >= totalPages - 2) {
-                  // Show last 5 pages
-                  pageNum = totalPages - 4 + i;
-                } else {
-                  // Show current page and 2 on each side
-                  pageNum = currentPage - 2 + i;
-                }
-                
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => setCurrentPage(pageNum)}
-                    className={`px-3 py-1 rounded ${
-                      currentPage === pageNum
-                        ? 'bg-soup-red-600 text-white'
-                        : 'bg-white text-soup-brown-700 hover:bg-soup-red-100'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                );
-              })}
+              {/* Mobile: Show current page / total */}
+              <div className="md:hidden flex items-center px-3 py-1">
+                <span className="text-soup-brown-700">
+                  Page {currentPage} of {totalPages}
+                </span>
+              </div>
+              
+              {/* Desktop: Show page numbers */}
+              <div className="hidden md:flex space-x-2">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  // Calculate page numbers to show
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    // Show all pages if 5 or fewer
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    // Show first 5 pages
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    // Show last 5 pages
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    // Show current page and 2 on each side
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`px-3 py-1 rounded ${
+                        currentPage === pageNum
+                          ? 'bg-soup-red-600 text-white'
+                          : 'bg-white text-soup-brown-700 hover:bg-soup-red-100'
+                      }`}
+                      aria-label={`Page ${pageNum}`}
+                      aria-current={currentPage === pageNum ? 'page' : undefined}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
               
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
@@ -304,8 +339,9 @@ export default function RestaurantListingPage({
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     : 'bg-soup-red-600 text-white hover:bg-soup-red-700'
                 }`}
+                aria-label="Next page"
               >
-                Next
+                <span className="sr-only md:not-sr-only">Next</span>
               </button>
             </div>
           </div>

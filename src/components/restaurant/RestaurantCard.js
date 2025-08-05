@@ -27,9 +27,9 @@ export default function RestaurantCard({ restaurant }) {
   const fallbackImage = fallbackImages[fallbackIndex];
   
   return (
-    <div className="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 bg-white">
+    <div className="border rounded-2xl overflow-hidden shadow-soft hover:shadow-hover transition-all duration-300 hover:scale-[1.02] bg-white">
       {/* Restaurant Image with Error Handling */}
-      <div className="relative h-48 w-full bg-soup-orange-100">
+      <div className="relative h-48 w-full bg-neutral-100">
         {!imageError && restaurant.image_url ? (
           <img
             src={restaurant.image_url}
@@ -48,7 +48,7 @@ export default function RestaurantCard({ restaurant }) {
               e.target.parentNode.classList.add('flex', 'items-center', 'justify-center');
               const textElement = document.createElement('span');
               textElement.textContent = restaurant.name;
-              textElement.className = 'text-soup-brown-800 text-center px-4 font-medium';
+              textElement.className = 'text-neutral-800 text-center px-4 font-medium';
               e.target.parentNode.appendChild(textElement);
             }}
           />
@@ -56,19 +56,19 @@ export default function RestaurantCard({ restaurant }) {
       </div>
       
       {/* Restaurant Info */}
-      <div className="p-4">
-        <h3 className="text-xl font-bold text-soup-brown-900 mb-1">{restaurant.name}</h3>
-        <p className="text-soup-brown-600 mb-2">{restaurant.city}, {restaurant.state}</p>
+      <div className="p-5">
+        <h3 className="text-xl font-bold text-neutral-900 mb-1">{restaurant.name}</h3>
+        <p className="text-neutral-600 mb-2">{restaurant.city}, {restaurant.state}</p>
         
         {/* Rating */}
-        <div className="flex items-center space-x-1 mb-2">
+        <div className="flex items-center space-x-1 mb-3">
           {Array.from({ length: 5 }).map((_, i) => (
             <svg 
               key={i}
               className={`h-4 w-4 ${
                 i < Math.floor(restaurant.rating || 0)
-                  ? 'text-yellow-400 fill-yellow-400'
-                  : 'text-gray-300 fill-gray-300'
+                  ? 'text-accent-500 fill-accent-500'
+                  : 'text-neutral-300 fill-neutral-300'
               }`}
               xmlns="http://www.w3.org/2000/svg" 
               viewBox="0 0 24 24"
@@ -77,7 +77,7 @@ export default function RestaurantCard({ restaurant }) {
             </svg>
           ))}
           {restaurant.rating && (
-            <span className="text-sm text-soup-brown-600 ml-2">
+            <span className="text-sm text-neutral-600 ml-2">
               ({restaurant.review_count || 0} reviews)
             </span>
           )}
@@ -89,13 +89,13 @@ export default function RestaurantCard({ restaurant }) {
             {restaurant.soup_types.slice(0, 3).map((soupType, index) => (
               <span
                 key={index}
-                className="text-xs bg-soup-orange-100 text-soup-brown-700 px-2 py-1 rounded-full"
+                className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-full"
               >
                 {soupType}
               </span>
             ))}
             {restaurant.soup_types.length > 3 && (
-              <span className="text-xs bg-soup-orange-50 text-soup-brown-600 px-2 py-1 rounded-full">
+              <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-1 rounded-full">
                 +{restaurant.soup_types.length - 3} more
               </span>
             )}
@@ -105,7 +105,7 @@ export default function RestaurantCard({ restaurant }) {
         {/* View Button */}
         <Link
           href={`/${stateAbbr}/${citySlug}/${restaurantSlug}`}
-          className="block w-full text-center bg-soup-red-600 hover:bg-soup-red-700 text-white font-medium py-2 rounded-md mt-4 transition duration-300"
+          className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 rounded-xl mt-4 transition duration-300 hover:shadow-md"
         >
           View Restaurant
         </Link>

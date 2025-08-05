@@ -96,11 +96,12 @@ To become the #1 soup discovery platform in the U.S., offering an emotional, tru
 - ✅ **SkeletonLoader component** - Complete with loading states
 
 **Frontend-Database Connection:**
-- ⚠️ **Homepage connected to database** - Uses API but needs verification of real data flow
+- ✅ **Homepage connected to database** - Successfully fetches featured and city-specific restaurants
 - ✅ **useRestaurants hook** - Complete with API integration and error handling
-- ⚠️ **Restaurant listing pages** - `/restaurants` page functional but needs verification with real data
+- ✅ **Restaurant listing pages** - `/restaurants` page fully functional with real data
 - ✅ **Search functionality** - Search API connected and functional
 - ✅ **Filtering and pagination** - Complete implementation with soup type and rating filters
+- ✅ **City/State pages** - Dynamic routing connected to database with filtering by location
 
 **Design System:**
 - ✅ Custom color palette (soup-red, soup-orange, soup-brown, etc.)
@@ -119,8 +120,6 @@ To become the #1 soup discovery platform in the U.S., offering an emotional, tru
 - ❌ **Restaurant detail pages** - Page file exists but is completely empty (CRITICAL BLOCKER)
 - ❌ **User authentication flows** - Context exists but no login/register pages
 - ❌ **Review system** - Database schema exists but no frontend implementation
-- ⚠️ **City/State pages** - Dynamic routing exists but pages show static content, not database data
-- ⚠️ **Homepage database connection** - Uses API but needs verification of real data flow
 
 ### ❌ **Remaining Core Features**
 
@@ -142,7 +141,7 @@ To become the #1 soup discovery platform in the U.S., offering an emotional, tru
 
 ## 🚀 **Next Steps Roadmap**
 
-### **Sprint 1 - Critical Fixes (3-4 days)**
+### **Sprint 1 - Critical Fixes (2-3 days)**
 
 **Priority 1: Fix Restaurant Detail Pages (CRITICAL)**
 - **Issue**: Restaurant detail pages (`/[state]/[city]/[restaurant]`) file exists but is completely empty
@@ -150,22 +149,10 @@ To become the #1 soup discovery platform in the U.S., offering an emotional, tru
 - **Files to modify**: `src/pages/[state]/[city]/[restaurant].js`
 - **Estimated time**: 2 days (needs full implementation)
 
-**Priority 2: Connect City/State Pages to Database**
-- **Issue**: Dynamic routing exists but pages show static content instead of database data
-- **Solution**: Connect existing pages to use real restaurant data from API
-- **Files to modify**: `src/pages/[state]/[city]/index.js`, `src/pages/[state]/restaurants/index.js`
-- **Estimated time**: 1 day
-
-**Priority 3: Verify Homepage Data Connection**
-- **Issue**: Homepage uses API but needs verification of real data flow
-- **Solution**: Test and ensure homepage displays actual restaurant data
+**Priority 2: Polish Homepage Experience**
+- **Issue**: Homepage is connected to the database but could use UX improvements
+- **Solution**: Enhance layout, add loading states, improve error handling
 - **Files to modify**: `src/pages/index.js`
-- **Estimated time**: 0.5 days
-
-**Priority 4: Environment Setup**
-- **Issue**: Missing `.env.example` file for easy setup
-- **Solution**: Create comprehensive environment variables documentation
-- **Files to create**: `.env.example` (COMPLETED)
 - **Estimated time**: 0.5 days
 
 ### **Sprint 2A - User Authentication (3-4 days)**
@@ -333,4 +320,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-*Last updated: January 2025*
+*Last updated: July 2025*
