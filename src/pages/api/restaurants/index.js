@@ -34,63 +34,18 @@ export default async function handler(req, res) {
       city, state, limit, page, featured, soupTypes, ratings, priceRanges, sortBy, sortOrder, offset 
     });
     
-    // First try to fetch featured restaurants if requested
-    let restaurants = [];
-    if (featured === 'true') {
-      restaurants = await getRestaurants({
-        city,
-        state,
-        rating: ratings.length > 0 ? Math.min(...ratings) : null,
-        priceRange: priceRanges.length > 0 ? priceRanges : null,
-        limit: parseInt(limit),
-        offset,
-        sortBy,
-        sortOrder,
-        featured: true
-      });
-      
-      // If no featured restaurants found, fall back to top-rated restaurants
-      if (restaurants.length === 0) {
-        console.log('No featured restaurants found, falling back to top-rated');
-        restaurants = await getRestaurants({
-          city,
-          state,
-          rating: ratings.length > 0 ? Math.min(...ratings) : null,
-          priceRange: priceRanges.length > 0 ? priceRanges : null,
-          limit: parseInt(limit),
-          offset,
-          sortBy: 'rating',
-          sortOrder: 'desc',
-          featured: false
-        });
-      }
-    } else {
-      // Regular query without featured filter
-      restaurants = await getRestaurants({
-        city,
-        state,
-        rating: ratings.length > 0 ? Math.min(...ratings) : null,
-        priceRange: priceRanges.length > 0 ? priceRanges : null,
-        limit: parseInt(limit),
-        offset,
-        sortBy,
-        sortOrder,
-        featured: false
-      });
-    }
-    
-    // Filter by soup type if specified (done in JavaScript since Supabase foreign key filtering is complex)
-    if (soupTypes.length > 0) {
-      restaurants = restaurants.filter(restaurant => {
-        // Use soups from the database, not detectedSoupTypes from data files
-        const restaurantSoupTypes = restaurant.soups 
-          ? restaurant.soups
-              .filter(soup => soup && soup.soup_type)
-              .map(soup => soup.soup_type)
-          : [];
-        return soupTypes.some(selectedType => restaurantSoupTypes.includes(selectedType));
-      });
-    }
+    // Single optimized query instead of multiple queries
+    const restaurants = await getRestaurants({
+      city,
+      state,
+      rating: ratings.length > 0 ? Math.min(...ratings) : null,
+      priceRange: priceRanges.length > 0 ? priceRanges : null,
+      limit: parseInt(limit),
+      offset,
+      sortBy,
+      sortOrder,
+      featured: featured === 'true'
+    });
     
     console.log(`Retrieved ${restaurants.length} restaurants from database`);
     
@@ -98,138 +53,53 @@ export default async function handler(req, res) {
     const processedRestaurants = restaurants.map(restaurant => {
       // Extract soup types from soups relationship table
       const soup_types = restaurant.soups 
-        ? [...new Set(restaurant.soups
-            .filter(soup => soup && soup.soup_type) // Filter out null or undefined soups
-            .map(soup => soup.soup_type))]
+        ? restaurant.soups
+            .filter(soup => soup && soup.soup_type)
+            .map(soup => soup.soup_type)
         : [];
-      
-      // Calculate review stats
-      const reviews = restaurant.reviews || [];
-      const reviewCount = reviews.length;
-      const avgRating = reviewCount > 0
-        ? reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / reviewCount
-        : null;
-      
-      // Generate a fallback image URL using Unsplash
-      // These URLs are known to be reliable
-      const fallbackImages = [
-        'https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-        'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-        'https://images.unsplash.com/photo-1613844237701-8f3664fc2eff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-        'https://images.unsplash.com/photo-1607116667981-ff148a4e754d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-        'https://images.unsplash.com/photo-1616501268209-edfff098fdd2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-        'https://images.unsplash.com/photo-1604152135912-04a022e23696?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80'
-      ];
-      
-      // Use the restaurant ID to consistently assign the same fallback image
-      const fallbackIndex = restaurant.id 
-        ? parseInt(restaurant.id.replace(/[^0-9]/g, '').slice(0, 4) || '0', 16) % fallbackImages.length 
-        : 0;
-      const fallbackImage = fallbackImages[fallbackIndex];
       
       return {
         id: restaurant.id,
         name: restaurant.name,
-        slug: restaurant.slug || restaurant.name.toLowerCase().replace(/\s+/g, '-'),
+        slug: restaurant.slug,
         city: restaurant.city,
         state: restaurant.state,
-        rating: restaurant.rating || avgRating || 0,
-        review_count: reviewCount,
-        soup_types,
-        // Use restaurant's image if available, otherwise use a fallback
-        image_url: restaurant.image_url || fallbackImage,
-        address: restaurant.address,
-        phone: restaurant.phone,
-        website: restaurant.website,
-        price_range: restaurant.price_range
+        rating: restaurant.rating,
+        review_count: restaurant.review_count,
+        price_range: restaurant.price_range,
+        image_url: restaurant.image_url,
+        is_verified: restaurant.is_verified,
+        is_featured: restaurant.is_featured,
+        soup_types: soup_types
       };
     });
     
-    // Get total count for pagination
-    let totalCount = 0;
-    
-    try {
-      // Simplified query just to get the count
-      let countQuery = supabase
-        .from('restaurants')
-        .select('id', { count: 'exact' });
-      
-      // Apply the same filters
-      if (city) countQuery = countQuery.eq('city', city);
-      if (state) countQuery = countQuery.eq('state', state);
-      if (featured === 'true') countQuery = countQuery.eq('is_featured', true);
-      if (ratings.length > 0) countQuery = countQuery.in('rating', ratings);
-      if (priceRanges.length > 0) countQuery = countQuery.in('price_range', priceRanges);
-      
-      const { count, error } = await countQuery;
-      
-      if (!error && count !== null) {
-        totalCount = count;
-        // If soup type filtering is applied, we need to adjust the count
-        // This is a simplified approach - in production you might want a more accurate count
-        if (soupTypes.length > 0) {
-          // For now, we'll use the length of filtered results as the count
-          totalCount = processedRestaurants.length;
-        }
-      } else {
-        // If count query fails, use the length of current results
-        totalCount = processedRestaurants.length;
-      }
-    } catch (countError) {
-      console.error('Error getting count:', countError);
-      totalCount = processedRestaurants.length;
+    // Filter by soup type if specified (done in JavaScript since Supabase foreign key filtering is complex)
+    let filteredRestaurants = processedRestaurants;
+    if (soupTypes.length > 0) {
+      filteredRestaurants = processedRestaurants.filter(restaurant => {
+        return soupTypes.some(selectedType => restaurant.soup_types.includes(selectedType));
+      });
     }
     
-    // Return the data
-    return res.status(200).json({
-      restaurants: processedRestaurants,
-      totalCount
-    });
-  } catch (error) {
-    console.error('Error in restaurants API:', error);
+    // Get total count for pagination (simplified - in production you'd want a separate count query)
+    const totalCount = filteredRestaurants.length;
     
-    // Return an error response with fallback data for development
-    return res.status(200).json({ 
-      restaurants: [
-        {
-          id: '1',
-          name: 'Soup Heaven (Fallback)',
-          city: 'New York',
-          state: 'NY',
-          rating: 4.5,
-          review_count: 120,
-          soup_types: ['Ramen', 'Pho', 'Clam Chowder'],
-          image_url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-          slug: 'soup-heaven',
-          price_range: '$$'
-        },
-        {
-          id: '2',
-          name: 'Brothy Goodness (Fallback)',
-          city: 'New York',
-          state: 'NY',
-          rating: 4.2,
-          review_count: 85,
-          soup_types: ['French Onion', 'Tomato Bisque'],
-          image_url: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-          slug: 'brothy-goodness',
-          price_range: '$'
-        },
-        {
-          id: '3',
-          name: 'Ladle & Spoon (Fallback)',
-          city: 'New York',
-          state: 'NY',
-          rating: 4.7,
-          review_count: 200,
-          soup_types: ['Chicken Noodle', 'Minestrone', 'Beef Stew'],
-          image_url: 'https://images.unsplash.com/photo-1613844237701-8f3664fc2eff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-          slug: 'ladle-and-spoon',
-          price_range: '$$$'
-        }
-      ],
-      totalCount: 3,
-      isErrorData: true
+    console.log(`Returning ${filteredRestaurants.length} restaurants to frontend`);
+    
+    res.status(200).json({
+      restaurants: filteredRestaurants,
+      totalCount: totalCount,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      totalPages: Math.ceil(totalCount / parseInt(limit))
+    });
+    
+  } catch (error) {
+    console.error('API Error:', error);
+    res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
     });
   }
 }

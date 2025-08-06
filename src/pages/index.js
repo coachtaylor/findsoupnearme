@@ -18,8 +18,106 @@ export default function Home() {
   const [typingText, setTypingText] = useState('');
   const [typingIndex, setTypingIndex] = useState(0);
   const [scrollY, setScrollY] = useState(0);
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const [rippleElements, setRippleElements] = useState([]);
+  const [magneticElements, setMagneticElements] = useState([]);
+  const [hoveredElement, setHoveredElement] = useState(null);
+  const [expandedCards, setExpandedCards] = useState(new Set());
+  const [loadingStates, setLoadingStates] = useState({
+    featured: false,
+    city: false,
+    discover: false
+  });
+  const [isClient, setIsClient] = useState(false);
+  
+  // Intersection Observer refs for scroll animations
+  const featuredSectionRef = useRef(null);
+  const citySectionRef = useRef(null);
+  const discoverSectionRef = useRef(null);
+  const [visibleSections, setVisibleSections] = useState({
+    featured: false,
+    city: false,
+    discover: false
+  });
   
   const subheadingText = "From hearty ramen to comforting chowder, find your perfect bowl across 11 major US cities";
+  
+  // Micro-interaction utility functions
+  const createRippleEffect = (event, element) => {
+    const rect = element.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = event.clientX - rect.left - size / 2;
+    const y = event.clientY - rect.top - size / 2;
+    
+    const ripple = document.createElement('span');
+    ripple.className = 'ripple-effect';
+    ripple.style.cssText = `
+      position: absolute;
+      width: ${size}px;
+      height: ${size}px;
+      left: ${x}px;
+      top: ${y}px;
+      background: radial-gradient(circle, rgba(249, 115, 22, 0.3) 0%, transparent 70%);
+      border-radius: 50%;
+      transform: scale(0);
+      animation: ripple-animation 0.6s ease-out;
+      pointer-events: none;
+      z-index: 1000;
+    `;
+    
+    element.style.position = 'relative';
+    element.appendChild(ripple);
+    
+    setTimeout(() => {
+      if (ripple.parentNode) {
+        ripple.parentNode.removeChild(ripple);
+      }
+    }, 600);
+  };
+  
+  const handleMagneticHover = (event, element) => {
+    const rect = element.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const distance = Math.sqrt(
+      Math.pow(event.clientX - centerX, 2) + Math.pow(event.clientY - centerY, 2)
+    );
+    const maxDistance = Math.max(rect.width, rect.height) * 2;
+    
+    if (distance < maxDistance) {
+      const strength = (1 - distance / maxDistance) * 0.1;
+      const translateX = (event.clientX - centerX) * strength;
+      const translateY = (event.clientY - centerY) * strength;
+      
+      element.style.transform = `translate(${translateX}px, ${translateY}px) scale(1.02)`;
+    } else {
+      element.style.transform = 'translate(0, 0) scale(1)';
+    }
+  };
+  
+  const handleMagneticLeave = (element) => {
+    element.style.transform = 'translate(0, 0) scale(1)';
+  };
+  
+  const toggleCardExpansion = (cardId) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cardId)) {
+        newSet.delete(cardId);
+      } else {
+        newSet.add(cardId);
+      }
+      return newSet;
+    });
+  };
+  
+  const simulateLoading = (section) => {
+    setLoadingStates(prev => ({ ...prev, [section]: true }));
+    setTimeout(() => {
+      setLoadingStates(prev => ({ ...prev, [section]: false }));
+    }, 1500);
+  };
   
   // Check if device is mobile
   useEffect(() => {
@@ -27,6 +125,7 @@ export default function Home() {
       setIsMobile(window.innerWidth < 768);
     };
     
+    setIsClient(true);
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
@@ -58,7 +157,7 @@ export default function Home() {
   
   // Enhanced mouse movement parallax effect (disabled on mobile for performance)
   useEffect(() => {
-    if (isMobile) return;
+    if (isMobile || !isClient) return;
     
     let animationFrameId;
     let isMoving = false;
@@ -86,54 +185,105 @@ export default function Home() {
         
         // Apply easing for smoother movement
         const easedX = normalizedX * 0.8;
-        const easedY = normalizedY * 0.8;
+        const easedY = normalizedY * 0.6;
         
-        setMousePosition({ 
-          x: Math.max(-1, Math.min(1, easedX)), 
-          y: Math.max(-1, Math.min(1, easedY)) 
-        });
+        setMousePosition({ x: easedX, y: easedY });
       });
     };
     
     const handleMouseLeave = () => {
-      // Smoothly reset position when mouse leaves the hero section
-      isMoving = false;
       setMousePosition({ x: 0, y: 0 });
+      isMoving = false;
     };
     
     const handleMouseEnter = () => {
-      isMoving = true;
+      isMoving = false;
     };
     
     const heroElement = heroRef.current;
     if (heroElement) {
-      heroElement.addEventListener('mousemove', handleMouseMove, { passive: true });
+      heroElement.addEventListener('mousemove', handleMouseMove);
       heroElement.addEventListener('mouseleave', handleMouseLeave);
       heroElement.addEventListener('mouseenter', handleMouseEnter);
-      
-      return () => {
+    }
+    
+    return () => {
+      if (heroElement) {
         heroElement.removeEventListener('mousemove', handleMouseMove);
         heroElement.removeEventListener('mouseleave', handleMouseLeave);
         heroElement.removeEventListener('mouseenter', handleMouseEnter);
-        if (animationFrameId) {
-          cancelAnimationFrame(animationFrameId);
-        }
-      };
-    }
-  }, [isMobile]);
+      }
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, [isMobile, isClient]);
   
   // Scroll position tracking for wave parallax
   useEffect(() => {
+    if (!isClient) return;
+    
     const handleScroll = () => {
-      setScrollY(window.scrollY);
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      setScrollY(scrollY);
+      setScrollProgress(scrollY / (documentHeight - windowHeight));
+      setIsScrolling(true);
+      
+      // Clear scrolling state after scroll ends
+      clearTimeout(window.scrollTimeout);
+      window.scrollTimeout = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
     };
     
     window.addEventListener('scroll', handleScroll, { passive: true });
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      clearTimeout(window.scrollTimeout);
     };
-  }, []);
+  }, [isClient]);
+  
+  // Intersection Observer for scroll-triggered animations
+  useEffect(() => {
+    if (!isClient) return;
+    
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const sectionName = entry.target.dataset.section;
+        if (entry.isIntersecting) {
+          setVisibleSections(prev => ({
+            ...prev,
+            [sectionName]: true
+          }));
+        }
+      });
+    }, observerOptions);
+    
+    // Observe sections
+    if (featuredSectionRef.current) {
+      featuredSectionRef.current.dataset.section = 'featured';
+      observer.observe(featuredSectionRef.current);
+    }
+    if (citySectionRef.current) {
+      citySectionRef.current.dataset.section = 'city';
+      observer.observe(citySectionRef.current);
+    }
+    if (discoverSectionRef.current) {
+      discoverSectionRef.current.dataset.section = 'discover';
+      observer.observe(discoverSectionRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, [isClient]);
   
   // Fetch featured restaurants
   const { 
@@ -145,8 +295,73 @@ export default function Home() {
     limit: 6 
   });
   
+  // Handle loading states after client hydration
+  useEffect(() => {
+    if (isClient) {
+      setLoadingStates(prev => ({
+        ...prev,
+        featured: featuredLoading
+      }));
+    }
+  }, [isClient, featuredLoading]);
+  
+  // Popular cities list for the UI
+  const popularCities = [
+    { name: 'New York', state: 'NY' },
+    { name: 'Los Angeles', state: 'CA' },
+    { name: 'Chicago', state: 'IL' },
+    { name: 'San Francisco', state: 'CA' },
+    { name: 'Seattle', state: 'WA' },
+    { name: 'Miami', state: 'FL' },
+    { name: 'Phoenix', state: 'AZ' },
+    { name: 'Houston', state: 'TX' },
+    { name: 'Austin', state: 'TX' },
+    { name: 'Dallas', state: 'TX' },
+    { name: 'San Diego', state: 'CA' },
+    { name: 'Philadelphia', state: 'PA' }
+  ];
+  
   // You could also fetch restaurants by city
   const [selectedCity, setSelectedCity] = useState('New York');
+  const [filteredCities, setFilteredCities] = useState(popularCities);
+  
+  // Filter cities based on search query
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const filtered = popularCities.filter(city => {
+        const cityName = city.name.toLowerCase();
+        const stateName = city.state.toLowerCase();
+        const stateFullName = getStateFullName(city.state).toLowerCase();
+        
+        return cityName.includes(query) || 
+               stateName.includes(query) || 
+               stateFullName.includes(query) ||
+               cityName.startsWith(query) ||
+               cityName.split(' ').some(word => word.startsWith(query));
+      });
+      setFilteredCities(filtered);
+    } else {
+      setFilteredCities(popularCities);
+    }
+  }, [searchQuery, popularCities]);
+  
+  // Helper function to get full state names
+  const getStateFullName = (stateCode) => {
+    const stateNames = {
+      'NY': 'New York',
+      'CA': 'California',
+      'IL': 'Illinois',
+      'WA': 'Washington',
+      'FL': 'Florida',
+      'AZ': 'Arizona',
+      'TX': 'Texas',
+      'PA': 'Pennsylvania'
+    };
+    return stateNames[stateCode] || stateCode;
+  };
+  
+  // Fetch restaurants for selected city
   const { 
     restaurants: cityRestaurants, 
     loading: cityLoading, 
@@ -218,16 +433,6 @@ export default function Home() {
     }
   };
   
-  // Popular cities list for the UI
-  const popularCities = [
-    { name: 'New York', state: 'NY' },
-    { name: 'Los Angeles', state: 'CA' },
-    { name: 'Chicago', state: 'IL' },
-    { name: 'San Francisco', state: 'CA' },
-    { name: 'Seattle', state: 'WA' },
-    { name: 'Miami', state: 'FL' }
-  ];
-  
   // Soup type quick filters
   const quickFilters = [
     { name: 'Ramen', emoji: '🍜', type: 'ramen' },
@@ -238,13 +443,93 @@ export default function Home() {
   const handleQuickFilter = (soupType) => {
     router.push(`/restaurants?soupType=${soupType}`);
   };
+
+  // Map soup types to emojis
+  const getSoupEmoji = (soupType) => {
+    const emojiMap = {
+      'ramen': '🍜',
+      'pho': '🍲',
+      'chowder': '🥣',
+      'tomato': '🍅',
+      'chicken': '🐓',
+      'vegetable': '🥕',
+      'miso': '🥢',
+      'stew': '🍲',
+      'noodle': '🍝',
+      'seafood': '🦞',
+      'bean': '🫘',
+      'corn': '🌽',
+      'mushroom': '🍄'
+    };
+    
+    const lowerType = soupType.toLowerCase();
+    
+    // Find a matching key in the emoji map
+    for (const key in emojiMap) {
+      if (lowerType.includes(key)) {
+        return emojiMap[key];
+      }
+    }
+    
+    // Default emoji if no match found
+    return '🥣';
+  };
   
   return (
-    <div>
+    <div className="relative">
       <Head>
         <title>FindSoupNearMe - Discover the Best Soup Restaurants Near You</title>
         <meta name="description" content="Find the best soup restaurants in your city. Discover delicious ramen, pho, chowder, and more at top-rated restaurants." />
       </Head>
+      
+      {/* Floating Navigation with Blur Background */}
+      <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        isScrolling ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+      }`}>
+        <div className="bg-white/80 backdrop-blur-md border-b border-orange-100/50 shadow-lg">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-6">
+                <Link href="/" className="text-xl font-bold text-orange-600">
+                  FindSoupNearMe
+                </Link>
+                <nav className="hidden md:flex space-x-6">
+                  <Link href="/restaurants" className="text-neutral-700 hover:text-orange-600 transition-colors">
+                    All Restaurants
+                  </Link>
+                  <Link href="/cities" className="text-neutral-700 hover:text-orange-600 transition-colors">
+                    Cities
+                  </Link>
+                  <Link href="/about" className="text-neutral-700 hover:text-orange-600 transition-colors">
+                    About
+                  </Link>
+                </nav>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Quick search..."
+                    className="pl-10 pr-4 py-2 bg-white/50 backdrop-blur-sm rounded-lg border border-orange-200/50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  />
+                  <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Progress Bar */}
+      <div className="fixed top-0 left-0 right-0 z-40 h-1 bg-gradient-to-r from-orange-400 to-orange-600 transform origin-left transition-transform duration-300"
+           style={{ transform: `scaleX(${scrollProgress})` }}></div>
+      
+      {/* Organic Blob Shapes */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-orange-200/20 rounded-full blur-3xl animate-blob"></div>
+        <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-orange-300/15 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-orange-100/25 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
+      </div>
       
       {/* Clean Hero with Accent Elements */}
       <section ref={heroRef} className="py-20 md:py-28 relative overflow-hidden">
@@ -563,98 +848,454 @@ export default function Home() {
       </section>
       
       {/* Featured Restaurants Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">
+      <section 
+        ref={featuredSectionRef}
+        className={`py-16 relative overflow-hidden transition-all duration-1000 ${
+          visibleSections.featured ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}
+        style={{
+          '--scroll-progress': scrollProgress,
+          '--section-depth': Math.max(0, Math.min(1, (scrollY - 600) / 200))
+        }}
+      >
+        {/* Geometric Pattern Background */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `
+            radial-gradient(circle at 20% 20%, rgba(249, 115, 22, 0.3) 1px, transparent 1px),
+            radial-gradient(circle at 80% 80%, rgba(249, 115, 22, 0.2) 1px, transparent 1px)
+          `,
+          backgroundSize: '60px 60px, 40px 40px',
+          transform: `translateY(${scrollY * 0.1}px)`
+        }}></div>
+        
+        {/* Noise Texture */}
+        <div className="absolute inset-0 opacity-10" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
+          backgroundSize: '256px 256px'
+        }}></div>
+        
+        {/* Parallax Background Elements */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-orange-300/40 rounded-full animate-pulse"
+               style={{ transform: `translateY(${scrollY * 0.05}px)` }}></div>
+          <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-orange-200/60 rounded-full animate-pulse delay-1000"
+               style={{ transform: `translateY(${scrollY * 0.08}px)` }}></div>
+          <div className="absolute bottom-1/4 left-1/2 w-1 h-1 bg-orange-400/50 rounded-full animate-pulse delay-2000"
+               style={{ transform: `translateY(${scrollY * 0.03}px)` }}></div>
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center px-4 py-1.5 bg-orange-100/80 backdrop-blur-sm text-orange-600 rounded-full text-sm font-medium mb-4 border border-orange-200/50">
+              🍜 Featured Collection
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
               Featured Soup Spots
             </h2>
-            <Link href="/restaurants" className="text-orange-500 hover:text-orange-600 font-medium flex items-center">
-              View All
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-            </Link>
+            <p className="text-neutral-600 max-w-2xl mx-auto">
+              Discover handpicked restaurants serving the most delicious soups in your area
+            </p>
           </div>
           
           {featuredError && (
-            <div className="text-red-500 text-center mb-8">
+            <div className="text-red-500 text-center mb-8 bg-red-50/80 backdrop-blur-sm rounded-lg p-4 border border-red-200/50">
               Error loading featured restaurants. Please try again later.
             </div>
           )}
           
           {featuredLoading ? (
-            <SkeletonLoader count={6} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+              {[1, 2, 3, 4, 5, 6].map((index) => (
+                <div 
+                  key={index}
+                  className="glassmorphism-card animate-pulse"
+                  style={{
+                    animationDelay: `${index * 100}ms`
+                  }}
+                >
+                  <div className="h-48 bg-gradient-to-br from-orange-100 to-orange-200 rounded-t-xl"></div>
+                  <div className="p-6 space-y-4">
+                    <div className="h-6 bg-orange-200 rounded"></div>
+                    <div className="h-4 bg-orange-100 rounded w-2/3"></div>
+                    <div className="h-4 bg-orange-100 rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredRestaurants.map((restaurant) => (
-                <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+              {featuredRestaurants.map((restaurant, index) => (
+                <div 
+                  key={restaurant.id}
+                  className={`glassmorphism-card group stagger-animate h-full card-interactive ${
+                    expandedCards.has(restaurant.id) ? 'state-transition expanded' : 'state-transition'
+                  }`}
+                  style={{
+                    animationDelay: `${index * 150}ms`,
+                    transform: `translateY(${index * 20}px)`,
+                    '--card-depth': Math.max(0, Math.min(1, (scrollY - 600) / 200))
+                  }}
+                  onMouseMove={(e) => handleMagneticHover(e, e.currentTarget)}
+                  onMouseLeave={(e) => handleMagneticLeave(e.currentTarget)}
+                  data-hover-text={`${restaurant.name} - ${restaurant.city}, ${restaurant.state}`}
+                >
+                  {/* Loading Overlay */}
+                  {loadingStates.featured && (
+                    <div className="loading-overlay active">
+                      <div className="loading-spinner"></div>
+                    </div>
+                  )}
+                  
+                  <div className="relative h-48 w-full overflow-hidden rounded-t-xl">
+                    <img
+                      src={restaurant.image_url || '/images/soup-pattern.svg'}
+                      alt={restaurant.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      onError={(e) => {
+                        e.target.src = '/images/soup-pattern.svg';
+                      }}
+                    />
+                    
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    
+                    {/* Steam Animation */}
+                    <div className="steam-container absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <div className="steam animate-steam-1"></div>
+                      <div className="steam animate-steam-2"></div>
+                      <div className="steam animate-steam-3"></div>
+                    </div>
+                    
+                    {/* Price range label - Moved to top right */}
+                    {restaurant.price_range && (
+                      <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs font-medium shadow-lg border border-white/20 hover-reveal"
+                           data-hover-text={`Price range: ${restaurant.price_range}`}>
+                        {restaurant.price_range}
+                      </div>
+                    )}
+                    
+                    {/* Verified badge if applicable - Moved to top left */}
+                    {restaurant.is_verified && (
+                      <div className="absolute top-3 left-3 bg-white rounded-full px-2 py-1 text-xs font-medium flex items-center shadow-soft hover-reveal"
+                           data-hover-text="Verified restaurant">
+                        <span className="text-orange-500 mr-1">✓</span> Verified
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-6 relative z-10 flex flex-col flex-1">
+                    <div className="flex-1 space-y-4">
+                      {/* Restaurant Name */}
+                      <h3 className="text-xl font-bold text-neutral-900 group-hover:text-orange-600 transition-colors duration-300 line-clamp-1">
+                        {restaurant.name}
+                      </h3>
+                      
+                      {/* Star Rating - Moved here */}
+                      <div className="flex items-center">
+                        <div className="flex mr-2">
+                          {[...Array(5)].map((_, i) => (
+                            <svg
+                              key={i}
+                              className={`h-4 w-4 transition-all duration-300 ${
+                                i < Math.floor(restaurant.rating || 0)
+                                  ? 'text-yellow-400 fill-current'
+                                  : 'text-neutral-300'
+                              }`}
+                              style={{
+                                animationDelay: `${i * 100}ms`,
+                                animation: hoveredElement === restaurant.id ? 'pulse-glow 1s ease-in-out infinite' : 'none'
+                              }}
+                              viewBox="0 0 20 20"
+                            >
+                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                            </svg>
+                          ))}
+                        </div>
+                        <span className="text-neutral-600 text-sm">
+                          {restaurant.rating ? restaurant.rating.toFixed(1) : 'N/A'}
+                          {restaurant.review_count ? ` (${restaurant.review_count})` : ''}
+                        </span>
+                      </div>
+                      
+                      {/* Location with Animated Icon */}
+                      <div className="flex items-center space-x-2">
+                        <div className="map-pin-container">
+                          <svg className="h-4 w-4 text-orange-500 transition-transform duration-300 group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <span className="text-neutral-600 text-sm line-clamp-1">
+                          {restaurant.city}, {restaurant.state}
+                        </span>
+                      </div>
+                      
+                      {/* Soup Types - Always Visible */}
+                      {restaurant.soup_types && restaurant.soup_types.length > 0 && (
+                        <div className="flex flex-wrap gap-2 min-h-[3rem]">
+                          {restaurant.soup_types.slice(0, 3).map((type, typeIndex) => (
+                            <span
+                              key={typeIndex}
+                              className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors duration-200 micro-interaction"
+                              style={{ animationDelay: `${typeIndex * 50}ms` }}
+                            >
+                              <span className="mr-1">{getSoupEmoji(type)}</span> {type}
+                            </span>
+                          ))}
+                          {restaurant.soup_types.length > 3 && (
+                            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
+                              +{restaurant.soup_types.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* View Details Button with Enhanced Hover */}
+                    <Link
+                      href={restaurant.slug && restaurant.city && restaurant.state
+                        ? `/${restaurant.state.toLowerCase()}/${restaurant.city.toLowerCase().replace(/\s+/g, '-')}/${restaurant.slug}`
+                        : `/restaurants/${restaurant.id}`
+                      }
+                      className="block w-full text-center py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform group-hover:animate-pulse mt-6 btn-enhanced click-feedback"
+                      onClick={(e) => createRippleEffect(e, e.currentTarget)}
+                    >
+                      <span className="flex items-center justify-center space-x-2">
+                        <span>View Details</span>
+                        <svg className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </span>
+                    </Link>
+                  </div>
+                  
+                  {/* Subtle Border Glow Effect */}
+                  <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-400/30 via-transparent to-orange-600/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm"></div>
+                </div>
               ))}
             </div>
           )}
-        </div>
-      </section>
-      
-      {/* City Section with Modern Design */}
-      <section className="py-16 bg-orange-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">
-              {selectedCity} Favorites
-            </h2>
-            <div className="hidden md:block">
-              <div className="flex space-x-2">
-                {popularCities.slice(0, 4).map((city) => (
-                  <button
-                    key={city.name}
-                    onClick={() => setSelectedCity(city.name)}
-                    className={`px-4 py-1.5 rounded-full text-sm transition-colors ${
-                      selectedCity === city.name
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-white text-neutral-700 hover:bg-orange-100'
-                    }`}
-                  >
-                    {city.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
           
-          {cityError && (
-            <div className="text-red-500 text-center mb-8">
-              Error loading restaurants. Please try again later.
-            </div>
-          )}
-          
-          {cityLoading ? (
-            <SkeletonLoader count={3} />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {cityRestaurants.map((restaurant) => (
-                <RestaurantCard key={restaurant.id} restaurant={restaurant} />
-              ))}
-            </div>
-          )}
-          
-          <div className="text-center mt-10">
+          {/* View All Button */}
+          <div className="text-center mt-12">
             <Link 
-              href={`/${selectedCity.split(' ')[0] === 'New' ? 'ny' : selectedCity.substring(0, 2).toLowerCase()}/${selectedCity.toLowerCase().replace(/\s+/g, '-')}/restaurants`}
-              className="inline-block px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
+              href="/restaurants" 
+              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform group breathing-animation"
             >
-              Explore All {selectedCity} Restaurants
+              <span className="mr-2">View All Restaurants</span>
+              <svg className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
             </Link>
           </div>
         </div>
       </section>
       
+      {/* Interactive City Section with Modern Design */}
+      <section 
+        ref={citySectionRef}
+        className={`py-16 relative overflow-hidden transition-all duration-1000 ${
+          visibleSections.city ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}
+        style={{
+          '--scroll-progress': scrollProgress,
+          '--section-depth': Math.max(0, Math.min(1, (scrollY - 1200) / 300))
+        }}
+      >
+        {/* Geometric Pattern Background */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `
+            linear-gradient(45deg, rgba(249, 115, 22, 0.1) 25%, transparent 25%),
+            linear-gradient(-45deg, rgba(249, 115, 22, 0.1) 25%, transparent 25%),
+            linear-gradient(45deg, transparent 75%, rgba(249, 115, 22, 0.1) 75%),
+            linear-gradient(-45deg, transparent 75%, rgba(249, 115, 22, 0.1) 75%)
+          `,
+          backgroundSize: '40px 40px',
+          backgroundPosition: '0 0, 0 20px, 20px -20px, -20px 0px',
+          transform: `translateY(${scrollY * 0.15}px)`
+        }}></div>
+        
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `radial-gradient(circle at 25% 25%, rgba(249, 115, 22, 0.3) 2px, transparent 2px)`,
+          backgroundSize: '50px 50px'
+        }}></div>
+        
+        {/* Floating Elements */}
+        <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-orange-300/40 rounded-full animate-pulse"
+             style={{ transform: `translateY(${scrollY * 0.05}px)` }}></div>
+        <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-orange-200/60 rounded-full animate-pulse delay-1000"
+             style={{ transform: `translateY(${scrollY * 0.08}px)` }}></div>
+        <div className="absolute bottom-1/4 left-1/2 w-1 h-1 bg-orange-400/50 rounded-full animate-pulse delay-2000"
+             style={{ transform: `translateY(${scrollY * 0.03}px)` }}></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          {/* Enhanced Header with Floating Search */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center px-4 py-1.5 bg-orange-100/80 backdrop-blur-sm text-orange-600 rounded-full text-sm font-medium mb-4 border border-orange-200/50">
+              🌆 City Explorer
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
+              Discover Local Favorites
+            </h2>
+            <p className="text-neutral-600 text-lg mb-6">
+              Currently exploring <span className="font-semibold text-orange-600">{selectedCity}</span>
+            </p>
+          </div>
+          
+          {/* Floating Search Input with Glassmorphism */}
+          <div className="max-w-md mx-auto mb-8">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-400/20 to-orange-600/20 rounded-xl blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative bg-white/80 backdrop-blur-md rounded-xl border border-white/50 shadow-lg p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Search cities..."
+                    className="flex-1 bg-transparent border-none outline-none text-neutral-700 placeholder-neutral-500"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <div className="flex-shrink-0">
+                    <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* City Cards Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {filteredCities.map((city, index) => {
+              const isSelected = selectedCity === city.name;
+              
+              return (
+                <div
+                  key={city.name}
+                  className={`city-card relative group cursor-pointer transition-all duration-500 hover:scale-105 transform rounded-xl overflow-hidden ${
+                    isSelected ? 'ring-2 ring-orange-400 scale-105' : ''
+                  } magnetic-hover`}
+                  style={{
+                    background: city.name === 'New York' ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)' :
+                              city.name === 'Los Angeles' ? 'linear-gradient(135deg, #ec4899, #f97316)' :
+                              city.name === 'Chicago' ? 'linear-gradient(135deg, #2563eb, #4f46e5)' :
+                              city.name === 'San Francisco' ? 'linear-gradient(135deg, #10b981, #3b82f6)' :
+                              city.name === 'Seattle' ? 'linear-gradient(135deg, #6b7280, #3b82f6)' :
+                              city.name === 'Miami' ? 'linear-gradient(135deg, #f472b6, #fb923c)' :
+                              city.name === 'Phoenix' ? 'linear-gradient(135deg, #f97316, #dc2626)' :
+                              city.name === 'Houston' ? 'linear-gradient(135deg, #3b82f6, #10b981)' :
+                              city.name === 'Austin' ? 'linear-gradient(135deg, #8b5cf6, #ec4899)' :
+                              city.name === 'Dallas' ? 'linear-gradient(135deg, #2563eb, #7c3aed)' :
+                              city.name === 'San Diego' ? 'linear-gradient(135deg, #60a5fa, #06b6d4)' :
+                              city.name === 'Philadelphia' ? 'linear-gradient(135deg, #1d4ed8, #3730a3)' :
+                              'linear-gradient(135deg, #f97316, #ea580c)',
+                    animationDelay: `${index * 100}ms`
+                  }}
+                  onClick={(e) => {
+                    createRippleEffect(e, e.currentTarget);
+                    setSelectedCity(city.name);
+                    setSearchQuery('');
+                    simulateLoading('city');
+                  }}
+                  onMouseMove={(e) => handleMagneticHover(e, e.currentTarget)}
+                  onMouseLeave={(e) => handleMagneticLeave(e.currentTarget)}
+                  data-hover-text={`Explore ${city.name} restaurants`}
+                >
+                  {/* Loading Overlay */}
+                  {loadingStates.city && selectedCity === city.name && (
+                    <div className="loading-overlay active">
+                      <div className="loading-spinner"></div>
+                    </div>
+                  )}
+                  
+                  {/* Selected Checkmark */}
+                  {isSelected && (
+                    <div className="absolute top-3 left-3 h-4 w-4 bg-white rounded-full flex items-center justify-center shadow-lg border border-white/20 z-10">
+                      <svg className="h-3 w-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                  )}
+                  
+                  <div className="relative z-10 p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold">{city.name}</h3>
+                      <div className="map-pin-container">
+                        <svg className="h-5 w-5 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    </div>
+                    
+                    {/* Progressive Disclosure for City Info */}
+                    <div className={`progressive-disclosure ${selectedCity === city.name ? 'visible' : ''}`}>
+                      <p className="text-sm opacity-90 mb-3">
+                        Discover amazing soup spots
+                      </p>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-white/20 backdrop-blur-sm rounded-full px-2 py-1">
+                          🍜 {isClient ? `${Math.floor(Math.random() * 50) + 20}+` : '20+'} spots
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Hover Reveal Information */}
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <div className="text-2xl mb-2">🍲</div>
+                      <p className="text-sm font-medium">Explore {city.name}</p>
+                      <p className="text-xs opacity-80">Click to discover</p>
+                    </div>
+                  </div>
+                  
+                  {/* Ambient Glow Effect */}
+                  <div className="absolute -inset-1 bg-gradient-to-r from-orange-400/30 via-transparent to-orange-600/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm"></div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {filteredCities.length === 0 && (
+            <div className="text-center py-12 text-neutral-600">
+              <div className="text-4xl mb-4">🔍</div>
+              <p className="text-lg font-medium mb-2">No cities found</p>
+              <p className="text-sm">Try searching for a different city name</p>
+            </div>
+          )}
+        </div>
+      </section>
+      
       {/* Discover Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
+      <section 
+        ref={discoverSectionRef}
+        className={`py-16 relative overflow-hidden transition-all duration-1000 ${
+          visibleSections.discover ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        }`}
+        style={{
+          '--scroll-progress': scrollProgress,
+          '--section-depth': Math.max(0, Math.min(1, (scrollY - 1800) / 300))
+        }}
+      >
+        {/* Geometric Pattern Background */}
+        <div className="absolute inset-0 opacity-5" style={{
+          backgroundImage: `
+            radial-gradient(circle at 30% 30%, rgba(249, 115, 22, 0.2) 1px, transparent 1px),
+            radial-gradient(circle at 70% 70%, rgba(249, 115, 22, 0.15) 1px, transparent 1px)
+          `,
+          backgroundSize: '80px 80px, 60px 60px',
+          transform: `translateY(${scrollY * 0.2}px)`
+        }}></div>
+        
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-5xl mx-auto">
-            <div className="bg-gradient-to-br from-orange-50 to-light-orange-50 rounded-2xl p-8 md:p-12 shadow-md">
+            <div className="glassmorphism-depth rounded-2xl p-8 md:p-12 shadow-xl morphing-element">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div>
+                <div className="depth-layer-1">
                   <span className="inline-block px-4 py-1 bg-light-orange-100 text-light-orange-500 rounded-full text-sm font-semibold mb-4">
                     Did You Know?
                   </span>
@@ -665,34 +1306,36 @@ export default function Home() {
                     From New York's classic chicken noodle to San Francisco's clam chowder in sourdough bread bowls, every city has signature soups worth discovering.
                   </p>
                   <div className="flex flex-wrap gap-3">
-                    <div className="bg-white px-4 py-3 rounded-lg shadow-sm flex items-center border border-orange-100">
+                    <div className="bg-white px-4 py-3 rounded-lg shadow-sm flex items-center border border-orange-100 morphing-element hover-reveal"
+                         data-hover-text="Traditional Japanese noodle soup">
                       <span className="text-2xl mr-3">🍜</span>
                       <div>
                         <p className="font-medium text-neutral-900">Ramen</p>
-                        <p className="text-sm text-orange-600">30+ spots</p>
+                        <p className="text-sm text-orange-600">{isClient ? '30+' : '30+'} spots</p>
                       </div>
                     </div>
-                    <div className="bg-white px-4 py-3 rounded-lg shadow-sm flex items-center border border-orange-100">
+                    <div className="bg-white px-4 py-3 rounded-lg shadow-sm flex items-center border border-orange-100 morphing-element hover-reveal"
+                         data-hover-text="Creamy seafood soup">
                       <span className="text-2xl mr-3">🥣</span>
                       <div>
                         <p className="font-medium text-neutral-900">Chowder</p>
-                        <p className="text-sm text-orange-600">42+ spots</p>
+                        <p className="text-sm text-orange-600">{isClient ? '42+' : '42+'} spots</p>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="relative">
-                  <div className="aspect-square rounded-xl overflow-hidden shadow-lg">
+                <div className="relative depth-layer-2">
+                  <div className="aspect-square rounded-xl overflow-hidden shadow-lg morphing-element">
                     <img 
                       src="https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
                       alt="Delicious ramen" 
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="absolute -bottom-5 -left-5 bg-white rounded-lg shadow-md p-3 hidden md:block">
+                  <div className="absolute -bottom-5 -left-5 bg-white rounded-lg shadow-md p-3 hidden md:block depth-layer-3">
                     <div className="flex items-center">
-                      <div className="bg-orange-500 rounded-full w-3 h-3 mr-2"></div>
-                      <span className="text-sm font-medium">Live: 435+ active restaurants</span>
+                      <div className="bg-orange-500 rounded-full w-3 h-3 mr-2 animate-pulse"></div>
+                      <span className="text-sm font-medium">Live: {isClient ? '435+' : '435+'} active restaurants</span>
                     </div>
                   </div>
                 </div>

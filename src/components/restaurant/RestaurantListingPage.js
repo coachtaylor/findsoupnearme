@@ -44,6 +44,9 @@ export default function RestaurantListingPage({
     page: currentPage
   });
   
+  // Show loading state immediately for better UX
+  const isLoading = loading || restaurants.length === 0;
+  
   // Calculate total pages
   const totalPages = Math.ceil(totalCount / pageSize);
   
@@ -210,6 +213,62 @@ export default function RestaurantListingPage({
     }
     
     return crumbs;
+  };
+
+  // Helper to get emoji based on soup type
+  const getSoupEmoji = (type) => {
+    switch (type) {
+      case 'Pho': return '🍜';
+      case 'Ramen': return '🍜';
+      case 'Udon': return '🍜';
+      case 'Wonton': return '🥟';
+      case 'Egg Drop': return '🥚';
+      case 'Hot and Sour': return '🌶️';
+      case 'Miso': return '🥣';
+      case 'Tom Yum': return '🌶️';
+      case 'Tom Kha': return '🥣';
+      case 'Tonkotsu': return '🍜';
+      case 'Shoyu': return '🥣';
+      case 'Congee': return '🍚';
+      case 'Samgyetang': return '🥣';
+      case 'Kimchi': return '🥬';
+      case 'Bun Bo Hue': return '🍜';
+      case 'Clam Chowder': return '🐚';
+      case 'Lobster Bisque': return '🦞';
+      case 'French Onion': return '🧅';
+      case 'Vichyssoise': return '🥣';
+      case 'Bouillabaisse': return '🥣';
+      case 'Tomato': return '🍅';
+      case 'Minestrone': return '🥣';
+      case 'Chowder': return '🥣';
+      case 'Vegetable': return '🥬';
+      case 'Stracciatella': return '🥣';
+      case 'Ribollita': return '🥣';
+      case 'Chicken Noodle': return '🍜';
+      case 'Bone Broth': return '🍖';
+      case 'Bisque': return '🥣';
+      case 'Corn Chowder': return '🌽';
+      case 'Avgolemono': return '🥣';
+      case 'House Special': return '🍲';
+      case 'Vegan': return '🥗';
+      case 'Cioppino': return '🍷';
+      case 'Mushroom': return '🍄';
+      case 'Cabbage': return '🥬';
+      case 'Fruit': return '🍎';
+      case 'Apple': return '🍎';
+      case 'Tortilla': return '��';
+      case 'Lentil': return '🫘';
+      case 'Sweet Potato': return '🍠';
+      case 'Pumpkin': return '🎃';
+      case 'Potato Leek': return '🥔';
+      case 'Pickle': return '🧂';
+      case 'Matzo Ball': return '🥣';
+      case 'Cauliflower': return '🥦';
+      case 'Butternut Squash': return '🎃';
+      case 'Ajiaco': return '🥣';
+      case 'Cherry': return '🍒';
+      default: return '🍲';
+    }
   };
   
   return (
@@ -478,16 +537,12 @@ export default function RestaurantListingPage({
         )}
 
         {/* Loading State */}
-        {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
-              <SkeletonLoader key={i} />
-            ))}
-          </div>
+        {isLoading && (
+          <SkeletonLoader count={6} />
         )}
 
         {/* No Results */}
-        {!loading && restaurants.length === 0 && !error && (
+        {!isLoading && restaurants.length === 0 && !error && (
           <div className="text-center py-12">
             <div className="text-6xl mb-4">🍲</div>
             <h3 className="text-xl font-semibold text-neutral-900 mb-2">No restaurants found</h3>
@@ -508,22 +563,143 @@ export default function RestaurantListingPage({
         )}
 
         {/* Restaurant Grid */}
-        {!loading && restaurants.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {restaurants.map((restaurant) => (
-              <RestaurantCard 
-                key={restaurant.id} 
-                restaurant={restaurant}
-                selectedSoupTypes={selectedSoupTypes}
-                selectedRatings={selectedRatings}
-                selectedPriceRanges={selectedPriceRanges}
-              />
+        {!isLoading && restaurants.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+            {restaurants.map((restaurant, index) => (
+              <div 
+                key={restaurant.id}
+                className="glassmorphism-card group stagger-animate h-full card-interactive"
+                style={{
+                  animationDelay: `${index * 150}ms`,
+                  transform: `translateY(${index * 20}px)`
+                }}
+              >
+                <div className="relative h-48 w-full overflow-hidden rounded-t-xl">
+                  <img
+                    src={restaurant.image_url || '/images/soup-pattern.svg'}
+                    alt={restaurant.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    onError={(e) => {
+                      e.target.src = '/images/soup-pattern.svg';
+                    }}
+                  />
+                  
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                  
+                  {/* Steam Animation */}
+                  <div className="steam-container absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                    <div className="steam animate-steam-1"></div>
+                    <div className="steam animate-steam-2"></div>
+                    <div className="steam animate-steam-3"></div>
+                  </div>
+                  
+                  {/* Price range label - Top right */}
+                  {restaurant.price_range && (
+                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs font-medium shadow-lg border border-white/20 hover-reveal"
+                         data-hover-text={`Price range: ${restaurant.price_range}`}>
+                      ${restaurant.price_range}
+                    </div>
+                  )}
+                  
+                  {/* Verified badge if applicable - Top left */}
+                  {restaurant.is_verified && (
+                    <div className="absolute top-3 left-3 bg-white rounded-full px-2 py-1 text-xs font-medium flex items-center shadow-soft hover-reveal"
+                         data-hover-text="Verified restaurant">
+                      <span className="text-orange-500 mr-1">✓</span> Verified
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-6 relative z-10 flex flex-col flex-1">
+                  <div className="flex-1 space-y-4">
+                    {/* Restaurant Name */}
+                    <h3 className="text-xl font-bold text-neutral-900 group-hover:text-orange-600 transition-colors duration-300 line-clamp-1">
+                      {restaurant.name}
+                    </h3>
+                    
+                    {/* Star Rating */}
+                    <div className="flex items-center">
+                      <div className="flex mr-2">
+                        {[...Array(5)].map((_, i) => (
+                          <svg
+                            key={i}
+                            className={`h-4 w-4 transition-all duration-300 ${
+                              i < Math.floor(restaurant.rating || 0)
+                                ? 'text-yellow-400 fill-current'
+                                : 'text-neutral-300'
+                            }`}
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                          </svg>
+                        ))}
+                      </div>
+                      <span className="text-neutral-600 text-sm">
+                        {restaurant.rating ? restaurant.rating.toFixed(1) : 'N/A'}
+                        {restaurant.review_count ? ` (${restaurant.review_count})` : ''}
+                      </span>
+                    </div>
+                    
+                    {/* Location with Animated Icon */}
+                    <div className="flex items-center space-x-2">
+                      <div className="map-pin-container">
+                        <svg className="h-4 w-4 text-orange-500 transition-transform duration-300 group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-neutral-600 text-sm line-clamp-1">
+                        {restaurant.city}, {restaurant.state}
+                      </span>
+                    </div>
+                    
+                    {/* Soup Types - Always Visible */}
+                    {restaurant.soup_types && restaurant.soup_types.length > 0 && (
+                      <div className="flex flex-wrap gap-2 min-h-[3rem]">
+                        {restaurant.soup_types.slice(0, 3).map((type, typeIndex) => (
+                          <span
+                            key={typeIndex}
+                            className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors duration-200 micro-interaction"
+                            style={{ animationDelay: `${typeIndex * 50}ms` }}
+                          >
+                            <span className="mr-1">{getSoupEmoji(type)}</span> {type}
+                          </span>
+                        ))}
+                        {restaurant.soup_types.length > 3 && (
+                          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
+                            +{restaurant.soup_types.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* View Details Button with Enhanced Hover */}
+                  <Link
+                    href={restaurant.slug && restaurant.city && restaurant.state
+                      ? `/${restaurant.state.toLowerCase()}/${restaurant.city.toLowerCase().replace(/\s+/g, '-')}/${restaurant.slug}`
+                      : `/restaurants/${restaurant.id}`
+                    }
+                    className="block w-full text-center py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform group-hover:animate-pulse mt-6 btn-enhanced click-feedback"
+                  >
+                    <span className="flex items-center justify-center space-x-2">
+                      <span>View Details</span>
+                      <svg className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </span>
+                  </Link>
+                </div>
+                
+                {/* Subtle Border Glow Effect */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-400/30 via-transparent to-orange-600/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm"></div>
+              </div>
             ))}
           </div>
         )}
 
         {/* Pagination */}
-        {!loading && totalPages > 1 && (
+        {!isLoading && totalPages > 1 && (
           <div className="flex justify-center mt-8">
             <div className="flex items-center space-x-2">
               <button

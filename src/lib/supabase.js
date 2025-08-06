@@ -98,13 +98,22 @@ export async function getRestaurants({
       city, state, soupType, rating, priceRange, limit, offset, sortBy, sortOrder, featured 
     });
     
-    // Start building the query
+    // Start building the query - only select essential fields for better performance
     let query = supabase
       .from('restaurants')
       .select(`
-        *,
-        soups (*),
-        reviews (*)
+        id,
+        name,
+        slug,
+        city,
+        state,
+        rating,
+        review_count,
+        price_range,
+        image_url,
+        is_verified,
+        is_featured,
+        soups (soup_type)
       `)
       .order(sortBy, { ascending: sortOrder === 'asc' })
       .limit(limit);

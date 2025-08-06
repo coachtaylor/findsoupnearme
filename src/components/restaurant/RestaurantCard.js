@@ -89,8 +89,8 @@ export default function RestaurantCard({
   };
   
   return (
-    <div className="card overflow-hidden hover-lift">
-      <Link href={restaurantUrl} className="block">
+    <div className="card overflow-hidden hover-lift h-full">
+      <Link href={restaurantUrl} className="block h-full flex flex-col">
         <div className="relative h-48 w-full overflow-hidden">
           {/* Image */}
           {imageError ? (
@@ -106,28 +106,28 @@ export default function RestaurantCard({
             />
           )}
           
-          {/* Verified badge if applicable */}
-          {is_verified && (
-            <div className="absolute top-3 right-3 bg-white rounded-full px-2 py-1 text-xs font-medium flex items-center shadow-soft">
-              <span className="text-orange-500 mr-1">✓</span> Verified
+          {/* Price range label - Moved to top right */}
+          {price_range && (
+            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs font-medium shadow-lg border border-white/20">
+              {price_range}
             </div>
           )}
           
-          {/* Price range label */}
-          {price_range && (
-            <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium shadow-soft text-neutral-800">
-              {price_range}
+          {/* Verified badge if applicable */}
+          {is_verified && (
+            <div className="absolute top-3 left-3 bg-white rounded-full px-2 py-1 text-xs font-medium flex items-center shadow-soft">
+              <span className="text-orange-500 mr-1">✓</span> Verified
             </div>
           )}
         </div>
         
-        <div className="p-5">
-          <h2 className="text-xl font-bold text-neutral-900 mb-1 line-clamp-1">{name}</h2>
-          
-          <div className="flex items-center mb-3">
-            {/* Star rating */}
+        <div className="p-6 flex flex-col flex-1">
+          <div className="flex-1 space-y-4">
+            <h2 className="text-xl font-bold text-neutral-900 line-clamp-1">{name}</h2>
+            
+            {/* Star rating - Moved under restaurant name */}
             <div className="flex items-center">
-              <div className="flex mr-1">
+              <div className="flex mr-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <svg 
                     key={star} 
@@ -143,46 +143,46 @@ export default function RestaurantCard({
                 {review_count ? ` (${review_count})` : ''}
               </span>
             </div>
-          </div>
-          
-          {/* Location */}
-          <div className="flex items-start mb-3">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-neutral-400 mr-1 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-            <span className="text-neutral-600 text-sm line-clamp-1">
-              {city}, {state}
-            </span>
-          </div>
-          
-          {/* Soup Types */}
-          {soup_types && soup_types.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {soup_types.slice(0, 3).map((type, index) => (
-                <span 
-                  key={index} 
-                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${
-                    isSoupTypeSelected(type)
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'bg-primary-50 text-primary-700 border-primary-200'
-                  }`}
-                >
-                  <span className="mr-1">{getSoupEmoji(type)}</span> {type}
-                </span>
-              ))}
-              {soup_types.length > 3 && (
-                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-50 text-primary-600 border border-primary-200">
-                  +{soup_types.length - 3} more
-                </span>
-              )}
+            
+            {/* Location */}
+            <div className="flex items-start">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-neutral-400 mr-1 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span className="text-neutral-600 text-sm line-clamp-1">
+                {city}, {state}
+              </span>
             </div>
-          )}
+            
+            {/* Soup Types */}
+            {soup_types && soup_types.length > 0 && (
+              <div className="flex flex-wrap gap-2 min-h-[3rem]">
+                {soup_types.slice(0, 3).map((type, index) => (
+                  <span 
+                    key={index} 
+                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border ${
+                      isSoupTypeSelected(type)
+                        ? 'bg-primary-600 text-white border-primary-600'
+                        : 'bg-primary-50 text-primary-700 border-primary-200'
+                    }`}
+                  >
+                    <span className="mr-1">{getSoupEmoji(type)}</span> {type}
+                  </span>
+                ))}
+                {soup_types.length > 3 && (
+                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-primary-50 text-primary-600 border border-primary-200">
+                    +{soup_types.length - 3} more
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
           
           {/* View Details Button */}
           <Link
             href={restaurantUrl}
-            className="block w-full text-center py-2.5 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors shadow-soft hover:shadow-md"
+            className="block w-full text-center py-3 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors shadow-soft hover:shadow-md mt-6"
           >
             View Details
           </Link>
