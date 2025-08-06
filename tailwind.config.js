@@ -7,41 +7,79 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'soup-red': {
-          50: '#FFF5F5',
-          100: '#FFE2E2',
-          200: '#FFB8B8',
-          300: '#FF8E8E',
-          400: '#F76E6E',
-          500: '#E55959',
-          600: '#D12C2C',
-          700: '#B01F1F',
-          800: '#8F1717',
-          900: '#6E1010',
+        // Primary: Sophisticated teal/blue-green
+        primary: {
+          50: '#F0F9FA',
+          100: '#E0F2F4',
+          200: '#B8E4E9',
+          300: '#8DD1D9',
+          400: '#5BB8C4',
+          500: '#21808D', // Main primary color
+          600: '#1C6B77',
+          700: '#175A64',
+          800: '#134A52',
+          900: '#0F3A41',
         },
-        'soup-orange': {
-          50: '#FFF9F0',
-          100: '#FFF0E5',
-          200: '#FFDFCC',
-          300: '#FFCAA8',
-          400: '#F7941E', // Main orange
-          500: '#E88812',
-          600: '#D67A0A',
-          700: '#BF6B02',
-          800: '#A85D00',
-          900: '#904F00',
+        // Background: Clean cream/off-white
+        background: {
+          50: '#FEFEFD',
+          100: '#FDFDFB',
+          200: '#FCFCF9', // Main background color
+          300: '#FAFAF6',
+          400: '#F8F8F3',
+          500: '#F6F6F0',
         },
-        'soup-brown': {
-          50: '#FAF9F7',
-          100: '#F5F3EF',
-          200: '#E8E4DA',
-          300: '#D5CDC0',
-          400: '#B7AE9E',
-          500: '#A0947F',
-          600: '#887D68',
-          700: '#706754',
-          800: '#5A5243',
-          900: '#2E2E2E', // Main brown/black
+        // Accent: Warm copper/orange-red
+        accent: {
+          50: '#FDF6F4',
+          100: '#FAEDE8',
+          200: '#F5D5CC',
+          300: '#EEB8A8',
+          400: '#E5957A',
+          500: '#A84B2F', // Main accent color
+          600: '#8F3F28',
+          700: '#763422',
+          800: '#5D2A1C',
+          900: '#442016',
+        },
+        // Orange: Burnt orange and light orange accents
+        orange: {
+          50: '#FFF7ED',
+          100: '#FFEDD5',
+          200: '#FED7AA',
+          300: '#FDBA74',
+          400: '#FB923C',
+          500: '#F97316', // Burnt orange
+          600: '#EA580C',
+          700: '#C2410C',
+          800: '#9A3412',
+          900: '#7C2D12',
+        },
+        // Light Orange: Softer orange tones
+        'light-orange': {
+          50: '#FFFBEB',
+          100: '#FEF3C7',
+          200: '#FDE68A',
+          300: '#FCD34D',
+          400: '#FBBF24',
+          500: '#F59E0B', // Light orange
+          600: '#D97706',
+          700: '#B45309',
+          800: '#92400E',
+          900: '#78350F',
+        },
+        // Neutrals: Charcoals and cool grays
+        neutral: {
+          50: '#F8F9FA',
+          100: '#F1F3F4',
+          200: '#E8EAED',
+          300: '#DADCE0',
+          400: '#BDC1C6',
+          500: '#9AA0A6',
+          600: '#80868B',
+          700: '#5F6368',
+          800: '#3C4043',
+          900: '#202124', // Main text color
         },
       },
       fontFamily: {

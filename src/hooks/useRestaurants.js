@@ -8,6 +8,7 @@ export default function useRestaurants({
   featured = false,
   soupType = null,
   rating = null,
+  priceRange = null,
   page = 1
 }) {
   const [restaurants, setRestaurants] = useState([]);
@@ -18,7 +19,7 @@ export default function useRestaurants({
   useEffect(() => {
     const fetchRestaurants = async () => {
       console.log('Fetching restaurants with params:', { 
-        city, state, limit, featured, soupType, rating, page 
+        city, state, limit, featured, soupType, rating, priceRange, page 
       });
       
       setLoading(true);
@@ -31,8 +32,32 @@ export default function useRestaurants({
         if (state) queryParams.append('state', state);
         if (limit) queryParams.append('limit', limit.toString());
         if (featured) queryParams.append('featured', 'true');
-        if (soupType) queryParams.append('soupType', soupType);
-        if (rating) queryParams.append('rating', rating.toString());
+        
+        // Handle arrays for multiple selections
+        if (soupType) {
+          if (Array.isArray(soupType)) {
+            soupType.forEach(type => queryParams.append('soupType', type));
+          } else {
+            queryParams.append('soupType', soupType);
+          }
+        }
+        
+        if (rating) {
+          if (Array.isArray(rating)) {
+            rating.forEach(r => queryParams.append('rating', r.toString()));
+          } else {
+            queryParams.append('rating', rating.toString());
+          }
+        }
+        
+        if (priceRange) {
+          if (Array.isArray(priceRange)) {
+            priceRange.forEach(p => queryParams.append('priceRange', p));
+          } else {
+            queryParams.append('priceRange', priceRange);
+          }
+        }
+        
         if (page) queryParams.append('page', page.toString());
         
         // Make API request
@@ -65,7 +90,7 @@ export default function useRestaurants({
     };
     
     fetchRestaurants();
-  }, [city, state, limit, featured, soupType, rating, page]);
+  }, [city, state, limit, featured, soupType, rating, priceRange, page]);
   
   return { restaurants, loading, error, totalCount };
 }

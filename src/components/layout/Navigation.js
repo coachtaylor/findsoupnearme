@@ -12,7 +12,7 @@ export default function Navigation() {
           {/* Logo and Desktop Menu */}
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-2xl font-display font-bold text-primary-500 hover:text-primary-600 transition-colors">
+              <Link href="/" className="text-2xl font-display font-bold text-orange-500 hover:text-orange-600 transition-colors">
                 FindSoupNearMe
               </Link>
             </div>
@@ -20,19 +20,19 @@ export default function Navigation() {
             <div className="hidden md:ml-8 md:flex md:items-center space-x-1">
               <Link 
                 href="/restaurants" 
-                className="px-3 py-2 rounded-lg text-neutral-700 hover:text-primary-500 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-2 rounded-lg text-neutral-700 hover:text-orange-500 hover:bg-orange-50 transition-colors"
               >
                 All Restaurants
               </Link>
               <Link 
                 href="/cities" 
-                className="px-3 py-2 rounded-lg text-neutral-700 hover:text-primary-500 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-2 rounded-lg text-neutral-700 hover:text-orange-500 hover:bg-orange-50 transition-colors"
               >
                 Cities
               </Link>
               <Link 
                 href="/about" 
-                className="px-3 py-2 rounded-lg text-neutral-700 hover:text-primary-500 hover:bg-neutral-50 transition-colors"
+                className="px-3 py-2 rounded-lg text-neutral-700 hover:text-orange-500 hover:bg-orange-50 transition-colors"
               >
                 About
               </Link>
@@ -43,7 +43,7 @@ export default function Navigation() {
           <div className="hidden md:flex md:items-center">
             <Link 
               href="/restaurants/search" 
-              className="inline-flex items-center justify-center bg-primary-500 hover:bg-primary-600 text-white px-5 py-2.5 rounded-xl shadow-soft hover:shadow-md transition-all duration-300"
+              className="inline-flex items-center justify-center bg-orange-500 hover:bg-orange-600 text-white px-5 py-2.5 rounded-xl shadow-soft hover:shadow-md transition-all duration-300"
             >
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -67,7 +67,7 @@ export default function Navigation() {
           <div className="flex items-center md:hidden">
             <button
               type="button"
-              className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-700 hover:text-primary-500 hover:bg-neutral-50 focus:outline-none transition-colors"
+              className="inline-flex items-center justify-center p-2 rounded-lg text-neutral-700 hover:text-orange-500 hover:bg-orange-50 focus:outline-none transition-colors"
               aria-controls="mobile-menu"
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -120,28 +120,28 @@ export default function Navigation() {
         <div className="px-4 pt-2 pb-4 space-y-1 bg-white border-t border-neutral-100 shadow-md">
           <Link 
             href="/restaurants" 
-            className="block px-4 py-3 rounded-lg text-base font-medium text-neutral-700 hover:text-primary-500 hover:bg-neutral-50 transition-colors"
+            className="block px-4 py-3 rounded-lg text-base font-medium text-neutral-700 hover:text-orange-500 hover:bg-orange-50 transition-colors"
           >
             All Restaurants
           </Link>
           
           <Link 
             href="/cities" 
-            className="block px-4 py-3 rounded-lg text-base font-medium text-neutral-700 hover:text-primary-500 hover:bg-neutral-50 transition-colors"
+            className="block px-4 py-3 rounded-lg text-base font-medium text-neutral-700 hover:text-orange-500 hover:bg-orange-50 transition-colors"
           >
             Cities
           </Link>
           
           <Link 
             href="/about" 
-            className="block px-4 py-3 rounded-lg text-base font-medium text-neutral-700 hover:text-primary-500 hover:bg-neutral-50 transition-colors"
+            className="block px-4 py-3 rounded-lg text-base font-medium text-neutral-700 hover:text-orange-500 hover:bg-orange-50 transition-colors"
           >
             About
           </Link>
           
           <Link 
             href="/restaurants/search" 
-            className="flex items-center mt-3 px-4 py-3 rounded-lg text-base font-medium text-white bg-primary-500 hover:bg-primary-600 transition-colors shadow-soft"
+            className="flex items-center mt-3 px-4 py-3 rounded-lg text-base font-medium text-white bg-orange-500 hover:bg-orange-600 transition-colors shadow-soft"
           >
             <svg 
               xmlns="http://www.w3.org/2000/svg" 

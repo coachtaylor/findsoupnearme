@@ -86,6 +86,7 @@ export async function getRestaurants({
   state = null,
   soupType = null,
   rating = null,
+  priceRange = null,
   limit = 20,
   offset = 0,
   sortBy = 'rating',
@@ -94,7 +95,7 @@ export async function getRestaurants({
 } = {}) {
   try {
     console.log('Fetching restaurants with params:', { 
-      city, state, soupType, rating, limit, offset, sortBy, sortOrder, featured 
+      city, state, soupType, rating, priceRange, limit, offset, sortBy, sortOrder, featured 
     });
     
     // Start building the query
@@ -122,14 +123,16 @@ export async function getRestaurants({
       query = query.eq('state', state);
     }
     
-    if (soupType) {
-      // For soupType filtering, we need a more complex approach
-      // This is a simplified version - might need adjustment based on your schema
-      query = query.eq('soups.soup_type', soupType);
-    }
-    
     if (rating) {
       query = query.gte('rating', rating);
+    }
+    
+    if (priceRange) {
+      if (Array.isArray(priceRange)) {
+        query = query.in('price_range', priceRange);
+      } else {
+        query = query.eq('price_range', priceRange);
+      }
     }
     
     if (featured) {

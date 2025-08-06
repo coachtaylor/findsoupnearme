@@ -106,6 +106,122 @@ export default function SearchPage() {
       
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-neutral-900 mb-6 text-center">
+            Find Your Perfect Bowl
+          </h1>
+          
+          <p className="text-neutral-700 mb-8 text-center">
+            Search for soup restaurants in your area or explore by soup type
+          </p>
+          
+// src/pages/restaurants/search.js
+import { useState, useEffect } from 'react';
+import Head from 'next/head';
+import { useRouter } from 'next/router';
+
+export default function SearchPage() {
+  const router = useRouter();
+  const [location, setLocation] = useState('');
+  const [soupType, setSoupType] = useState('');
+  const [isButtonEnabled, setIsButtonEnabled] = useState(false);
+  
+  // Enable button when location has valid input
+  useEffect(() => {
+    setIsButtonEnabled(location.trim().length > 0);
+  }, [location]);
+  
+  // Common soup types for the dropdown
+  const soupTypes = [
+    { value: '', label: 'Any Soup Type' },
+    { value: 'Ramen', label: 'Ramen' },
+    { value: 'Pho', label: 'Pho' },
+    { value: 'Chowder', label: 'Chowder' },
+    { value: 'French Onion', label: 'French Onion' },
+    { value: 'Tomato', label: 'Tomato' },
+    { value: 'Chicken Noodle', label: 'Chicken Noodle' },
+    { value: 'Minestrone', label: 'Minestrone' },
+    { value: 'Beef Stew', label: 'Beef Stew' },
+    { value: 'Vegetable', label: 'Vegetable' },
+  ];
+  
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!isButtonEnabled) {
+      return; // Prevent submission if button is disabled
+    }
+    
+    // Construct search URL
+    let searchUrl = '/restaurants';
+    
+    // Add query parameters if they exist
+    const params = new URLSearchParams();
+    
+    if (location) {
+      // Check if input is a ZIP code (5 digits)
+      const isZipCode = /^\d{5}$/.test(location.trim());
+      
+      // Map of known city names to their state/city URL paths
+      const cityMapping = {
+        'new york': '/ny/new-york/restaurants',
+        'los angeles': '/ca/los-angeles/restaurants',
+        'chicago': '/il/chicago/restaurants',
+        'houston': '/tx/houston/restaurants',
+        'miami': '/fl/miami/restaurants',
+        'seattle': '/wa/seattle/restaurants',
+        'phoenix': '/az/phoenix/restaurants',
+        'austin': '/tx/austin/restaurants',
+        'dallas': '/tx/dallas/restaurants',
+        'san francisco': '/ca/san-francisco/restaurants',
+        'san diego': '/ca/san-diego/restaurants',
+        'philadelphia': '/pa/philadelphia/restaurants'
+      };
+      
+      const normalizedLocation = location.toLowerCase().trim();
+      
+      if (cityMapping[normalizedLocation]) {
+        // Direct match to a known city name
+        searchUrl = cityMapping[normalizedLocation];
+      } else if (isZipCode) {
+        // For ZIP codes, we'll use query parameters
+        // Phoenix ZIP codes are 85xxx
+        if (location.startsWith('85')) {
+          searchUrl = '/az/phoenix/restaurants';
+        } else {
+          // For other ZIP codes, pass as query parameter
+          params.append('location', location);
+          params.append('type', 'zip');
+        }
+      } else {
+        // For any other location string, pass as query parameter
+        params.append('location', location);
+      }
+    }
+    
+    if (soupType && soupType !== '') {
+      params.append('soupType', soupType);
+    }
+    
+    // Add query string if there are parameters
+    const queryString = params.toString();
+    if (queryString) {
+      searchUrl += `?${queryString}`;
+    }
+    
+    // Navigate to the search results
+    router.push(searchUrl);
+  };
+  
+  return (
+    <>
+      <Head>
+        <title>Find Soup Near Me | FindSoupNearMe</title>
+        <meta name="description" content="Search for the perfect bowl of soup in your area. Filter by location, soup type, and more." />
+      </Head>
+      
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-soup-brown-900 mb-6 text-center">
             Find the Perfect Bowl of Soup Near You
           </h1>

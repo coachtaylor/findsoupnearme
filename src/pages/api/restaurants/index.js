@@ -17,15 +17,21 @@ export default async function handler(req, res) {
       featured, 
       soupType, 
       rating,
+      priceRange,
       sortBy = 'rating',
       sortOrder = 'desc' 
     } = req.query;
+    
+    // Handle multiple values for filters
+    const soupTypes = Array.isArray(soupType) ? soupType : soupType ? [soupType] : [];
+    const ratings = Array.isArray(rating) ? rating.map(r => parseFloat(r)) : rating ? [parseFloat(rating)] : [];
+    const priceRanges = Array.isArray(priceRange) ? priceRange : priceRange ? [priceRange] : [];
     
     // Calculate offset for pagination
     const offset = (page - 1) * parseInt(limit);
     
     console.log('API request params:', { 
-      city, state, limit, page, featured, soupType, rating, sortBy, sortOrder, offset 
+      city, state, limit, page, featured, soupTypes, ratings, priceRanges, sortBy, sortOrder, offset 
     });
     
     // First try to fetch featured restaurants if requested
@@ -34,8 +40,8 @@ export default async function handler(req, res) {
       restaurants = await getRestaurants({
         city,
         state,
-        soupType,
-        rating: rating ? parseFloat(rating) : null,
+        rating: ratings.length > 0 ? Math.min(...ratings) : null,
+        priceRange: priceRanges.length > 0 ? priceRanges : null,
         limit: parseInt(limit),
         offset,
         sortBy,
@@ -49,8 +55,8 @@ export default async function handler(req, res) {
         restaurants = await getRestaurants({
           city,
           state,
-          soupType,
-          rating: rating ? parseFloat(rating) : null,
+          rating: ratings.length > 0 ? Math.min(...ratings) : null,
+          priceRange: priceRanges.length > 0 ? priceRanges : null,
           limit: parseInt(limit),
           offset,
           sortBy: 'rating',
@@ -63,8 +69,8 @@ export default async function handler(req, res) {
       restaurants = await getRestaurants({
         city,
         state,
-        soupType,
-        rating: rating ? parseFloat(rating) : null,
+        rating: ratings.length > 0 ? Math.min(...ratings) : null,
+        priceRange: priceRanges.length > 0 ? priceRanges : null,
         limit: parseInt(limit),
         offset,
         sortBy,
@@ -73,11 +79,24 @@ export default async function handler(req, res) {
       });
     }
     
+    // Filter by soup type if specified (done in JavaScript since Supabase foreign key filtering is complex)
+    if (soupTypes.length > 0) {
+      restaurants = restaurants.filter(restaurant => {
+        // Use soups from the database, not detectedSoupTypes from data files
+        const restaurantSoupTypes = restaurant.soups 
+          ? restaurant.soups
+              .filter(soup => soup && soup.soup_type)
+              .map(soup => soup.soup_type)
+          : [];
+        return soupTypes.some(selectedType => restaurantSoupTypes.includes(selectedType));
+      });
+    }
+    
     console.log(`Retrieved ${restaurants.length} restaurants from database`);
     
     // Process the data for the frontend
     const processedRestaurants = restaurants.map(restaurant => {
-      // Extract soup types from related soups
+      // Extract soup types from soups relationship table
       const soup_types = restaurant.soups 
         ? [...new Set(restaurant.soups
             .filter(soup => soup && soup.soup_type) // Filter out null or undefined soups
@@ -139,13 +158,19 @@ export default async function handler(req, res) {
       if (city) countQuery = countQuery.eq('city', city);
       if (state) countQuery = countQuery.eq('state', state);
       if (featured === 'true') countQuery = countQuery.eq('is_featured', true);
-      if (soupType) countQuery = countQuery.eq('soups.soup_type', soupType);
-      if (rating) countQuery = countQuery.gte('rating', parseFloat(rating));
+      if (ratings.length > 0) countQuery = countQuery.in('rating', ratings);
+      if (priceRanges.length > 0) countQuery = countQuery.in('price_range', priceRanges);
       
       const { count, error } = await countQuery;
       
       if (!error && count !== null) {
         totalCount = count;
+        // If soup type filtering is applied, we need to adjust the count
+        // This is a simplified approach - in production you might want a more accurate count
+        if (soupTypes.length > 0) {
+          // For now, we'll use the length of filtered results as the count
+          totalCount = processedRestaurants.length;
+        }
       } else {
         // If count query fails, use the length of current results
         totalCount = processedRestaurants.length;
@@ -175,7 +200,8 @@ export default async function handler(req, res) {
           review_count: 120,
           soup_types: ['Ramen', 'Pho', 'Clam Chowder'],
           image_url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-          slug: 'soup-heaven'
+          slug: 'soup-heaven',
+          price_range: '$$'
         },
         {
           id: '2',
@@ -186,7 +212,8 @@ export default async function handler(req, res) {
           review_count: 85,
           soup_types: ['French Onion', 'Tomato Bisque'],
           image_url: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-          slug: 'brothy-goodness'
+          slug: 'brothy-goodness',
+          price_range: '$'
         },
         {
           id: '3',
@@ -197,7 +224,8 @@ export default async function handler(req, res) {
           review_count: 200,
           soup_types: ['Chicken Noodle', 'Minestrone', 'Beef Stew'],
           image_url: 'https://images.unsplash.com/photo-1613844237701-8f3664fc2eff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-          slug: 'ladle-and-spoon'
+          slug: 'ladle-and-spoon',
+          price_range: '$$$'
         }
       ],
       totalCount: 3,

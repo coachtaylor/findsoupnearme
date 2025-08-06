@@ -5,18 +5,38 @@
 
 @layer base {
   :root {
-    --soup-red-500: #E55959;
-    --soup-orange-400: #F7941E;
-    --soup-brown-900: #2E2E2E;
+    --primary-500: #21808D;
+    --accent-500: #A84B2F;
+    --orange-500: #F97316;
+    --light-orange-500: #F59E0B;
+    --neutral-900: #202124;
+    --background-200: #FCFCF9;
   }
 
   body {
-    @apply bg-white text-soup-brown-900 font-sans;
+    @apply bg-background-200 text-neutral-900 font-sans;
   }
 
   /* Improved focus styling for accessibility */
   *:focus-visible {
-    @apply outline-none ring-2 ring-soup-red-400 ring-offset-2;
+    @apply outline-none ring-2 ring-orange-400 ring-offset-2;
+  }
+
+  /* Custom scrollbar with orange accents */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-orange-50;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-orange-300 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-orange-400;
   }
 }
 
@@ -35,5 +55,279 @@
 
   .hover-lift:hover {
     transform: translateY(-5px);
+  }
+
+  /* Orange accent button styles */
+  .btn-orange {
+    @apply bg-orange-500 hover:bg-orange-600 text-white font-medium transition-colors shadow-soft hover:shadow-md;
+  }
+
+  .btn-orange-outline {
+    @apply bg-white border border-orange-300 text-orange-600 hover:bg-orange-50 hover:border-orange-400 font-medium transition-colors;
+  }
+
+  /* Orange accent link styles */
+  .link-orange {
+    @apply text-orange-500 hover:text-orange-600 transition-colors;
+  }
+
+  /* Orange accent badge styles */
+  .badge-orange {
+    @apply bg-orange-100 text-orange-600 border border-orange-200;
+  }
+
+  .badge-light-orange {
+    @apply bg-light-orange-100 text-light-orange-600 border border-light-orange-200;
+  }
+}
+
+@layer utilities {
+  /* Enhanced Animated Gradient Background */
+  .animate-gradient-shift {
+    background: linear-gradient(
+      45deg,
+      #FEFEFD 0%,
+      #FDFDFB 25%,
+      #FCFCF9 50%,
+      #FFF7ED 75%,
+      #FFFBEB 100%
+    );
+    background-size: 400% 400%;
+    animation: gradientShift 10s ease-in-out infinite;
+  }
+
+  /* Primary Conic Gradient Animation */
+  .animate-conic-gradient-primary {
+    background: conic-gradient(
+      from 0deg,
+      #F0F9FA 0deg,
+      #E0F2F4 60deg,
+      #B8E4E9 120deg,
+      #FFF7ED 180deg,
+      #F0F9FA 240deg,
+      #FFFBEB 300deg,
+      #F0F9FA 360deg
+    );
+    animation: conicRotatePrimary 15s linear infinite;
+  }
+
+  /* Secondary Conic Gradient Animation */
+  .animate-conic-gradient-secondary {
+    background: conic-gradient(
+      from 180deg,
+      #FDF6F4 0deg,
+      #FEFEFD 45deg,
+      #FDFDFB 90deg,
+      #FED7AA 135deg,
+      #FEFEFD 180deg,
+      #FDFDFB 225deg,
+      #FDE68A 270deg,
+      #FEFEFD 315deg,
+      #FDF6F4 360deg
+    );
+    animation: conicRotateSecondary 20s linear infinite reverse;
+  }
+
+  /* Radial Gradient for Depth */
+  .bg-radial-gradient {
+    background: radial-gradient(
+      circle at 30% 20%,
+      rgba(240, 249, 250, 0.8) 0%,
+      rgba(224, 242, 244, 0.4) 50%,
+      rgba(255, 247, 237, 0.2) 100%
+    );
+  }
+
+  /* Vignette Effect */
+  .bg-vignette {
+    background: radial-gradient(
+      circle at center,
+      transparent 0%,
+      transparent 40%,
+      rgba(0, 0, 0, 0.1) 70%,
+      rgba(0, 0, 0, 0.2) 100%
+    );
+  }
+
+  /* Parallax Container */
+  .parallax-container {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
+  }
+
+  /* Parallax Layers */
+  .parallax-layer {
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out;
+    will-change: transform;
+  }
+
+  /* Smooth transitions for all parallax elements */
+  .parallax-layer * {
+    transition: all 0.1s ease-out;
+  }
+
+  /* Floating Bowl Elements */
+  .floating-bowl {
+    will-change: transform;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  .floating-bowl > div {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  /* Subtle hover effect for bowls */
+  .floating-bowl:hover {
+    filter: brightness(1.1);
+  }
+
+  /* Performance optimization for 3D transforms */
+  .floating-bowl,
+  .floating-bowl * {
+    will-change: transform;
+  }
+
+  /* Floating Icons */
+  .floating-icon {
+    will-change: transform;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .floating-icon svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  }
+
+  /* Glow Effect for Special Icons */
+  .floating-glow {
+    filter: drop-shadow(0 0 8px rgba(33, 128, 141, 0.3)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .floating-glow svg {
+    filter: drop-shadow(0 0 4px rgba(33, 128, 141, 0.4)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  }
+
+  /* Orange Glow Effect */
+  .floating-glow-orange {
+    filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.3)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  }
+
+  .floating-glow-orange svg {
+    filter: drop-shadow(0 0 4px rgba(249, 115, 22, 0.4)) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  }
+
+  /* Hover effects for floating icons */
+  .floating-icon:hover {
+    filter: brightness(1.2) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  }
+
+  .floating-glow:hover {
+    filter: brightness(1.3) drop-shadow(0 0 12px rgba(33, 128, 141, 0.5)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  }
+
+  .floating-glow-orange:hover {
+    filter: brightness(1.3) drop-shadow(0 0 12px rgba(249, 115, 22, 0.5)) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
+  }
+
+  /* Wave Dividers */
+  .wave-divider {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    will-change: transform;
+    transition: all 0.3s ease-out;
+    z-index: 10;
+  }
+
+  .wave-primary {
+    animation: waveFlow 8s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  .wave-secondary {
+    animation: waveFlow 12s ease-in-out infinite reverse;
+    z-index: 2;
+  }
+
+  .wave-accent {
+    animation: waveFlow 16s ease-in-out infinite;
+    z-index: 3;
+  }
+
+  /* Wave Flow Animation */
+  @keyframes waveFlow {
+    0%, 100% {
+      transform: translateX(0px) scaleY(1);
+    }
+    25% {
+      transform: translateX(-20px) scaleY(1.1);
+    }
+    50% {
+      transform: translateX(0px) scaleY(1);
+    }
+    75% {
+      transform: translateX(20px) scaleY(0.9);
+    }
+  }
+
+  /* Hover effects for waves */
+  .wave-divider:hover {
+    filter: brightness(1.1);
+  }
+
+  .wave-primary:hover {
+    animation-duration: 6s;
+  }
+
+  .wave-secondary:hover {
+    animation-duration: 10s;
+  }
+
+  .wave-accent:hover {
+    animation-duration: 14s;
+  }
+
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes conicRotatePrimary {
+  from {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.05);
+  }
+  to {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+@keyframes conicRotateSecondary {
+  from {
+    transform: rotate(0deg) scale(1.02);
+  }
+  50% {
+    transform: rotate(-180deg) scale(0.98);
+  }
+  to {
+    transform: rotate(-360deg) scale(1.02);
   }
 }
