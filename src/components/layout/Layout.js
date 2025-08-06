@@ -1,103 +1,158 @@
 // src/components/layout/Layout.js
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useState } from 'react';
+import Footer from './Footer';
 
 export default function Layout({ children, title, description }) {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // Handle scroll event to show sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="flex flex-col min-h-screen">
       <Head>
-        <title>{title ? `${title} | FindSoupNearMe` : 'FindSoupNearMe - Discover the Best Soup Near You'}</title>
-        <meta name="description" content={description || 'Find the best soup restaurants near you. Browse reviews, menus, and order soup online.'} />
+        <title>{title ? `${title} | FindSoupNearMe` : 'FindSoupNearMe - Find The Best Soup Near You'}</title>
+        <meta name="description" content={description || 'Discover the best soup restaurants near you. Find ramen, pho, chowder, and more at top-rated restaurants.'} />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       
-      {/* Navigation */}
-      <header className="bg-white shadow">
-        <nav className="container mx-auto px-4">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <Link href="/" className="text-2xl font-bold text-primary-500">
-                  FindSoupNearMe
-                </Link>
-              </div>
-              <div className="hidden md:ml-6 md:flex md:items-center">
-                <Link href="/restaurants" className="px-3 py-2 text-neutral-700 hover:text-primary-500">
-                  All Restaurants
-                </Link>
-                <Link href="/cities" className="px-3 py-2 text-neutral-700 hover:text-primary-500">
-                  Cities
-                </Link>
-                <Link href="/about" className="px-3 py-2 text-neutral-700 hover:text-primary-500">
-                  About
-                </Link>
-              </div>
-            </div>
+      {/* Main Header */}
+      <header className={`bg-white transition-all duration-300 z-50 ${isScrolled ? 'shadow-md sticky top-0 py-2' : 'py-4'}`}>
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Link href="/" className="flex items-center">
+              <span className="text-2xl font-bold text-[#F76E6E]">
+                Find<span className="text-soup-brown-900">Soup</span>Near<span className="text-[#F7941E]">Me</span>
+              </span>
+            </Link>
             
-            <div className="hidden md:flex md:items-center">
-              <Link 
-                href="/restaurants/search" 
-                className="inline-block bg-primary-500 hover:bg-primary-600 text-white px-4 py-2 rounded"
-              >
-                Find Soup Near Me
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link href="/restaurants" className="text-soup-brown-700 hover:text-[#F76E6E] transition-colors font-medium">
+                All Restaurants
               </Link>
-            </div>
+              <Link href="/cities" className="text-soup-brown-700 hover:text-[#F76E6E] transition-colors font-medium">
+                Cities
+              </Link>
+              <Link href="/soup-types" className="text-soup-brown-700 hover:text-[#F76E6E] transition-colors font-medium">
+                Soup Types
+              </Link>
+              <Link href="/about" className="text-soup-brown-700 hover:text-[#F76E6E] transition-colors font-medium">
+                About
+              </Link>
+            </nav>
             
-            {/* Mobile menu button */}
-            <div className="flex items-center md:hidden">
-              <button
-                type="button"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded text-neutral-700 hover:text-primary-500"
-              >
-                <span className="sr-only">Open main menu</span>
-                {mobileMenuOpen ? (
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                ) : (
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                  </svg>
-                )}
-              </button>
-            </div>
+            {/* Mini Search (visible in sticky mode) */}
+            {isScrolled && (
+              <div className="hidden md:flex items-center">
+                <form action="/restaurants" method="get" className="relative">
+                  <input 
+                    type="text" 
+                    name="location" 
+                    placeholder="Quick search..." 
+                    className="pl-4 pr-10 py-2 bg-neutral-100 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#F76E6E] w-48" 
+                  />
+                  <button 
+                    type="submit" 
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-soup-brown-500"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </button>
+                </form>
+              </div>
+            )}
+            
+            {/* Mobile Menu Button */}
+            <button 
+              className="md:hidden flex flex-col space-y-1.5" 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span className={`block w-6 h-0.5 bg-soup-brown-900 transition-transform duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+              <span className={`block w-6 h-0.5 bg-soup-brown-900 transition-opacity duration-300 ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+              <span className={`block w-6 h-0.5 bg-soup-brown-900 transition-transform duration-300 ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+            </button>
           </div>
-        </nav>
-        
-        {/* Mobile menu */}
-        <div className={`${mobileMenuOpen ? 'block' : 'hidden'} md:hidden`}>
-          <div className="px-2 pt-2 pb-3 space-y-1">
-            <Link href="/restaurants" className="block px-3 py-2 text-neutral-700 hover:text-primary-500">
-              All Restaurants
-            </Link>
-            <Link href="/cities" className="block px-3 py-2 text-neutral-700 hover:text-primary-500">
-              Cities
-            </Link>
-            <Link href="/about" className="block px-3 py-2 text-neutral-700 hover:text-primary-500">
-              About
-            </Link>
-            <Link href="/restaurants/search" className="block px-3 py-2 text-primary-500 hover:text-primary-600">
-              Find Soup Near Me
-            </Link>
+          
+          {/* Mobile Menu */}
+          <div className={`md:hidden transition-all duration-300 overflow-hidden ${isMobileMenuOpen ? 'max-h-64 mt-4' : 'max-h-0'}`}>
+            <nav className="flex flex-col space-y-4 py-4">
+              <Link 
+                href="/restaurants" 
+                className="text-soup-brown-700 hover:text-[#F76E6E] transition-colors font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                All Restaurants
+              </Link>
+              <Link 
+                href="/cities" 
+                className="text-soup-brown-700 hover:text-[#F76E6E] transition-colors font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Cities
+              </Link>
+              <Link 
+                href="/soup-types" 
+                className="text-soup-brown-700 hover:text-[#F76E6E] transition-colors font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Soup Types
+              </Link>
+              <Link 
+                href="/about" 
+                className="text-soup-brown-700 hover:text-[#F76E6E] transition-colors font-medium py-2"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                About
+              </Link>
+              
+              {/* Mobile Search */}
+              <form 
+                action="/restaurants" 
+                method="get" 
+                className="relative mt-2"
+                onSubmit={() => setIsMobileMenuOpen(false)}
+              >
+                <input 
+                  type="text" 
+                  name="location" 
+                  placeholder="Search for soup near you..." 
+                  className="w-full pl-4 pr-10 py-3 bg-neutral-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#F76E6E]" 
+                />
+                <button 
+                  type="submit" 
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-soup-brown-500"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </button>
+              </form>
+            </nav>
           </div>
         </div>
       </header>
       
-      {/* Main content */}
+      {/* Main Content */}
       <main className="flex-grow">
         {children}
       </main>
       
-      {/* Simple Footer */}
-      <footer className="bg-neutral-900 text-white py-8">
-        <div className="container mx-auto px-4">
-          <p>&copy; {new Date().getFullYear()} FindSoupNearMe. All rights reserved.</p>
-        </div>
-      </footer>
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }

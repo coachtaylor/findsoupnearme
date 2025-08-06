@@ -1,115 +1,176 @@
 // src/components/restaurant/RestaurantCard.js
-import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { useState } from 'react';
 
 export default function RestaurantCard({ restaurant }) {
   const [imageError, setImageError] = useState(false);
   
-  // Create a URL-friendly slug for the restaurant
-  const restaurantSlug = restaurant.slug || restaurant.name.toLowerCase().replace(/\s+/g, '-');
-  const stateAbbr = restaurant.state?.toLowerCase() || '';
-  const citySlug = restaurant.city?.toLowerCase().replace(/\s+/g, '-') || '';
+  // Format restaurant information
+  const {
+    id,
+    name,
+    slug,
+    city,
+    state,
+    rating,
+    review_count,
+    image_url,
+    soup_types = [],
+    price_range,
+    is_verified,
+  } = restaurant;
   
-  // Fallback images from Unsplash
-  const fallbackImages = [
-    'https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-    'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-    'https://images.unsplash.com/photo-1613844237701-8f3664fc2eff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-    'https://images.unsplash.com/photo-1607116667981-ff148a4e754d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-    'https://images.unsplash.com/photo-1616501268209-edfff098fdd2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-    'https://images.unsplash.com/photo-1604152135912-04a022e23696?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80'
-  ];
-
-  // Use restaurant ID to deterministically select a fallback image
-  const fallbackIndex = restaurant.id 
-    ? parseInt(restaurant.id.replace(/[^0-9]/g, '').slice(0, 4) || '0', 16) % fallbackImages.length 
-    : 0;
-  const fallbackImage = fallbackImages[fallbackIndex];
+  // Generate URL for the restaurant
+  const restaurantUrl = slug && city && state 
+    ? `/${state.toLowerCase()}/${city.toLowerCase().replace(/\s+/g, '-')}/${slug}`
+    : `/restaurants/${id}`;
+  
+  // Handle missing or error in image loading
+  const handleImageError = () => {
+    setImageError(true);
+  };
+  
+  // Map price range to dollar signs
+  const getPriceRangeLabel = () => {
+    switch (price_range) {
+      case '$':
+        return '$ · Budget Friendly';
+      case '$$':
+        return '$$ · Moderately Priced';
+      case '$$$':
+        return '$$$ · Fine Dining';
+      case '$$$$':
+        return '$$$$ · Luxury';
+      default:
+        return '';
+    }
+  };
+  
+  // Map soup types to emojis
+  const getSoupEmoji = (type) => {
+    const emojiMap = {
+      'ramen': '🍜',
+      'pho': '🍲',
+      'chowder': '🥣',
+      'tomato': '🍅',
+      'chicken': '🐓',
+      'vegetable': '🥕',
+      'miso': '🥢',
+      'stew': '🍲',
+      'noodle': '🍝',
+      'seafood': '🦞',
+      'bean': '🫘',
+      'corn': '🌽',
+      'mushroom': '🍄'
+    };
+    
+    const lowerType = type.toLowerCase();
+    
+    // Find a matching key in the emoji map
+    for (const key in emojiMap) {
+      if (lowerType.includes(key)) {
+        return emojiMap[key];
+      }
+    }
+    
+    // Default emoji if no match found
+    return '🥣';
+  };
   
   return (
-    <div className="border rounded-2xl overflow-hidden shadow-soft hover:shadow-hover transition-all duration-300 hover:scale-[1.02] bg-white">
-      {/* Restaurant Image with Error Handling */}
-      <div className="relative h-48 w-full bg-neutral-100">
-        {!imageError && restaurant.image_url ? (
-          <img
-            src={restaurant.image_url}
-            alt={restaurant.name}
-            className="w-full h-full object-cover"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <img
-            src={fallbackImage}
-            alt={restaurant.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              // If even the fallback fails, show a colored background with text
-              e.target.style.display = 'none';
-              e.target.parentNode.classList.add('flex', 'items-center', 'justify-center');
-              const textElement = document.createElement('span');
-              textElement.textContent = restaurant.name;
-              textElement.className = 'text-neutral-800 text-center px-4 font-medium';
-              e.target.parentNode.appendChild(textElement);
-            }}
-          />
-        )}
-      </div>
-      
-      {/* Restaurant Info */}
-      <div className="p-5">
-        <h3 className="text-xl font-bold text-neutral-900 mb-1">{restaurant.name}</h3>
-        <p className="text-neutral-600 mb-2">{restaurant.city}, {restaurant.state}</p>
-        
-        {/* Rating */}
-        <div className="flex items-center space-x-1 mb-3">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <svg 
-              key={i}
-              className={`h-4 w-4 ${
-                i < Math.floor(restaurant.rating || 0)
-                  ? 'text-accent-500 fill-accent-500'
-                  : 'text-neutral-300 fill-neutral-300'
-              }`}
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 0 24 24"
-            >
-              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-            </svg>
-          ))}
-          {restaurant.rating && (
-            <span className="text-sm text-neutral-600 ml-2">
-              ({restaurant.review_count || 0} reviews)
-            </span>
+    <div className="card overflow-hidden hover-lift">
+      <Link href={restaurantUrl} className="block">
+        <div className="relative h-48 w-full overflow-hidden">
+          {/* Image */}
+          {imageError ? (
+            <div className="flex items-center justify-center h-full bg-soup-orange-100">
+              <span className="text-5xl">🍲</span>
+            </div>
+          ) : (
+            <img
+              src={image_url || `/api/mock/soup-images?id=${id}`}
+              alt={`${name} - Soup Restaurant`}
+              className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+              onError={handleImageError}
+            />
+          )}
+          
+          {/* Verified badge if applicable */}
+          {is_verified && (
+            <div className="absolute top-3 right-3 bg-white rounded-full px-2 py-1 text-xs font-medium flex items-center shadow-soft">
+              <span className="text-soup-red-500 mr-1">✓</span> Verified
+            </div>
+          )}
+          
+          {/* Price range label */}
+          {price_range && (
+            <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 text-xs font-medium shadow-soft text-soup-brown-800">
+              {price_range}
+            </div>
           )}
         </div>
         
-        {/* Soup Types */}
-        {restaurant.soup_types && restaurant.soup_types.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {restaurant.soup_types.slice(0, 3).map((soupType, index) => (
-              <span
-                key={index}
-                className="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded-full"
-              >
-                {soupType}
+        <div className="p-5">
+          <h2 className="text-xl font-bold text-soup-brown-900 mb-1 line-clamp-1">{name}</h2>
+          
+          <div className="flex items-center mb-3">
+            {/* Star rating */}
+            <div className="flex items-center">
+              <div className="flex mr-1">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <svg 
+                    key={star} 
+                    className={`h-4 w-4 ${star <= Math.round(rating) ? 'text-soup-orange-400 fill-current' : 'text-gray-300 fill-current'}`}
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                  </svg>
+                ))}
+              </div>
+              <span className="text-soup-brown-600 text-sm">
+                {rating ? rating.toFixed(1) : 'N/A'}
+                {review_count ? ` (${review_count})` : ''}
               </span>
-            ))}
-            {restaurant.soup_types.length > 3 && (
-              <span className="text-xs bg-neutral-100 text-neutral-600 px-2 py-1 rounded-full">
-                +{restaurant.soup_types.length - 3} more
-              </span>
-            )}
+            </div>
           </div>
-        )}
-        
-        {/* View Button */}
-        <Link
-          href={`/${stateAbbr}/${citySlug}/${restaurantSlug}`}
-          className="block w-full text-center bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 rounded-xl mt-4 transition duration-300 hover:shadow-md"
-        >
-          View Restaurant
-        </Link>
-      </div>
+          
+          {/* Location */}
+          <div className="flex items-start mb-3">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-soup-brown-400 mr-1 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span className="text-soup-brown-600 text-sm line-clamp-1">
+              {city}, {state}
+            </span>
+          </div>
+          
+          {/* Soup Types */}
+          {soup_types && soup_types.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {soup_types.slice(0, 3).map((type, index) => (
+                <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-soup-orange-50 text-soup-brown-700">
+                  <span className="mr-1">{getSoupEmoji(type)}</span> {type}
+                </span>
+              ))}
+              {soup_types.length > 3 && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-soup-red-50 text-soup-red-600">
+                  +{soup_types.length - 3} more
+                </span>
+              )}
+            </div>
+          )}
+          
+          {/* View Details Button */}
+          <Link
+            href={restaurantUrl}
+            className="block w-full text-center py-2.5 px-4 bg-soup-red-500 hover:bg-soup-red-600 text-white rounded-lg font-medium transition-colors shadow-soft hover:shadow-md"
+          >
+            View Details
+          </Link>
+        </div>
+      </Link>
     </div>
   );
 }

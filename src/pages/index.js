@@ -75,6 +75,26 @@ export default function Home() {
     router.push(`/restaurants?location=${encodeURIComponent(searchQuery)}`);
   };
   
+  // Detect user's location
+  const detectLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          // Could integrate with a geocoding service to get city name
+          // For now, just show coordinates in the search input
+          setSearchQuery(`Near Me (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          alert("Could not detect your location. Please enter it manually.");
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
+    }
+  };
+  
   // Popular cities list for the UI
   const popularCities = [
     { name: 'New York', state: 'NY' },
@@ -85,71 +105,128 @@ export default function Home() {
     { name: 'Miami', state: 'FL' }
   ];
   
+  // Soup type quick filters
+  const quickFilters = [
+    { name: 'Ramen', emoji: '🍜', type: 'ramen' },
+    { name: 'Stew', emoji: '🍲', type: 'stew' },
+    { name: 'Chowder', emoji: '🥣', type: 'chowder' }
+  ];
+  
+  const handleQuickFilter = (soupType) => {
+    router.push(`/restaurants?soupType=${soupType}`);
+  };
+  
   return (
     <div>
       <Head>
         <title>FindSoupNearMe - Discover the Best Soup Restaurants Near You</title>
-        <meta name="description" content="Find the best soup restaurants in your city. Browse reviews, menus, and order soup online." />
+        <meta name="description" content="Find the best soup restaurants in your city. Discover delicious ramen, pho, chowder, and more at top-rated restaurants." />
       </Head>
       
-      {/* Hero Section with Modern Design */}
-      <section 
-        className="relative py-20 md:py-32 overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, #FFF6ED 0%, #FFE2E2 50%, #FFC7C7 100%)",
-        }}
-      >
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-          <div className="absolute -top-20 -right-20 w-64 h-64 bg-[#FFC7C7] rounded-full opacity-20 blur-3xl"></div>
-          <div className="absolute top-40 -left-20 w-80 h-80 bg-[#FFD8A9] rounded-full opacity-20 blur-3xl"></div>
-          <div className="absolute bottom-10 right-20 w-72 h-72 bg-[#FFE2E2] rounded-full opacity-30 blur-3xl"></div>
-        </div>
+      {/* Clean Hero with Accent Elements */}
+      <section className="py-20 md:py-28 bg-white relative overflow-hidden">
+        {/* Accent Elements */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-soup-red-100 rounded-full -mr-32 -mt-32 opacity-70"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-soup-orange-100 rounded-full -ml-24 -mb-24 opacity-70"></div>
         
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold text-soup-brown-900 mb-6 leading-tight">
-              Find the Perfect Bowl of 
-              <span className="text-[#F76E6E] block mt-2">Soup Near You</span>
+            <div className="inline-flex items-center justify-center px-4 py-1.5 bg-soup-red-100 text-soup-red-600 rounded-full text-sm font-medium mb-6">
+              🍜 Discover 10,000+ Soup Restaurants
+            </div>
+            
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight">
+              The Best <span className="text-soup-red-500">Soup</span> Near You
             </h1>
             
-            <p className="text-xl md:text-2xl text-soup-brown-700 mb-10 leading-relaxed">
-              Discover, rate, and order from the best soup restaurants in your city.
+            <p className="text-soup-brown-700 text-lg md:text-xl mb-10 max-w-2xl mx-auto">
+              From hearty ramen to comforting chowder, find your perfect bowl across 11 major US cities
             </p>
             
-            {/* Modern Search Form with Button */}
-            <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-              <div className="flex items-center bg-white rounded-full overflow-hidden shadow-xl border border-gray-100">
-                <input
-                  type="text"
-                  placeholder="Enter city, ZIP code, or location..."
-                  className="flex-grow px-6 py-4 text-gray-700 focus:outline-none border-0 text-lg"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+            <form onSubmit={handleSearch} className="max-w-2xl mx-auto mb-8">
+              <div className="flex flex-col md:flex-row gap-3">
+                <div className="relative flex-grow">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <span className="text-soup-brown-400">📍</span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Enter your city or ZIP code"
+                    className="w-full pl-12 pr-12 py-4 bg-white rounded-lg border border-soup-brown-200 shadow-md focus:outline-none focus:ring-2 focus:ring-soup-red-400 focus:border-transparent"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={detectLocation}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-soup-brown-500 hover:text-soup-red-500 transition-colors"
+                    title="Use my current location"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </button>
+                </div>
+                
                 <button
                   type="submit"
-                  className="bg-[#F76E6E] hover:bg-[#E55959] text-white px-8 py-4 flex items-center transition-all duration-300 hover:px-10"
+                  className="px-8 py-4 bg-soup-red-500 hover:bg-soup-red-600 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg flex items-center justify-center"
                 >
                   <MagnifyingGlassIcon className="h-5 w-5 mr-2" />
-                  <span className="font-medium">Search</span>
+                  <span>Search</span>
                 </button>
               </div>
             </form>
+            
+            {/* Quick Filters */}
+            <div className="flex flex-wrap justify-center gap-3 mb-8">
+              {quickFilters.map((filter) => (
+                <button
+                  key={filter.type}
+                  type="button"
+                  onClick={() => handleQuickFilter(filter.type)}
+                  className="px-5 py-2.5 bg-white rounded-full border border-soup-brown-200 shadow-sm hover:shadow-md transition-shadow flex items-center gap-2 text-soup-brown-700 hover:bg-soup-red-50"
+                >
+                  <span className="text-xl">{filter.emoji}</span>
+                  <span>{filter.name}</span>
+                </button>
+              ))}
+            </div>
+            
+            {/* Popular Cities */}
+            <div className="hidden md:block">
+              <p className="text-soup-brown-500 mb-3 text-sm font-medium">Popular Cities:</p>
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+                {popularCities.map((city) => (
+                  <Link
+                    key={city.name}
+                    href={`/${city.state.toLowerCase()}/${city.name.toLowerCase().replace(/\s+/g, '-')}/restaurants`}
+                    className="text-soup-red-500 hover:text-soup-red-600 text-sm font-medium hover:underline"
+                  >
+                    {city.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
       
       {/* Featured Restaurants Section */}
-      <section className="py-16 bg-white relative">
-        <div className="absolute top-0 w-full h-20 bg-gradient-to-b from-[#FFE2E2] to-white opacity-50"></div>
+      <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-soup-brown-900 mb-3 text-center">
-            Featured Soup Spots
-          </h2>
-          <p className="text-center text-soup-brown-600 mb-12 max-w-2xl mx-auto">
-            Discover our handpicked selection of the best soup restaurants, offering everything from hearty ramen to comforting chowder.
-          </p>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-soup-brown-900">
+              Featured Soup Spots
+            </h2>
+            <Link href="/restaurants" className="text-soup-red-500 hover:text-soup-red-600 font-medium flex items-center">
+              View All
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+              </svg>
+            </Link>
+          </div>
           
           {featuredError && (
             <div className="text-red-500 text-center mb-8">
@@ -166,39 +243,33 @@ export default function Home() {
               ))}
             </div>
           )}
-          
-          <div className="text-center mt-12">
-            <Link href="/restaurants" className="inline-block bg-[#F76E6E] hover:bg-[#E55959] text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 hover:shadow-lg hover:px-10">
-              View All Restaurants
-            </Link>
-          </div>
         </div>
       </section>
       
       {/* City Section with Modern Design */}
-      <section className="py-16 relative" style={{ background: "linear-gradient(135deg, #FFF9F9 0%, #FFF0E5 100%)" }}>
+      <section className="py-16 bg-soup-red-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl md:text-4xl font-bold text-soup-brown-900 mb-3 text-center">
-            Explore Soup by City
-          </h2>
-          <p className="text-center text-soup-brown-600 mb-10 max-w-2xl mx-auto">
-            Every city has its own unique soup culture. Discover what makes each location special.
-          </p>
-          
-          <div className="flex flex-wrap justify-center gap-3 mb-14">
-            {popularCities.map((city) => (
-              <button
-                key={city.name}
-                onClick={() => setSelectedCity(city.name)}
-                className={`px-6 py-3 rounded-full text-sm font-medium transition-all duration-300 ${
-                  selectedCity === city.name
-                    ? 'bg-[#F76E6E] text-white shadow-md'
-                    : 'bg-white text-soup-brown-800 hover:bg-[#FEE2E2] hover:shadow-md'
-                }`}
-              >
-                {city.name}
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl md:text-3xl font-bold text-soup-brown-900">
+              {selectedCity} Favorites
+            </h2>
+            <div className="hidden md:block">
+              <div className="flex space-x-2">
+                {popularCities.slice(0, 4).map((city) => (
+                  <button
+                    key={city.name}
+                    onClick={() => setSelectedCity(city.name)}
+                    className={`px-4 py-1.5 rounded-full text-sm transition-colors ${
+                      selectedCity === city.name
+                        ? 'bg-soup-red-500 text-white'
+                        : 'bg-white text-soup-brown-700 hover:bg-soup-red-100'
+                    }`}
+                  >
+                    {city.name}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
           
           {cityError && (
@@ -210,50 +281,74 @@ export default function Home() {
           {cityLoading ? (
             <SkeletonLoader count={3} />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {cityRestaurants.map((restaurant) => (
                 <RestaurantCard key={restaurant.id} restaurant={restaurant} />
               ))}
             </div>
           )}
           
-          <div className="text-center mt-12">
+          <div className="text-center mt-10">
             <Link 
-              href={`/${selectedCity.toLowerCase().replace(' ', '-')}/restaurants`}
-              className="inline-block bg-[#F76E6E] hover:bg-[#E55959] text-white font-semibold py-3 px-8 rounded-full transition-all duration-300 hover:shadow-lg hover:px-10"
+              href={`/${selectedCity.split(' ')[0] === 'New' ? 'ny' : selectedCity.substring(0, 2).toLowerCase()}/${selectedCity.toLowerCase().replace(/\s+/g, '-')}/restaurants`}
+              className="inline-block px-8 py-3 bg-soup-red-500 hover:bg-soup-red-600 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
             >
-              See All in {selectedCity}
+              Explore All {selectedCity} Restaurants
             </Link>
           </div>
         </div>
       </section>
       
-      {/* About Section with Modern Design */}
+      {/* Discover Section */}
       <section className="py-16 bg-white">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-soup-brown-900 mb-3 text-center">
-            About FindSoupNearMe
-          </h2>
-          <p className="text-center text-soup-brown-600 mb-10 max-w-2xl mx-auto">
-            We're passionate about connecting soup lovers with their perfect bowl.
-          </p>
-          
-          <div className="bg-gradient-to-br from-[#FFF6ED] to-[#FFE2E2] p-8 rounded-2xl shadow-sm">
-            <p className="text-lg text-soup-brown-700 mb-4 leading-relaxed">
-              FindSoupNearMe is the #1 platform for discovering and ordering soup from restaurants across the U.S. Whether you're craving a steaming bowl of ramen, a hearty chowder, or a classic chicken noodle, we've got you covered.
-            </p>
-            <p className="text-lg text-soup-brown-700 mb-4 leading-relaxed">
-              With detailed restaurant listings, reviews from fellow soup lovers, and easy ordering options, finding your perfect bowl has never been easier.
-            </p>
-          </div>
-          
-          <div className="text-center mt-10">
-            <Link href="/about" className="inline-flex items-center text-[#F76E6E] hover:text-[#E55959] font-semibold transition-all duration-300">
-              <span>Learn more about our story</span>
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M12.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            </Link>
+        <div className="container mx-auto px-4">
+          <div className="max-w-5xl mx-auto">
+            <div className="bg-gradient-to-br from-soup-brown-50 to-soup-orange-50 rounded-2xl p-8 md:p-12 shadow-md">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div>
+                  <span className="inline-block px-4 py-1 bg-soup-orange-100 text-soup-orange-500 rounded-full text-sm font-semibold mb-4">
+                    Did You Know?
+                  </span>
+                  <h2 className="text-2xl md:text-3xl font-bold text-soup-brown-900 mb-4">
+                    Every City Has Its Unique Soup Culture
+                  </h2>
+                  <p className="text-soup-brown-700 mb-6">
+                    From New York's classic chicken noodle to San Francisco's clam chowder in sourdough bread bowls, every city has signature soups worth discovering.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <div className="bg-white px-4 py-3 rounded-lg shadow-sm flex items-center">
+                      <span className="text-2xl mr-3">🍜</span>
+                      <div>
+                        <p className="font-medium text-soup-brown-900">Ramen</p>
+                        <p className="text-sm text-soup-brown-600">30+ spots</p>
+                      </div>
+                    </div>
+                    <div className="bg-white px-4 py-3 rounded-lg shadow-sm flex items-center">
+                      <span className="text-2xl mr-3">🥣</span>
+                      <div>
+                        <p className="font-medium text-soup-brown-900">Chowder</p>
+                        <p className="text-sm text-soup-brown-600">42+ spots</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="relative">
+                  <div className="aspect-square rounded-xl overflow-hidden shadow-lg">
+                    <img 
+                      src="https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                      alt="Delicious ramen" 
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="absolute -bottom-5 -left-5 bg-white rounded-lg shadow-md p-3 hidden md:block">
+                    <div className="flex items-center">
+                      <div className="bg-soup-red-500 rounded-full w-3 h-3 mr-2"></div>
+                      <span className="text-sm font-medium">Live: 435+ active restaurants</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>

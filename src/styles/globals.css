@@ -1,71 +1,39 @@
+/* src/styles/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Import updated fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Cabinet+Grotesk:wght@400;500;700&display=swap');
-
-/* Base styles */
 @layer base {
-  html {
-    scroll-behavior: smooth;
+  :root {
+    --soup-red-500: #E55959;
+    --soup-orange-400: #F7941E;
+    --soup-brown-900: #2E2E2E;
   }
-  
+
   body {
-    background-color: #FCFCFC;
+    @apply bg-white text-soup-brown-900 font-sans;
   }
-  
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display text-neutral-900;
-  }
-  
-  a, button, input, select, textarea {
-    @apply transition-all duration-200;
+
+  /* Improved focus styling for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-soup-red-400 ring-offset-2;
   }
 }
 
-/* Component classes */
 @layer components {
-  .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium transition-all duration-300;
+  .container {
+    @apply max-w-7xl mx-auto;
   }
-  
-  .btn-primary {
-    @apply bg-primary-500 text-white hover:bg-primary-600 hover:shadow-md;
-  }
-  
-  .btn-secondary {
-    @apply bg-white text-primary-500 border border-primary-500 hover:bg-primary-50;
-  }
-  
-  .card {
-    @apply bg-white rounded-2xl shadow-soft overflow-hidden hover:shadow-hover transition-all duration-300;
-  }
-  
-  .input {
-    @apply block w-full px-4 py-3 rounded-xl border border-neutral-200;
-  }
-  
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-  }
-  
-  .section {
-    @apply py-16 px-4 sm:px-6 lg:px-8;
-  }
-  
-  .hero-gradient {
-    @apply bg-gradient-to-r from-primary-500 to-secondary-500 text-white;
-  }
-}
 
-/* Print styles */
-@media print {
-  .no-print {
-    display: none;
+  .card {
+    @apply bg-white rounded-lg shadow-soft hover:shadow-medium transition-shadow duration-300;
   }
   
-  .print-only {
-    display: block;
+  .hover-lift {
+    @apply transition-transform duration-300;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-5px);
   }
 }
