@@ -44,8 +44,10 @@ export default function RestaurantListingPage({
     page: currentPage
   });
   
-  // Show loading state immediately for better UX
-  const isLoading = loading || restaurants.length === 0;
+  // Show loading state only when actually loading
+  const isLoading = loading;
+  
+
   
   // Calculate total pages
   const totalPages = Math.ceil(totalCount / pageSize);

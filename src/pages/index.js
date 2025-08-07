@@ -1,5 +1,5 @@
 // src/pages/index.js
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
@@ -295,18 +295,12 @@ export default function Home() {
     limit: 6 
   });
   
-  // Handle loading states after client hydration
-  useEffect(() => {
-    if (isClient) {
-      setLoadingStates(prev => ({
-        ...prev,
-        featured: featuredLoading
-      }));
-    }
-  }, [isClient, featuredLoading]);
+
   
-  // Popular cities list for the UI
-  const popularCities = [
+
+  
+  // Popular cities list for the UI - moved outside component to prevent recreation
+  const popularCities = useMemo(() => [
     { name: 'New York', state: 'NY' },
     { name: 'Los Angeles', state: 'CA' },
     { name: 'Chicago', state: 'IL' },
@@ -319,10 +313,8 @@ export default function Home() {
     { name: 'Dallas', state: 'TX' },
     { name: 'San Diego', state: 'CA' },
     { name: 'Philadelphia', state: 'PA' }
-  ];
+  ], []);
   
-  // You could also fetch restaurants by city
-  const [selectedCity, setSelectedCity] = useState('New York');
   const [filteredCities, setFilteredCities] = useState(popularCities);
   
   // Filter cities based on search query
@@ -361,15 +353,7 @@ export default function Home() {
     return stateNames[stateCode] || stateCode;
   };
   
-  // Fetch restaurants for selected city
-  const { 
-    restaurants: cityRestaurants, 
-    loading: cityLoading, 
-    error: cityError 
-  } = useRestaurants({ 
-    city: selectedCity, 
-    limit: 3 
-  });
+
   
   // Handle search form submission
   const handleSearch = (e) => {
@@ -939,12 +923,7 @@ export default function Home() {
                   onMouseLeave={(e) => handleMagneticLeave(e.currentTarget)}
                   data-hover-text={`${restaurant.name} - ${restaurant.city}, ${restaurant.state}`}
                 >
-                  {/* Loading Overlay */}
-                  {loadingStates.featured && (
-                    <div className="loading-overlay active">
-                      <div className="loading-spinner"></div>
-                    </div>
-                  )}
+
                   
                   <div className="relative h-48 w-full overflow-hidden rounded-t-xl">
                     <img
@@ -1138,7 +1117,7 @@ export default function Home() {
               Discover Local Favorites
             </h2>
             <p className="text-neutral-600 text-lg mb-6">
-              Currently exploring <span className="font-semibold text-orange-600">{selectedCity}</span>
+              Explore amazing soup spots in cities across the country
             </p>
           </div>
           
@@ -1170,15 +1149,10 @@ export default function Home() {
           
           {/* City Cards Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredCities.map((city, index) => {
-              const isSelected = selectedCity === city.name;
-              
-              return (
-                <div
-                  key={city.name}
-                  className={`city-card relative group cursor-pointer transition-all duration-500 hover:scale-105 transform rounded-xl overflow-hidden ${
-                    isSelected ? 'ring-2 ring-orange-400 scale-105' : ''
-                  } magnetic-hover`}
+            {filteredCities.map((city, index) => (
+              <div
+                key={city.name}
+                className="city-card relative group cursor-pointer transition-all duration-500 hover:scale-105 transform rounded-xl overflow-hidden magnetic-hover"
                   style={{
                     background: city.name === 'New York' ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)' :
                               city.name === 'Los Angeles' ? 'linear-gradient(135deg, #ec4899, #f97316)' :
@@ -1193,35 +1167,22 @@ export default function Home() {
                               city.name === 'San Diego' ? 'linear-gradient(135deg, #60a5fa, #06b6d4)' :
                               city.name === 'Philadelphia' ? 'linear-gradient(135deg, #1d4ed8, #3730a3)' :
                               'linear-gradient(135deg, #f97316, #ea580c)',
-                    animationDelay: `${index * 100}ms`
+                    animationDelay: `${index * 100}ms`,
+                    minHeight: '280px'
                   }}
                   onClick={(e) => {
                     createRippleEffect(e, e.currentTarget);
-                    setSelectedCity(city.name);
-                    setSearchQuery('');
-                    simulateLoading('city');
+                    router.push(`/restaurants?location=${encodeURIComponent(city.name)}`);
                   }}
                   onMouseMove={(e) => handleMagneticHover(e, e.currentTarget)}
                   onMouseLeave={(e) => handleMagneticLeave(e.currentTarget)}
                   data-hover-text={`Explore ${city.name} restaurants`}
                 >
-                  {/* Loading Overlay */}
-                  {loadingStates.city && selectedCity === city.name && (
-                    <div className="loading-overlay active">
-                      <div className="loading-spinner"></div>
-                    </div>
-                  )}
+
                   
-                  {/* Selected Checkmark */}
-                  {isSelected && (
-                    <div className="absolute top-3 left-3 h-4 w-4 bg-white rounded-full flex items-center justify-center shadow-lg border border-white/20 z-10">
-                      <svg className="h-3 w-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  )}
+
                   
-                  <div className="relative z-10 p-6 text-white">
+                  <div className="relative z-10 p-6 text-white h-full flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="text-lg font-bold">{city.name}</h3>
                       <div className="map-pin-container">
@@ -1231,11 +1192,8 @@ export default function Home() {
                       </div>
                     </div>
                     
-                    {/* Progressive Disclosure for City Info */}
-                    <div className={`progressive-disclosure ${selectedCity === city.name ? 'visible' : ''}`}>
-                      <p className="text-sm opacity-90 mb-3">
-                        Discover amazing soup spots
-                      </p>
+                    {/* City Info - Always Visible */}
+                    <div className="mt-auto">
                       <div className="flex items-center space-x-2">
                         <span className="text-xs bg-white/20 backdrop-blur-sm rounded-full px-2 py-1">
                           🍜 {isClient ? `${Math.floor(Math.random() * 50) + 20}+` : '20+'} spots
@@ -1245,7 +1203,10 @@ export default function Home() {
                   </div>
                   
                   {/* Hover Reveal Information */}
-                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <div 
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center cursor-pointer"
+                    onClick={() => router.push(`/restaurants?location=${encodeURIComponent(city.name)}`)}
+                  >
                     <div className="text-center text-white">
                       <div className="text-2xl mb-2">🍲</div>
                       <p className="text-sm font-medium">Explore {city.name}</p>
@@ -1256,8 +1217,7 @@ export default function Home() {
                   {/* Ambient Glow Effect */}
                   <div className="absolute -inset-1 bg-gradient-to-r from-orange-400/30 via-transparent to-orange-600/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm"></div>
                 </div>
-              );
-            })}
+            ))}
           </div>
           
           {filteredCities.length === 0 && (
