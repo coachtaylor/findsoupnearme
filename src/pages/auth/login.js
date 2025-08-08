@@ -1,5 +1,5 @@
 // src/pages/auth/login.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import Head from 'next/head';
@@ -63,7 +63,7 @@ const LoginPage = () => {
   const handleOAuthSignIn = async (provider) => {
     try {
       const { error } = await signInWithOAuth(provider, {
-        redirectTo: `${window.location.origin}/auth/callback?redirectTo=${router.query.redirectTo || '/dashboard'}`,
+        redirectTo: `${window.location.origin}/auth/callback?redirectTo=${router.query.redirectTo || '/'}`,
       });
 
       if (error) {
@@ -73,6 +73,10 @@ const LoginPage = () => {
       setFormError('An unexpected error occurred');
     }
   };
+
+  const navigateToRegister = useCallback(() => {
+    router.push('/auth/register');
+  }, [router]);
 
   return (
     <>
@@ -92,14 +96,7 @@ const LoginPage = () => {
             </h2>
             <p className="mt-2 text-center text-sm text-gray-600">
               Or{' '}
-              <Link 
-                href="/auth/register" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  router.push("/auth/register");
-                }}
-                className="font-medium text-orange-600 hover:text-orange-500"
-              >
+              <Link href="/auth/register" onClick={navigateToRegister} className="font-medium text-orange-600 hover:text-orange-500">
                 create a new account
               </Link>
             </p>
