@@ -22,8 +22,12 @@ const RegisterPage = () => {
   const { signUp, error: authError, clearError, user, loading } = useAuth();
   const router = useRouter();
 
-  // Don't redirect if user is already authenticated - let them access register page
-  // This prevents the redirect loop issue
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user && !loading) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
 
   // Validate form
   const validateForm = () => {
