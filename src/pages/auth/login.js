@@ -48,7 +48,7 @@ const LoginPage = () => {
       console.log('==== Component Unmount ====');
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [router, user, loading]);
+  }, []); // Empty dependency array to run only once
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;

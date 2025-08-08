@@ -53,7 +53,7 @@ const RegisterPage = () => {
       console.log('==== Component Unmount ====');
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [router, user, loading]);
+  }, []); // Empty dependency array to run only once
 
   // Validate form
   const validateForm = () => {
