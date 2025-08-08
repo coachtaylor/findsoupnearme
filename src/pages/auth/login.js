@@ -78,17 +78,7 @@ const LoginPage = () => {
     router.push('/auth/register');
   }, [router]);
 
-  // Add this after your component declarations
-  useEffect(() => {
-    // Ensure we're on the correct page by comparing current path
-    const currentPath = window.location.pathname;
-    const expectedPath = '/auth/login'; // or '/auth/register' for register.js
-    
-    if (currentPath !== expectedPath) {
-      console.log(`Path mismatch: expected ${expectedPath}, got ${currentPath}`);
-      router.replace(expectedPath);
-    }
-  }, [router]);
+
 
   return (
     <>
