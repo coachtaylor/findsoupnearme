@@ -143,7 +143,14 @@ const RegisterPage = () => {
             </p>
             <p className="mt-2 text-center text-sm text-gray-600">
               Already have an account?{' '}
-              <Link href="/auth/login" className="font-medium text-orange-600 hover:text-orange-500 transition-colors">
+              <Link 
+                href="/auth/login" 
+                onClick={(e) => {
+                  e.preventDefault();
+                  router.push("/auth/login");
+                }}
+                className="font-medium text-orange-600 hover:text-orange-500 transition-colors"
+              >
                 Sign in here
               </Link>
             </p>
