@@ -18,8 +18,8 @@ const AuthCallback = () => {
         // Wait for auth state to be initialized
         if (!loading) {
           if (user) {
-            // User is authenticated, redirect to dashboard or home
-            const redirectTo = router.query.redirectTo || '/dashboard';
+            // User is authenticated, redirect to home (or intended page)
+            const redirectTo = router.query.redirectTo || '/';
             router.push(redirectTo);
           } else if (error) {
             // There was an authentication error
