@@ -1,5 +1,5 @@
 // src/pages/auth/register.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import Head from 'next/head';
@@ -115,6 +115,10 @@ const RegisterPage = () => {
     }
   };
 
+  const navigateToLogin = useCallback(() => {
+    router.push('/auth/login');
+  }, [router]);
+
   return (
     <>
       <Head>
@@ -143,14 +147,7 @@ const RegisterPage = () => {
             </p>
             <p className="mt-2 text-center text-sm text-gray-600">
               Already have an account?{' '}
-              <Link 
-                href="/auth/login" 
-                onClick={(e) => {
-                  e.preventDefault();
-                  router.push("/auth/login");
-                }}
-                className="font-medium text-orange-600 hover:text-orange-500 transition-colors"
-              >
+              <Link href="/auth/login" onClick={navigateToLogin} className="font-medium text-orange-600 hover:text-orange-500 transition-colors">
                 Sign in here
               </Link>
             </p>
