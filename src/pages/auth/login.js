@@ -24,6 +24,32 @@ const LoginPage = () => {
     }
   }, [user, loading, router]);
 
+  // At the top of your component
+  useEffect(() => {
+    // Log full auth and router state on mount
+    console.log('==== Component Mount ====');
+    console.log('Auth state:', { user, loading });
+    console.log('Router state:', { 
+      pathname: router.pathname,
+      asPath: router.asPath,
+      query: router.query,
+      isReady: router.isReady
+    });
+    console.log('Window location:', window.location.href);
+    
+    // Check for browser navigation
+    const handleBeforeUnload = () => {
+      console.log('Page is being unloaded');
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      console.log('==== Component Unmount ====');
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [router, user, loading]);
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
