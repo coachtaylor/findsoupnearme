@@ -1,5 +1,5 @@
 // src/pages/auth/login.js
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import Head from 'next/head';
@@ -17,8 +17,12 @@ const LoginPage = () => {
   const { signIn, signInWithOAuth, error: authError, clearError, user, loading } = useAuth();
   const router = useRouter();
 
-  // Don't redirect if user is already authenticated - let them access login page
-  // This prevents the redirect loop issue
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user && !loading) {
+      router.push('/');
+    }
+  }, [user, loading, router]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -46,7 +50,7 @@ const LoginPage = () => {
         setFormError(error.message || 'Login failed');
       } else if (user) {
         // Redirect to dashboard or intended page
-        const redirectTo = router.query.redirectTo || '/dashboard';
+        const redirectTo = router.query.redirectTo || '/';
         router.push(redirectTo);
       }
     } catch (err) {
