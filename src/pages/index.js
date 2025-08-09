@@ -353,7 +353,43 @@ export default function Home() {
     return stateNames[stateCode] || stateCode;
   };
   
+  // Helper function to get city image
+  const getCityImage = (cityName) => {
+    const cityImages = {
+      'new york': 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'los angeles': 'https://images.unsplash.com/photo-1544413660-299165566b1d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'chicago': 'https://images.unsplash.com/photo-1494522358658-554d6e0c1c1c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'san francisco': 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'seattle': 'https://images.unsplash.com/photo-1502173173179-9e4bc76ae31a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'miami': 'https://images.unsplash.com/photo-1535498730771-e735b998cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'phoenix': 'https://images.unsplash.com/photo-1569336415962-a4bd9f69cd83?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'houston': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'austin': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ca4b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'dallas': 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'san diego': 'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      'philadelphia': 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'
+    };
+    return cityImages[cityName.toLowerCase()] || 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+  };
 
+  // Helper function to get restaurant count for a city
+  const getRestaurantCount = (cityName) => {
+    const cityCounts = {
+      'new york': 245,
+      'los angeles': 198,
+      'chicago': 167,
+      'san francisco': 189,
+      'seattle': 156,
+      'miami': 178,
+      'phoenix': 134,
+      'houston': 223,
+      'austin': 167,
+      'dallas': 189,
+      'san diego': 145,
+      'philadelphia': 167
+    };
+    return cityCounts[cityName.toLowerCase()] || 89;
+  };
   
   // Handle search form submission
   const handleSearch = (e) => {
@@ -466,44 +502,6 @@ export default function Home() {
         <meta name="description" content="Find the best soup restaurants in your city. Discover delicious ramen, pho, chowder, and more at top-rated restaurants." />
       </Head>
       
-      {/* Floating Navigation with Blur Background */}
-      <div className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolling ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
-      }`}>
-        <div className="bg-white/80 backdrop-blur-md border-b border-orange-100/50 shadow-lg">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <Link href="/" className="text-xl font-bold text-orange-600">
-                  FindSoupNearMe
-                </Link>
-                <nav className="hidden md:flex space-x-6">
-                  <Link href="/restaurants" className="text-neutral-700 hover:text-orange-600 transition-colors">
-                    All Restaurants
-                  </Link>
-                  <Link href="/cities" className="text-neutral-700 hover:text-orange-600 transition-colors">
-                    Cities
-                  </Link>
-                  <Link href="/about" className="text-neutral-700 hover:text-orange-600 transition-colors">
-                    About
-                  </Link>
-                </nav>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="Quick search..."
-                    className="pl-10 pr-4 py-2 bg-white/50 backdrop-blur-sm rounded-lg border border-orange-200/50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
-                  />
-                  <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
       {/* Progress Bar */}
       <div className="fixed top-0 left-0 right-0 z-40 h-1 bg-gradient-to-r from-orange-400 to-orange-600 transform origin-left transition-transform duration-300"
            style={{ transform: `scaleX(${scrollProgress})` }}></div>
@@ -515,262 +513,227 @@ export default function Home() {
         <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-orange-100/25 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
       </div>
       
-      {/* Clean Hero with Accent Elements */}
-      <section ref={heroRef} className="py-20 md:py-28 relative overflow-hidden">
-        {/* Modern Animated Gradient Background */}
-        <div className="absolute inset-0 animate-gradient-shift"></div>
-        
-        {/* Primary Conic Gradient */}
-        <div className="absolute inset-0 animate-conic-gradient-primary opacity-30"></div>
-        
-        {/* Secondary Conic Gradient with Different Timing */}
-        <div className="absolute inset-0 animate-conic-gradient-secondary opacity-20"></div>
-        
-        {/* Enhanced Noise Texture Overlay */}
-        <div className="absolute inset-0 opacity-15 mix-blend-multiply">
-          <div className="w-full h-full" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
-            backgroundSize: '256px 256px'
-          }}></div>
+      {/* Modern Hero Section with Split Layout */}
+      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-50">
+        {/* Animated Background Gradients */}
+        <div className="absolute inset-0">
+          {/* Primary gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-100/30 via-white to-orange-50/40"></div>
+          
+          {/* Animated gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-200/20 via-transparent to-orange-300/20 animate-pulse"></div>
+          
+          {/* Radial gradient for depth */}
+          <div className="absolute inset-0 bg-radial-gradient opacity-30"></div>
         </div>
-        
-        {/* Subtle Radial Gradient for Depth */}
-        <div className="absolute inset-0 bg-radial-gradient opacity-25"></div>
-        
-        {/* Vignette Effect */}
-        <div className="absolute inset-0 bg-vignette opacity-40"></div>
-        {/* Accent Elements */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary-100 rounded-full -mr-32 -mt-32 opacity-50 blur-sm"></div>
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-accent-100 rounded-full -ml-24 -mb-24 opacity-50 blur-sm"></div>
-        <div className="absolute top-1/4 left-0 w-32 h-32 bg-orange-100 rounded-full -ml-16 opacity-40 blur-sm"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-light-orange-100 rounded-full opacity-30 blur-sm"></div>
-        
-        {/* Dynamic 3D Floating Bowl Elements */}
+
+        {/* Floating Geometric Accent Elements */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Bowl 1 - Large Deep Background */}
+          {/* Large floating circle */}
           <div 
-            className="floating-bowl absolute top-8 right-8 w-28 h-28 md:w-36 md:h-36 opacity-25 transform transition-all duration-800 ease-out"
+            className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-br from-orange-200 to-orange-300 rounded-full opacity-60 blur-xl animate-float"
             style={{
-              transform: isMobile 
-                ? 'translate3d(0px, 0px, -200px) rotateX(15deg) rotateY(10deg)' 
-                : `translate3d(${mousePosition.x * -12}px, ${mousePosition.y * -12}px, -200px) rotateX(${15 + mousePosition.y * 8}deg) rotateY(${10 + mousePosition.x * 6}deg)`,
-              zIndex: 1
+              animationDelay: '0s',
+              animationDuration: '6s'
+            }}
+          ></div>
+          
+          {/* Medium floating triangle */}
+          <div 
+            className="absolute top-1/3 left-10 w-16 h-16 bg-gradient-to-br from-orange-300 to-orange-400 opacity-40 animate-float"
+            style={{
+              animationDelay: '2s',
+              animationDuration: '8s',
+              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'
+            }}
+          ></div>
+          
+          {/* Small floating square */}
+          <div 
+            className="absolute bottom-1/4 right-1/3 w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 opacity-50 animate-float"
+            style={{
+              animationDelay: '4s',
+              animationDuration: '7s',
+              transform: 'rotate(45deg)'
+            }}
+          ></div>
+          
+          {/* Floating spoon element */}
+          <div 
+            className="absolute top-1/2 left-1/4 w-8 h-8 opacity-30 animate-float"
+            style={{
+              animationDelay: '1s',
+              animationDuration: '5s'
             }}
           >
-            <div className="w-full h-full bg-gradient-to-br from-primary-100 to-primary-200 rounded-full shadow-2xl relative">
-              <div className="absolute inset-2 bg-gradient-to-br from-primary-50 to-transparent rounded-full opacity-60"></div>
-            </div>
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-orange-400">
+              <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2M21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4H5V21H19V9Z"/>
+            </svg>
           </div>
           
-          {/* Bowl 2 - Medium Mid-ground */}
+          {/* Floating bowl element */}
           <div 
-            className="floating-bowl absolute top-1/3 left-12 w-20 h-20 md:w-24 md:h-24 opacity-40 transform transition-all duration-600 ease-out"
+            className="absolute bottom-1/3 right-1/4 w-10 h-10 opacity-40 animate-float"
             style={{
-              transform: isMobile 
-                ? 'translate3d(0px, 0px, -120px) rotateX(-8deg) rotateY(-15deg)' 
-                : `translate3d(${mousePosition.x * -18}px, ${mousePosition.y * -18}px, -120px) rotateX(${-8 + mousePosition.y * 12}deg) rotateY(${-15 + mousePosition.x * 10}deg)`,
-              zIndex: 2
+              animationDelay: '3s',
+              animationDuration: '6s'
             }}
           >
-            <div className="w-full h-full bg-gradient-to-br from-orange-100 to-orange-200 rounded-full shadow-xl relative">
-              <div className="absolute inset-2 bg-gradient-to-br from-orange-50 to-transparent rounded-full opacity-70"></div>
-            </div>
-          </div>
-          
-          {/* Bowl 3 - Small Foreground */}
-          <div 
-            className="floating-bowl absolute bottom-16 right-1/3 w-16 h-16 md:w-20 md:h-20 opacity-60 transform transition-all duration-500 ease-out"
-            style={{
-              transform: isMobile 
-                ? 'translate3d(0px, 0px, -60px) rotateX(5deg) rotateY(20deg)' 
-                : `translate3d(${mousePosition.x * -24}px, ${mousePosition.y * -24}px, -60px) rotateX(${5 + mousePosition.y * 15}deg) rotateY(${20 + mousePosition.x * 12}deg)`,
-              zIndex: 3
-            }}
-          >
-            <div className="w-full h-full bg-gradient-to-br from-light-orange-100 to-light-orange-200 rounded-full shadow-lg relative">
-              <div className="absolute inset-2 bg-gradient-to-br from-light-orange-50 to-transparent rounded-full opacity-80"></div>
-            </div>
-          </div>
-          
-          {/* Bowl 4 - Tiny Accent */}
-          <div 
-            className="floating-bowl absolute top-1/2 right-1/4 w-12 h-12 md:w-14 md:h-14 opacity-35 transform transition-all duration-700 ease-out"
-            style={{
-              transform: isMobile 
-                ? 'translate3d(0px, 0px, -80px) rotateX(25deg) rotateY(-5deg)' 
-                : `translate3d(${mousePosition.x * -8}px, ${mousePosition.y * -8}px, -80px) rotateX(${25 + mousePosition.y * 6}deg) rotateY(${-5 + mousePosition.x * 4}deg)`,
-              zIndex: 2
-            }}
-          >
-            <div className="w-full h-full bg-gradient-to-br from-accent-50 to-accent-100 rounded-full shadow-md relative">
-              <div className="absolute inset-1 bg-gradient-to-br from-white to-transparent rounded-full opacity-50"></div>
-            </div>
-          </div>
-          
-          {/* Bowl 5 - Floating Spoon */}
-          <div 
-            className="floating-bowl absolute bottom-8 left-1/4 w-8 h-8 md:w-10 md:h-10 opacity-50 transform transition-all duration-400 ease-out"
-            style={{
-              transform: isMobile 
-                ? 'translate3d(0px, 0px, -40px) rotateX(-12deg) rotateY(8deg)' 
-                : `translate3d(${mousePosition.x * -16}px, ${mousePosition.y * -16}px, -40px) rotateX(${-12 + mousePosition.y * 10}deg) rotateY(${8 + mousePosition.x * 8}deg)`,
-              zIndex: 3
-            }}
-          >
-            <div className="w-full h-full bg-gradient-to-br from-orange-50 to-orange-100 rounded-full shadow-sm relative">
-              <div className="absolute inset-1 bg-gradient-to-br from-white to-transparent rounded-full opacity-60"></div>
-            </div>
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-orange-500">
+              <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2M21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4H5V21H19V9Z"/>
+            </svg>
           </div>
         </div>
-        
+
+        {/* Steam Animation Elements */}
+        <div className="absolute top-1/4 right-1/3 pointer-events-none">
+          <div className="steam-container">
+            <div className="steam animate-steam-1"></div>
+            <div className="steam animate-steam-2"></div>
+            <div className="steam animate-steam-3"></div>
+          </div>
+        </div>
+
         <div className="container mx-auto px-4 relative z-10">
-          <div className="parallax-container max-w-3xl mx-auto text-center">
-            {/* Badge Layer - Deep Background */}
-            <div 
-              className="inline-flex items-center justify-center px-4 py-1.5 bg-orange-100 text-orange-600 rounded-full text-sm font-medium mb-6 parallax-layer"
-              style={{
-                transform: isMobile 
-                  ? 'translateZ(-100px)' 
-                  : `translate3d(${mousePosition.x * -15}px, ${mousePosition.y * -15}px, -100px)`,
-                zIndex: 1
-              }}
-            >
-              🍜 Discover 10,000+ Soup Restaurants
-            </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-screen py-20">
             
-            {/* Heading Layer - Mid Ground */}
-            <h1 
-              className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight parallax-layer"
-              style={{
-                transform: isMobile 
-                  ? 'translateZ(-50px)' 
-                  : `translate3d(${mousePosition.x * -8}px, ${mousePosition.y * -8}px, -50px)`,
-                zIndex: 2
-              }}
-            >
-              The Best <span className="text-orange-500">Soup</span> Near You
-            </h1>
-            
-            {/* Subheading Layer - Shallow Background */}
-            <p 
-              className="text-neutral-700 text-lg md:text-xl mb-10 max-w-2xl mx-auto parallax-layer"
-              style={{
-                transform: isMobile 
-                  ? 'translateZ(-25px)' 
-                  : `translate3d(${mousePosition.x * -5}px, ${mousePosition.y * -5}px, -25px)`,
-                zIndex: 1
-              }}
-            >
-              From hearty ramen to comforting chowder, find your perfect bowl across 11 major US cities
-            </p>
-            
-            {/* Form Layer - Foreground */}
-            <form 
-              onSubmit={handleSearch} 
-              className="max-w-2xl mx-auto mb-8 parallax-layer"
-              style={{
-                transform: isMobile 
-                  ? 'translateZ(0px)' 
-                  : `translate3d(${mousePosition.x * 5}px, ${mousePosition.y * 5}px, 0px) rotateX(${mousePosition.y * 2}deg) rotateY(${mousePosition.x * 2}deg)`,
-                zIndex: 3
-              }}
-            >
-              <div className="flex flex-col md:flex-row gap-3">
-                <div className="relative flex-grow">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <span className="text-orange-400">📍</span>
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Enter your city or ZIP code"
-                    className="w-full pl-12 pr-12 py-4 bg-white rounded-lg border border-neutral-200 shadow-md focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={detectLocation}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-neutral-500 hover:text-orange-500 transition-colors"
-                    title="Use my current location"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </button>
-                </div>
-                
-                <button
-                  type="submit"
-                  className="px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors shadow-md hover:shadow-lg flex items-center justify-center"
-                >
-                  <MagnifyingGlassIcon className="h-5 w-5 mr-2" />
-                  <span>Search</span>
-                </button>
+            {/* Left Content Section */}
+            <div className="space-y-8">
+              {/* Badge */}
+              <div className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-100 to-orange-200 text-orange-700 rounded-full text-sm font-semibold shadow-lg border border-orange-200/50 backdrop-blur-sm">
+                <span className="mr-2">🍜</span>
+                Discover 10,000+ Soup Restaurants
               </div>
-            </form>
-            
-            {/* Quick Filters Layer - Mid Foreground */}
-            <div 
-              className="flex flex-wrap justify-center gap-3 mb-8 parallax-layer"
-              style={{
-                transform: isMobile 
-                  ? 'translateZ(25px)' 
-                  : `translate3d(${mousePosition.x * 3}px, ${mousePosition.y * 3}px, 25px)`,
-                zIndex: 2
-              }}
-            >
-              {quickFilters.map((filter) => (
-                <button
-                  key={filter.type}
-                  type="button"
-                  onClick={() => handleQuickFilter(filter.type)}
-                  className="px-5 py-2.5 bg-white rounded-full border border-neutral-200 shadow-sm hover:shadow-md transition-shadow flex items-center gap-2 text-neutral-700 hover:bg-orange-50 hover:border-orange-200 hover:text-orange-700"
-                >
-                  <span className="text-xl">{filter.emoji}</span>
-                  <span>{filter.name}</span>
-                </button>
-              ))}
-            </div>
-            
-            {/* Popular Cities Layer - Deep Foreground */}
-            <div 
-              className="hidden md:block parallax-layer"
-              style={{
-                transform: isMobile 
-                  ? 'translateZ(50px)' 
-                  : `translate3d(${mousePosition.x * 2}px, ${mousePosition.y * 2}px, 50px)`,
-                zIndex: 1
-              }}
-            >
-              <p className="text-neutral-500 mb-3 text-sm font-medium">Popular Cities:</p>
-              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
-                {popularCities.map((city) => (
-                  <Link
-                    key={city.name}
-                    href={`/${city.state.toLowerCase()}/${city.name.toLowerCase().replace(/\s+/g, '-')}/restaurants`}
-                    className="text-orange-500 hover:text-orange-600 text-sm font-medium hover:underline"
+
+              {/* Main Heading */}
+              <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight">
+                The Best{' '}
+                <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+                  Soup
+                </span>{' '}
+                Near You
+              </h1>
+
+              {/* Subheading */}
+              <p className="text-xl lg:text-2xl text-neutral-600 max-w-2xl leading-relaxed">
+                From hearty ramen to comforting chowder, find your perfect bowl across 11 major US cities
+              </p>
+
+              {/* Enhanced Search Bar */}
+              <div className="max-w-2xl">
+                <form onSubmit={handleSearch} className="relative">
+                  <div className="relative flex flex-col sm:flex-row gap-4">
+                    {/* Search Input */}
+                    <div className="relative flex-grow">
+                      <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
+                        <span className="text-2xl">📍</span>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="Enter your city or ZIP code"
+                        className="w-full pl-16 pr-16 py-6 bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-orange-200/50 shadow-xl focus:outline-none focus:ring-4 focus:ring-orange-300/50 focus:border-orange-400 text-lg font-medium transition-all duration-300 hover:shadow-2xl hover:border-orange-300"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        onClick={detectLocation}
+                        className="absolute inset-y-0 right-0 pr-6 flex items-center text-neutral-500 hover:text-orange-500 transition-colors duration-300"
+                        title="Use my current location"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </button>
+                    </div>
+                    
+                    {/* Search Button */}
+                    <button
+                      type="submit"
+                      className="px-8 py-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl font-semibold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 flex items-center justify-center gap-3 group"
+                    >
+                      <MagnifyingGlassIcon className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
+                      <span>Search</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Quick Filters */}
+              <div className="flex flex-wrap gap-4">
+                {quickFilters.map((filter) => (
+                  <button
+                    key={filter.type}
+                    type="button"
+                    onClick={() => handleQuickFilter(filter.type)}
+                    className="px-6 py-3 bg-white/80 backdrop-blur-sm rounded-full border-2 border-orange-200/50 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-3 text-neutral-700 hover:bg-orange-50 hover:border-orange-300 hover:scale-105 group"
                   >
-                    {city.name}
-                  </Link>
+                    <span className="text-2xl group-hover:scale-110 transition-transform duration-300">{filter.emoji}</span>
+                    <span className="font-semibold">{filter.name}</span>
+                  </button>
                 ))}
               </div>
+
+              {/* Popular Cities */}
+              <div className="pt-4">
+                <p className="text-neutral-500 mb-3 text-sm font-medium">Popular Cities:</p>
+                <div className="flex flex-wrap gap-4">
+                  {popularCities.slice(0, 6).map((city) => (
+                    <Link
+                      key={city.name}
+                      href={`/${city.state.toLowerCase()}/${city.name.toLowerCase().replace(/\s+/g, '-')}/restaurants`}
+                      className="text-orange-600 hover:text-orange-700 text-sm font-semibold hover:underline transition-colors duration-300"
+                    >
+                      {city.name}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Right Image Section */}
+            <div className="relative lg:flex lg:justify-center lg:items-center">
+              {/* Main Food Image */}
+              <div className="relative w-full max-w-lg mx-auto">
+                {/* Image Container */}
+                <div className="relative w-full h-96 lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl">
+                  <img
+                    src="/images/soup-pattern.svg"
+                    alt="Delicious soup bowl"
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80';
+                    }}
+                  />
+                  
+                  {/* Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                  
+                  {/* Floating Elements Over Image */}
+                  <div className="absolute top-4 right-4 w-16 h-16 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center">
+                    <span className="text-3xl">🥣</span>
+                  </div>
+                  
+                  <div className="absolute bottom-4 left-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center">
+                    <span className="text-2xl">🍜</span>
+                  </div>
+                </div>
+
+                {/* Floating Accent Elements */}
+                <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-orange-200 to-orange-300 rounded-full opacity-60 animate-float"></div>
+                <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full opacity-50 animate-float" style={{ animationDelay: '2s' }}></div>
+              </div>
             </div>
           </div>
         </div>
-        
-        {/* Modern SVG Wave Dividers */}
+
+        {/* Bottom Wave Divider */}
         <div className="absolute bottom-0 left-0 w-full overflow-hidden">
-          {/* Primary Wave */}
           <svg 
-            className="wave-divider wave-primary"
+            className="w-full h-24 lg:h-32"
             viewBox="0 0 1200 120" 
             preserveAspectRatio="none"
-            style={{
-              transform: isMobile 
-                ? `translateY(${scrollY * 0.1}px)` 
-                : `translateY(${mousePosition.y * -5 + scrollY * 0.1}px)`
-            }}
           >
             <path 
               d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" 
@@ -784,47 +747,6 @@ export default function Home() {
             />
             <path 
               d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" 
-              fill="#fef3e2"
-            />
-          </svg>
-          
-          {/* Secondary Wave */}
-          <svg 
-            className="wave-divider wave-secondary"
-            viewBox="0 0 1200 120" 
-            preserveAspectRatio="none"
-            style={{
-              transform: isMobile 
-                ? `translateY(${scrollY * 0.15}px)` 
-                : `translateY(${mousePosition.y * -3 + scrollY * 0.15}px)`
-            }}
-          >
-            <path 
-              d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z" 
-              opacity=".7" 
-              fill="#fef2f2"
-            />
-            <path 
-              d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" 
-              opacity=".9" 
-              fill="#fef7ed"
-            />
-          </svg>
-          
-          {/* Accent Wave */}
-          <svg 
-            className="wave-divider wave-accent"
-            viewBox="0 0 1200 120" 
-            preserveAspectRatio="none"
-            style={{
-              transform: isMobile 
-                ? `translateY(${scrollY * 0.2}px)` 
-                : `translateY(${mousePosition.y * -7 + scrollY * 0.2}px)`
-            }}
-          >
-            <path 
-              d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" 
-              opacity=".5" 
               fill="#fef3e2"
             />
           </svg>
@@ -1147,77 +1069,167 @@ export default function Home() {
             </div>
           </div>
           
-          {/* City Cards Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {filteredCities.map((city, index) => (
-              <div
-                key={city.name}
-                className="city-card relative group cursor-pointer transition-all duration-500 hover:scale-105 transform rounded-xl overflow-hidden magnetic-hover"
-                  style={{
-                    background: city.name === 'New York' ? 'linear-gradient(135deg, #3b82f6, #8b5cf6)' :
-                              city.name === 'Los Angeles' ? 'linear-gradient(135deg, #ec4899, #f97316)' :
-                              city.name === 'Chicago' ? 'linear-gradient(135deg, #2563eb, #4f46e5)' :
-                              city.name === 'San Francisco' ? 'linear-gradient(135deg, #10b981, #3b82f6)' :
-                              city.name === 'Seattle' ? 'linear-gradient(135deg, #6b7280, #3b82f6)' :
-                              city.name === 'Miami' ? 'linear-gradient(135deg, #f472b6, #fb923c)' :
-                              city.name === 'Phoenix' ? 'linear-gradient(135deg, #f97316, #dc2626)' :
-                              city.name === 'Houston' ? 'linear-gradient(135deg, #3b82f6, #10b981)' :
-                              city.name === 'Austin' ? 'linear-gradient(135deg, #8b5cf6, #ec4899)' :
-                              city.name === 'Dallas' ? 'linear-gradient(135deg, #2563eb, #7c3aed)' :
-                              city.name === 'San Diego' ? 'linear-gradient(135deg, #60a5fa, #06b6d4)' :
-                              city.name === 'Philadelphia' ? 'linear-gradient(135deg, #1d4ed8, #3730a3)' :
-                              'linear-gradient(135deg, #f97316, #ea580c)',
-                    animationDelay: `${index * 100}ms`,
-                    minHeight: '280px'
-                  }}
-                  onClick={(e) => {
-                    createRippleEffect(e, e.currentTarget);
-                    router.push(`/restaurants?location=${encodeURIComponent(city.name)}`);
-                  }}
-                  onMouseMove={(e) => handleMagneticHover(e, e.currentTarget)}
-                  onMouseLeave={(e) => handleMagneticLeave(e.currentTarget)}
-                  data-hover-text={`Explore ${city.name} restaurants`}
-                >
-
-                  
-
-                  
-                  <div className="relative z-10 p-6 text-white h-full flex flex-col justify-between">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-bold">{city.name}</h3>
-                      <div className="map-pin-container">
-                        <svg className="h-5 w-5 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                        </svg>
+          {/* Modern Horizontal Scrolling City Cards */}
+          <div className="relative">
+            {/* Scroll Indicators */}
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden lg:block">
+              <button 
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center border border-orange-200/50 hover:scale-110 transition-transform duration-300 cursor-pointer opacity-60 hover:opacity-100"
+                onClick={() => {
+                  const container = document.querySelector('.city-scroll-container');
+                  if (container) {
+                    container.scrollBy({ left: -400, behavior: 'smooth' });
+                  }
+                }}
+              >
+                <svg className="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="absolute right-0 top-1/2 -translate-y-1/2 z-20 hidden lg:block">
+              <button 
+                className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center border border-orange-200/50 hover:scale-110 transition-transform duration-300 cursor-pointer opacity-60 hover:opacity-100"
+                onClick={() => {
+                  const container = document.querySelector('.city-scroll-container');
+                  if (container) {
+                    container.scrollBy({ left: 400, behavior: 'smooth' });
+                  }
+                }}
+              >
+                <svg className="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Horizontal Scrolling Container */}
+            <div className="overflow-x-auto scrollbar-hide pb-8 -mx-4 px-4 city-scroll-container">
+              <div className="flex gap-6 min-w-max" style={{ paddingLeft: '0px', paddingRight: '0px' }}>
+                {filteredCities.map((city, index) => (
+                  <div
+                    key={city.name}
+                    className="city-card relative group cursor-pointer transition-all duration-700 hover:scale-105 transform rounded-2xl overflow-hidden magnetic-hover flex-shrink-0"
+                    style={{
+                      width: '320px',
+                      height: '400px',
+                      animationDelay: `${index * 150}ms`,
+                      transform: `translateX(${visibleSections.city ? 0 : '50px'})`,
+                      opacity: visibleSections.city ? 1 : 0,
+                      transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${index * 100}ms`
+                    }}
+                    onClick={(e) => {
+                      createRippleEffect(e, e.currentTarget);
+                      router.push(`/${city.state.toLowerCase()}/${city.name.toLowerCase().replace(/\s+/g, '-')}/restaurants`);
+                    }}
+                    onMouseMove={(e) => handleMagneticHover(e, e.currentTarget)}
+                    onMouseLeave={(e) => handleMagneticLeave(e.currentTarget)}
+                    data-hover-text={`Explore ${city.name} restaurants`}
+                  >
+                    {/* City Background Image */}
+                    <div className="absolute inset-0 w-full h-full">
+                      <img
+                        src={getCityImage(city.name)}
+                        alt={`${city.name} cityscape`}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80';
+                        }}
+                      />
+                      
+                      {/* Sophisticated Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity duration-500"></div>
+                      
+                      {/* Additional Gradient Layer for Depth */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 via-transparent to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    </div>
+                    
+                    {/* City Content */}
+                    <div className="relative z-10 p-8 text-white h-full flex flex-col justify-between">
+                      {/* Top Section */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-2xl font-bold mb-1 group-hover:text-orange-300 transition-colors duration-300">
+                            {city.name}
+                          </h3>
+                          <p className="text-orange-200/80 text-sm font-medium">
+                            {getStateFullName(city.state)}
+                          </p>
+                        </div>
+                        
+                        {/* Animated Location Icon */}
+                        <div className="map-pin-container">
+                          <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 group-hover:bg-white/30 transition-all duration-300">
+                            <svg className="h-6 w-6 animate-bounce" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Middle Section - Restaurant Count */}
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                          <div className="text-4xl mb-2 group-hover:scale-110 transition-transform duration-300">
+                            🍜
+                          </div>
+                          <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
+                            <span className="text-lg font-bold">
+                              {getRestaurantCount(city.name)}+
+                            </span>
+                            <span className="text-sm ml-1">spots</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Bottom Section */}
+                      <div className="mt-auto">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-xs bg-white/20 backdrop-blur-sm rounded-full px-3 py-1.5 border border-white/30">
+                              🌟 Top Rated
+                            </span>
+                          </div>
+                          
+                          {/* Explore Button */}
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+                            <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30 hover:bg-white/30 transition-all duration-300">
+                              <span className="text-sm font-medium">Explore</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                     
-                    {/* City Info - Always Visible */}
-                    <div className="mt-auto">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs bg-white/20 backdrop-blur-sm rounded-full px-2 py-1">
-                          🍜 {isClient ? `${Math.floor(Math.random() * 50) + 20}+` : '20+'} spots
-                        </span>
+                    {/* Hover Reveal Information */}
+                    <div 
+                      className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-center justify-center cursor-pointer"
+                      onClick={() => router.push(`/${city.state.toLowerCase()}/${city.name.toLowerCase().replace(/\s+/g, '-')}/restaurants`)}
+                    >
+                      <div className="text-center text-white p-6">
+                        <div className="text-4xl mb-4 animate-bounce">🍲</div>
+                        <p className="text-lg font-bold mb-2">Explore {city.name}</p>
+                        <p className="text-sm opacity-80 mb-4">Discover the best soup spots</p>
+                        <div className="bg-white/20 backdrop-blur-sm rounded-full px-4 py-2 border border-white/30">
+                          <span className="text-sm font-medium">View Restaurants</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  {/* Hover Reveal Information */}
-                  <div 
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center cursor-pointer"
-                    onClick={() => router.push(`/restaurants?location=${encodeURIComponent(city.name)}`)}
-                  >
-                    <div className="text-center text-white">
-                      <div className="text-2xl mb-2">🍲</div>
-                      <p className="text-sm font-medium">Explore {city.name}</p>
-                      <p className="text-xs opacity-80">Click to discover</p>
+                    
+                    {/* Ambient Glow Effect */}
+                    <div className="absolute -inset-1 bg-gradient-to-r from-orange-400/30 via-transparent to-orange-600/30 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm"></div>
+                    
+                    {/* Floating Particles Effect */}
+                    <div className="absolute inset-0 pointer-events-none">
+                      <div className="absolute top-4 right-4 w-2 h-2 bg-orange-300/60 rounded-full animate-pulse floating-particle"></div>
+                      <div className="absolute bottom-8 left-6 w-1.5 h-1.5 bg-orange-200/80 rounded-full animate-pulse floating-particle" style={{ animationDelay: '1s' }}></div>
+                      <div className="absolute top-1/2 right-8 w-1 h-1 bg-orange-400/70 rounded-full animate-pulse floating-particle" style={{ animationDelay: '2s' }}></div>
                     </div>
                   </div>
-                  
-                  {/* Ambient Glow Effect */}
-                  <div className="absolute -inset-1 bg-gradient-to-r from-orange-400/30 via-transparent to-orange-600/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm"></div>
-                </div>
-            ))}
+                ))}
+              </div>
+            </div>
           </div>
           
           {filteredCities.length === 0 && (

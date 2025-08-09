@@ -71,7 +71,12 @@ export default function useRestaurants({
         console.log('API response data:', data);
         
         if (data.restaurants && Array.isArray(data.restaurants)) {
-          setRestaurants(data.restaurants);
+          const normalized = data.restaurants.map((r) => ({
+            ...r,
+            price_range: r.price_range || '$$',
+          }));
+          console.log('Sample normalized restaurant:', normalized[0]);
+          setRestaurants(normalized);
           setTotalCount(data.totalCount || data.restaurants.length);
           setError(null);
         } else {

@@ -2,22 +2,6 @@
 import { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
-/**
- * Mobile-friendly filter drawer component for restaurant listings
- * 
- * @param {Object} props Component props
- * @param {boolean} props.isOpen Whether the drawer is open
- * @param {Function} props.onClose Function to call when the drawer is closed
- * @param {Array} props.soupTypes Array of soup type options
- * @param {string} props.selectedSoupType Currently selected soup type
- * @param {Function} props.onSoupTypeChange Function to call when soup type changes
- * @param {Array} props.ratingOptions Array of rating options
- * @param {number} props.selectedRating Currently selected rating
- * @param {Function} props.onRatingChange Function to call when rating changes
- * @param {Array} props.priceRangeOptions Array of price range options
- * @param {string} props.selectedPriceRange Currently selected price range
- * @param {Function} props.onPriceRangeChange Function to call when price range changes
- */
 export default function MobileFilterDrawer({ 
   isOpen, 
   onClose, 
@@ -36,18 +20,16 @@ export default function MobileFilterDrawer({
   return (
     <div className="fixed inset-0 z-50 md:hidden">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose}></div>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
       
       {/* Drawer */}
-      <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl">
+      <div className="absolute right-0 top-0 h-full w-80 bg-white/85 backdrop-blur-lg border-l border-white/60 shadow-2xl rounded-l-2xl">
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-neutral-200">
+          <div className="flex items-center justify-between p-4 border-b border-white/60">
             <h2 className="text-lg font-semibold text-neutral-900">Filter Restaurants</h2>
-            <button onClick={onClose} className="p-1 rounded-full text-neutral-600 hover:bg-neutral-100">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+            <button onClick={onClose} className="p-2 rounded-xl text-neutral-600 hover:bg-white/60">
+              <XMarkIcon className="w-5 h-5" />
             </button>
           </div>
           
@@ -56,12 +38,12 @@ export default function MobileFilterDrawer({
             {/* Soup Type Filter */}
             <div>
               <h3 className="font-medium text-neutral-800 mb-3">Soup Type</h3>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button 
-                  className={`w-full px-3 py-2 rounded-md text-left ${
+                  className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
                     selectedSoupTypes.length === 0 
-                      ? 'bg-primary-500 text-white' 
-                      : 'bg-white border border-primary-200 text-neutral-700'
+                      ? 'bg-orange-500 text-white border-orange-500 shadow-sm' 
+                      : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
                   }`}
                   onClick={() => onSoupTypeChange([])}
                 >
@@ -71,10 +53,10 @@ export default function MobileFilterDrawer({
                 {soupTypes.map((type) => (
                   <button
                     key={type}
-                    className={`w-full px-3 py-2 rounded-md text-left ${
+                    className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
                       selectedSoupTypes.includes(type)
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-white border border-primary-200 text-neutral-700'
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                        : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
                     }`}
                     onClick={() => {
                       if (selectedSoupTypes.includes(type)) {
@@ -93,25 +75,25 @@ export default function MobileFilterDrawer({
             {/* Rating Filter */}
             <div>
               <h3 className="font-medium text-neutral-800 mb-3">Minimum Rating</h3>
-              <div className="space-y-2">
+              <div className="grid grid-cols-3 gap-2">
                 <button 
-                  className={`w-full px-3 py-2 rounded-md text-left ${
+                  className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
                     selectedRatings.length === 0 
-                      ? 'bg-primary-500 text-white' 
-                      : 'bg-white border border-primary-200 text-neutral-700'
+                      ? 'bg-orange-500 text-white border-orange-500 shadow-sm' 
+                      : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
                   }`}
                   onClick={() => onRatingChange([])}
                 >
-                  Any Rating
+                  Any
                 </button>
                 
                 {ratingOptions.map((option) => (
                   <button
                     key={option.value}
-                    className={`w-full px-3 py-2 rounded-md text-left ${
+                    className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
                       selectedRatings.includes(option.value)
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-white border border-primary-200 text-neutral-700'
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                        : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
                     }`}
                     onClick={() => {
                       if (selectedRatings.includes(option.value)) {
@@ -130,25 +112,25 @@ export default function MobileFilterDrawer({
             {/* Price Range Filter */}
             <div>
               <h3 className="font-medium text-neutral-800 mb-3">Price Range</h3>
-              <div className="space-y-2">
+              <div className="grid grid-cols-4 gap-2">
                 <button 
-                  className={`w-full px-3 py-2 rounded-md text-left ${
+                  className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
                     selectedPriceRanges.length === 0 
-                      ? 'bg-primary-500 text-white' 
-                      : 'bg-white border border-primary-200 text-neutral-700'
+                      ? 'bg-orange-500 text-white border-orange-500 shadow-sm' 
+                      : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
                   }`}
                   onClick={() => onPriceRangeChange([])}
                 >
-                  Any Price
+                  Any
                 </button>
                 
                 {priceRangeOptions.map((option) => (
                   <button
                     key={option.value}
-                    className={`w-full px-3 py-2 rounded-md text-left ${
+                    className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
                       selectedPriceRanges.includes(option.value)
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-white border border-primary-200 text-neutral-700'
+                        ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                        : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
                     }`}
                     onClick={() => {
                       if (selectedPriceRanges.includes(option.value)) {
@@ -167,10 +149,10 @@ export default function MobileFilterDrawer({
           </div>
           
           {/* Footer */}
-          <div className="p-4 border-t border-neutral-200">
+          <div className="p-4 border-t border-white/60 bg-white/70 backdrop-blur-md">
             <button 
               onClick={onClose} 
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-md transition-colors"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-3 rounded-xl shadow-sm transition-colors"
             >
               Apply Filters
             </button>

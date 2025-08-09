@@ -47,8 +47,6 @@ export default function RestaurantListingPage({
   // Show loading state only when actually loading
   const isLoading = loading;
   
-
-  
   // Calculate total pages
   const totalPages = Math.ceil(totalCount / pageSize);
   
@@ -258,7 +256,7 @@ export default function RestaurantListingPage({
       case 'Cabbage': return '🥬';
       case 'Fruit': return '🍎';
       case 'Apple': return '🍎';
-      case 'Tortilla': return '��';
+      case 'Tortilla': return '🌮';
       case 'Lentil': return '🫘';
       case 'Sweet Potato': return '🍠';
       case 'Pumpkin': return '🎃';
@@ -293,7 +291,7 @@ export default function RestaurantListingPage({
         <div className="md:hidden mb-4">
           <button
             onClick={() => setIsFilterDrawerOpen(true)}
-            className="w-full flex items-center justify-center gap-2 bg-orange-50 py-3 px-4 rounded-lg text-neutral-800"
+            className="w-full flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm border border-white/60 shadow-sm py-3 px-4 rounded-xl text-neutral-800"
           >
             <AdjustmentsHorizontalIcon className="h-5 w-5" />
             <span>Filter Restaurants</span>
@@ -321,12 +319,12 @@ export default function RestaurantListingPage({
             <h2 className="text-lg font-semibold text-neutral-800">Filter Restaurants</h2>
           </div>
           
-          <div className="bg-orange-50 p-6 rounded-lg mb-8">
-            <div className="flex justify-between items-start space-x-8">
+          <div className="relative z-20 rounded-2xl p-6 mb-6 bg-white/70 backdrop-blur-md border border-white/60 shadow-sm">
+            <div className="flex justify-between items-start gap-8">
               {/* Soup Type Filter - Searchable Dropdown */}
               <div className="flex-1">
                 <label className="block text-neutral-700 mb-3 font-medium">Soup Type</label>
-                <div className="relative" ref={soupTypeDropdownRef}>
+                <div className={`relative ${isSoupTypeDropdownOpen ? 'mb-48' : ''}`} ref={soupTypeDropdownRef}>
                   {/* Selected Items Display */}
                   {selectedSoupTypes.length > 0 && (
                     <div className="mb-3">
@@ -334,7 +332,7 @@ export default function RestaurantListingPage({
                         <span className="text-sm font-medium text-neutral-700">Selected:</span>
                         <button
                           onClick={clearAllSoupTypes}
-                          className="text-xs text-orange-500 hover:text-orange-600 font-medium"
+                          className="text-xs text-orange-600 hover:text-orange-700 font-medium"
                         >
                           Clear All
                         </button>
@@ -343,12 +341,13 @@ export default function RestaurantListingPage({
                         {selectedSoupTypes.map((type) => (
                           <span
                             key={type}
-                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-600 text-white border border-primary-600"
+                            className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-orange-500 text-white border border-orange-500 shadow-sm transition transform hover:scale-105"
                           >
                             {type}
                             <button
                               onClick={() => removeSoupType(type)}
-                              className="ml-2 hover:text-orange-200"
+                              className="ml-2 hover:text-orange-100"
+                              aria-label={`Remove ${type}`}
                             >
                               ✕
                             </button>
@@ -358,57 +357,41 @@ export default function RestaurantListingPage({
                     </div>
                   )}
 
-                  {/* Dropdown Trigger */}
+                  {/* Dropdown Trigger as Search Input (single search bar) */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder={selectedSoupTypes.length > 0 ? `${selectedSoupTypes.length} selected • search to add more...` : 'Select or search soup types...'}
+                      value={soupTypeSearchTerm}
+                      onChange={(e) => setSoupTypeSearchTerm(e.target.value)}
+                      onFocus={() => setIsSoupTypeDropdownOpen(true)}
+                      className="w-full pl-10 pr-10 py-3 bg-white/80 backdrop-blur-md border border-white/60 rounded-xl text-neutral-700 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-orange-300/60"
+                    />
+                    <svg className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
                   <button
+                      type="button"
+                      aria-label="Toggle soup type dropdown"
                     onClick={() => setIsSoupTypeDropdownOpen(!isSoupTypeDropdownOpen)}
-                    className="w-full flex items-center justify-between px-4 py-3 bg-white border border-neutral-300 rounded-lg text-left hover:border-primary-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                  >
-                    <span className={selectedSoupTypes.length > 0 ? 'text-neutral-900' : 'text-neutral-500'}>
-                      {selectedSoupTypes.length > 0 
-                        ? `${selectedSoupTypes.length} soup type${selectedSoupTypes.length > 1 ? 's' : ''} selected`
-                        : 'Select soup types...'
-                      }
-                    </span>
-                    <svg
-                      className={`w-5 h-5 text-neutral-400 transition-transform ${isSoupTypeDropdownOpen ? 'rotate-180' : ''}`}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
                     >
+                      <svg className={`w-5 h-5 transition-transform ${isSoupTypeDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
+                  </div>
 
                   {/* Dropdown Menu */}
                   {isSoupTypeDropdownOpen && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg max-h-96 overflow-hidden">
-                      {/* Search Input */}
-                      <div className="p-3 border-b border-neutral-200">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder="Search soup types..."
-                            value={soupTypeSearchTerm}
-                            onChange={(e) => setSoupTypeSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                          />
-                          <svg
-                            className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                        </div>
-                      </div>
+                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-md border border-white/60 rounded-xl shadow-xl max-h-96 overflow-hidden animate-fade-in">
 
                       {/* Categories and Options */}
                       <div className="max-h-80 overflow-y-auto">
                         {filteredCategories.length > 0 ? (
                           filteredCategories.map((category) => (
                             <div key={category.name}>
-                              <div className="px-3 py-2 bg-neutral-50 text-sm font-medium text-neutral-700 border-b border-neutral-200">
+                              <div className="px-3 py-2 bg-neutral-50 text-sm font-medium text-neutral-700 border-b border-neutral-200/70">
                                 {category.name}
                               </div>
                               {category.types.map((type) => (
@@ -420,7 +403,7 @@ export default function RestaurantListingPage({
                                     type="checkbox"
                                     checked={selectedSoupTypes.includes(type.name)}
                                     onChange={() => toggleSoupType(type.name)}
-                                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded"
+                                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-neutral-300 rounded"
                                   />
                                   <span className="ml-3 text-sm text-neutral-900 flex-1">
                                     {type.name}
@@ -444,16 +427,21 @@ export default function RestaurantListingPage({
               </div>
               
               {/* Rating and Price Range Stacked */}
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 space-y-6">
                 {/* Rating Filter */}
                 <div>
-                  <label className="block text-neutral-700 mb-3 font-medium">Minimum Rating</label>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-neutral-700 font-medium">Minimum Rating</label>
+                    {selectedRatings.length > 0 && (
+                      <span className="text-xs text-orange-600 font-medium">{selectedRatings.length} selected</span>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <button
-                      className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
                         selectedRatings.length === 0
-                          ? 'bg-primary-500 text-white shadow-md'
-                          : 'bg-white text-neutral-700 hover:bg-primary-50 border border-primary-200 hover:shadow-sm'
+                          ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                          : 'bg-white/80 backdrop-blur-sm text-neutral-700 border-neutral-200 hover:bg-orange-50'
                       }`}
                       onClick={() => setSelectedRatings([])}
                     >
@@ -463,10 +451,10 @@ export default function RestaurantListingPage({
                     {ratingOptions.map((option) => (
                       <button
                         key={option.value}
-                        className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                        className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
                           selectedRatings.includes(option.value)
-                            ? 'bg-primary-500 text-white shadow-md'
-                            : 'bg-white text-neutral-700 hover:bg-primary-50 border border-primary-200 hover:shadow-sm'
+                            ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                            : 'bg-white/80 backdrop-blur-sm text-neutral-700 border-neutral-200 hover:bg-orange-50'
                         }`}
                         onClick={() => {
                           if (selectedRatings.includes(option.value)) {
@@ -484,13 +472,18 @@ export default function RestaurantListingPage({
 
                 {/* Price Range Filter */}
                 <div>
-                  <label className="block text-neutral-700 mb-3 font-medium">Price Range</label>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-neutral-700 font-medium">Price Range</label>
+                    {selectedPriceRanges.length > 0 && (
+                      <span className="text-xs text-orange-600 font-medium">{selectedPriceRanges.length} selected</span>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     <button
-                      className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
                         selectedPriceRanges.length === 0
-                          ? 'bg-primary-500 text-white shadow-md'
-                          : 'bg-white text-neutral-700 hover:bg-primary-50 border border-primary-200 hover:shadow-sm'
+                          ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                          : 'bg-white/80 backdrop-blur-sm text-neutral-700 border-neutral-200 hover:bg-orange-50'
                       }`}
                       onClick={() => setSelectedPriceRanges([])}
                     >
@@ -500,10 +493,10 @@ export default function RestaurantListingPage({
                     {priceRangeOptions.map((option) => (
                       <button
                         key={option.value}
-                        className={`px-3 py-2 rounded-full text-sm font-medium transition-colors ${
+                        className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
                           selectedPriceRanges.includes(option.value)
-                            ? 'bg-primary-500 text-white shadow-md'
-                            : 'bg-white text-neutral-700 hover:bg-primary-50 border border-primary-200 hover:shadow-sm'
+                            ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                            : 'bg-white/80 backdrop-blur-sm text-neutral-700 border-neutral-200 hover:bg-orange-50'
                         }`}
                         onClick={() => {
                           if (selectedPriceRanges.includes(option.value)) {
@@ -566,7 +559,7 @@ export default function RestaurantListingPage({
 
         {/* Restaurant Grid */}
         {!isLoading && restaurants.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
+          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
             {restaurants.map((restaurant, index) => (
               <div 
                 key={restaurant.id}
@@ -600,7 +593,7 @@ export default function RestaurantListingPage({
                   {restaurant.price_range && (
                     <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs font-medium shadow-lg border border-white/20 hover-reveal"
                          data-hover-text={`Price range: ${restaurant.price_range}`}>
-                      ${restaurant.price_range}
+                      {restaurant.price_range}
                     </div>
                   )}
                   

@@ -196,7 +196,7 @@ export default async function handler(req, res) {
         address: restaurant.address,
         phone: restaurant.phone,
         website: restaurant.website,
-        price_range: restaurant.price_range
+        price_range: restaurant.price_range || '$$'
       };
     });
     

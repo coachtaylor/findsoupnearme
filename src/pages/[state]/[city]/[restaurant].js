@@ -11,6 +11,13 @@ export default function RestaurantDetail() {
   const [loading, setLoading] = useState(true);
   const [restaurantData, setRestaurantData] = useState(null);
   const [error, setError] = useState(null);
+  const [scrollY, setScrollY] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY || 0);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   
   // Helper functions for data handling
   const getSoupTypes = (restaurant) => {
@@ -109,6 +116,14 @@ export default function RestaurantDetail() {
     if (!restaurant) return '';
     const address = `${restaurant.name}, ${restaurant.address || ''}, ${restaurant.city || ''}, ${restaurant.state || ''}`;
     return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+  };
+
+  const getOrderUrl = (restaurant) => {
+    if (!restaurant) return '#';
+    if (restaurant.order_url) return restaurant.order_url;
+    if (restaurant.website) return restaurant.website;
+    if (restaurant.phone) return `tel:${restaurant.phone}`;
+    return getGoogleMapsUrl(restaurant);
   };
   
   // Function to format a phone number
@@ -216,47 +231,66 @@ export default function RestaurantDetail() {
             </div>
           </div>
           
-          {/* Restaurant Header */}
-          <div className="container mx-auto px-4 py-6 md:py-10">
-            <div className="md:flex md:items-center md:justify-between">
-              <div className="md:flex-1">
-                <h1 className="text-3xl md:text-4xl font-bold text-neutral-900">{restaurant.name}</h1>
-                
+          {/* Hero Header */}
+          <section className="relative">
+            {/* Background Image with Parallax */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div
+                className="w-full h-[42vh] md:h-[52vh]"
+                style={{
+                  transform: `translateY(${Math.min(scrollY * 0.2, 80)}px)`,
+                  transition: 'transform 80ms linear'
+                }}
+              >
+                <img
+                  src={restaurant.exterior_image_url || fallbackImage}
+                  alt={`${restaurant.name} hero`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.target.src = fallbackImage; }}
+                />
+              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
+            </div>
+
+            {/* Content Overlay */}
+            <div className="relative container mx-auto px-4 pt-24 md:pt-28 pb-6 md:pb-10">
+              <div className="max-w-5xl">
+                <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs mb-3">
+                  {restaurant.city}, {restaurant.state}
+                </div>
+                <h1 className="text-3xl md:text-5xl font-extrabold text-white drop-shadow-sm">
+                  {restaurant.name}
+                </h1>
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-white/90">
                 {/* Rating */}
-                <div className="flex items-center mt-2 mb-2">
+                  <div className="flex items-center">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <svg 
                       key={i}
-                      className={`h-5 w-5 ${
-                        i < Math.floor(restaurant.rating || 0)
-                          ? 'text-accent-500 fill-accent-500'
-                          : 'text-neutral-300 fill-neutral-300'
-                      }`}
-                      xmlns="http://www.w3.org/2000/svg" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        className={`h-5 w-5 ${i < Math.floor(restaurant.rating || 0) ? 'text-yellow-400 fill-current' : 'text-white/40'}`}
+                        viewBox="0 0 20 20"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
-                  <span className="ml-2 text-neutral-700">
+                    <span className="ml-2">
                     {restaurant.rating ? restaurant.rating.toFixed(1) : 'No ratings'} 
-                    {restaurant.review_count ? ` (${restaurant.review_count} reviews)` : ''}
+                      {restaurant.review_count ? ` (${restaurant.review_count})` : ''}
                   </span>
                 </div>
-                
-                {/* Address & Info */}
-                <p className="text-neutral-600">
+                  {/* Address */}
+                  <div className="hidden md:block text-sm">
                   {restaurant.address ? `${restaurant.address}, ` : ''}
                   {restaurant.city ? `${restaurant.city}, ` : ''}
                   {restaurant.state || ''} 
                   {restaurant.zip_code ? ` ${restaurant.zip_code}` : ''}
-                </p>
-                
-                {/* Soup Types */}
+                  </div>
+                </div>
+                {/* Soup types */}
                 {soupTypes.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-4">
                     {soupTypes.map((type, index) => (
-                      <span key={index} className="px-3 py-1 bg-primary-50 text-primary-700 rounded-full text-sm">
+                      <span key={index} className="px-3 py-1.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur-md border border-white/30 text-white">
                         {type}
                       </span>
                     ))}
@@ -264,41 +298,30 @@ export default function RestaurantDetail() {
                 )}
               </div>
               
-              {/* Action Buttons */}
-              <div className="mt-6 md:mt-0 flex flex-col sm:flex-row gap-3">
+              {/* Floating FAB */}
+              <div className="fixed bottom-6 right-6 z-40">
                 <a 
-                  href={getGoogleMapsUrl(restaurant)} 
+                  href={getOrderUrl(restaurant)}
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-primary-500 hover:bg-primary-600 text-white shadow-soft hover:shadow-md transition-colors"
+                  className="group inline-flex items-center gap-2 px-5 py-3 rounded-full text-white bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all hover:shadow-xl"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" strokeLinecap="round" strokeLinejoin="round" />
+                    <circle cx="9" cy="19" r="2" />
+                    <circle cx="17" cy="19" r="2" />
                   </svg>
-                  Directions
+                  <span className="font-semibold">Order Now</span>
                 </a>
-                
-                {restaurant.phone && (
-                  <a 
-                    href={`tel:${restaurant.phone}`} 
-                    className="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-white hover:bg-neutral-50 text-neutral-700 border border-neutral-200 shadow-soft transition-colors"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                    {formatPhoneNumber(restaurant.phone) || 'Call'}
-                  </a>
-                )}
               </div>
             </div>
-          </div>
+          </section>
           
-          {/* Restaurant Photos */}
+          {/* Photo Strip */}
           <div className="container mx-auto px-4 py-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Main Photo */}
-              <div className="md:col-span-2 h-64 md:h-96 rounded-2xl overflow-hidden bg-neutral-100">
+              <div className="md:col-span-2 h-64 md:h-96 rounded-2xl overflow-hidden bg-neutral-100 relative">
                 {restaurant.exterior_image_url ? (
                   <img 
                     src={restaurant.exterior_image_url} 
@@ -317,6 +340,7 @@ export default function RestaurantDetail() {
                     />
                   </div>
                 )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
               </div>
               
               {/* Food Photos */}
@@ -344,12 +368,12 @@ export default function RestaurantDetail() {
           </div>
           
           {/* Tabs Navigation */}
-          <div className="container mx-auto px-4 mt-6 border-b border-neutral-200">
-            <div className="flex space-x-8">
+          <div className="container mx-auto px-4 mt-2 md:mt-6 border-b border-neutral-200">
+            <div className="flex gap-6 md:gap-10">
               <button
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-4 px-1 border-b-2 font-semibold text-sm tracking-wide transition-all ${
                   activeTab === 'menu'
-                    ? 'border-primary-500 text-primary-600'
+                    ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-neutral-500 hover:text-neutral-700'
                 }`}
                 onClick={() => setActiveTab('menu')}
@@ -357,9 +381,9 @@ export default function RestaurantDetail() {
                 Soup Menu
               </button>
               <button
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-4 px-1 border-b-2 font-semibold text-sm tracking-wide transition-all ${
                   activeTab === 'info'
-                    ? 'border-primary-500 text-primary-600'
+                    ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-neutral-500 hover:text-neutral-700'
                 }`}
                 onClick={() => setActiveTab('info')}
@@ -367,9 +391,9 @@ export default function RestaurantDetail() {
                 Restaurant Info
               </button>
               <button
-                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`py-4 px-1 border-b-2 font-semibold text-sm tracking-wide transition-all ${
                   activeTab === 'reviews'
-                    ? 'border-primary-500 text-primary-600'
+                    ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-neutral-500 hover:text-neutral-700'
                 }`}
                 onClick={() => setActiveTab('reviews')}
@@ -389,10 +413,10 @@ export default function RestaurantDetail() {
                 {restaurant.soups && restaurant.soups.length > 0 ? (
                   <div className="grid gap-6">
                     {restaurant.soups.map((soup) => (
-                      <div key={soup.id} className="bg-white rounded-xl shadow-soft p-6 flex flex-col md:flex-row">
+                      <div key={soup.id} className="bg-white/80 backdrop-blur-sm border border-white/60 rounded-2xl shadow-sm p-6 flex flex-col md:flex-row hover:shadow-md transition-shadow">
                         {/* Soup Image (if available) */}
                         {soup.image_url && (
-                          <div className="md:w-1/4 h-48 md:h-auto rounded-lg overflow-hidden bg-neutral-100 mb-4 md:mb-0 md:mr-6">
+                          <div className="md:w-1/4 h-48 md:h-auto rounded-xl overflow-hidden bg-neutral-100 mb-4 md:mb-0 md:mr-6">
                             <img 
                               src={soup.image_url} 
                               alt={soup.name} 
@@ -407,32 +431,32 @@ export default function RestaurantDetail() {
                         {/* Soup Details */}
                         <div className={soup.image_url ? "md:w-3/4" : "w-full"}>
                           <div className="flex flex-wrap items-start justify-between mb-2">
-                            <h3 className="text-xl font-bold text-neutral-900">{soup.name}</h3>
+                            <h3 className="text-xl md:text-2xl font-bold text-neutral-900">{soup.name}</h3>
                             {soup.price && (
-                              <span className="text-lg font-semibold text-neutral-900">${parseFloat(soup.price).toFixed(2)}</span>
+                              <span className="text-lg md:text-xl font-semibold text-neutral-900">${parseFloat(soup.price).toFixed(2)}</span>
                             )}
                           </div>
                           
                           {soup.description && (
-                            <p className="text-neutral-600 mb-3">{soup.description}</p>
+                            <p className="text-neutral-700 leading-relaxed mb-3">{soup.description}</p>
                           )}
                           
                           {/* Soup Tags */}
                           <div className="flex flex-wrap gap-2 mt-2">
                             {soup.soup_type && (
-                              <span className="px-2 py-1 bg-primary-50 text-primary-700 rounded-full text-xs">
+                              <span className="px-2.5 py-1 bg-orange-50 text-orange-700 border border-orange-200 rounded-full text-xs font-medium">
                                 {soup.soup_type}
                               </span>
                             )}
                             
                             {soup.dietary_info && Array.isArray(soup.dietary_info) && soup.dietary_info.map((diet, index) => (
-                              <span key={index} className="px-2 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs">
+                              <span key={index} className="px-2.5 py-1 bg-neutral-50 text-neutral-700 border border-neutral-200 rounded-full text-xs font-medium">
                                 {diet}
                               </span>
                             ))}
                             
                             {soup.is_seasonal && (
-                              <span className="px-2 py-1 bg-accent-50 text-accent-700 rounded-full text-xs">
+                              <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full text-xs font-medium">
                                 Seasonal
                               </span>
                             )}
@@ -542,15 +566,20 @@ export default function RestaurantDetail() {
                     {/* Map */}
                     <div>
                       <h3 className="text-lg font-semibold text-neutral-900 mb-2">Location</h3>
-                      <div className="h-60 bg-neutral-100 rounded-xl overflow-hidden">
+                      <div className="relative h-60 bg-neutral-100 rounded-2xl overflow-hidden border border-white/60 shadow-sm">
                         <a 
                           href={getGoogleMapsUrl(restaurant)} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="w-full h-full flex items-center justify-center text-primary-600 hover:text-primary-700"
+                          className="relative w-full h-full flex items-center justify-center text-orange-600 hover:text-orange-700"
                         >
-                          <span>Open in Google Maps</span>
+                          <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 1118 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                          <span className="font-medium">Open in Google Maps</span>
                         </a>
+                        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/5 to-transparent" />
                       </div>
                     </div>
                   </div>
@@ -563,7 +592,7 @@ export default function RestaurantDetail() {
               <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold text-neutral-900">Reviews</h2>
-                  <button className="px-4 py-2 bg-primary-500 hover:bg-primary-600 text-white rounded-lg shadow-soft hover:shadow-md transition-colors">
+                  <button className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl shadow-sm hover:shadow-md transition-colors">
                     Write a Review
                   </button>
                 </div>
@@ -571,19 +600,17 @@ export default function RestaurantDetail() {
                 {restaurant.reviews && restaurant.reviews.length > 0 ? (
                   <div className="space-y-6">
                    {restaurant.reviews.map((review) => (
-                      <div key={review.id} className="bg-white rounded-xl shadow-soft p-6">
+                      <div key={review.id} className="bg-white/80 backdrop-blur-sm border border-white/60 rounded-2xl shadow-sm p-6">
                         <div className="flex items-start justify-between mb-4">
                           <div>
                             <div className="flex items-center mb-1">
                               {/* User icon */}
-                              <div className="w-10 h-10 rounded-full bg-neutral-200 flex items-center justify-center mr-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
+                              <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-700 flex items-center justify-center mr-3 font-semibold">
+                                {review.author?.[0]?.toUpperCase() || 'U'}
                               </div>
                               
                               <div>
-                                <p className="font-medium text-neutral-900">User</p>
+                                <p className="font-medium text-neutral-900">{review.author || 'User'}</p>
                                 <p className="text-sm text-neutral-500">
                                   {review.created_at ? new Date(review.created_at).toLocaleDateString() : 'Recent'}
                                 </p>
@@ -596,11 +623,7 @@ export default function RestaurantDetail() {
                             {Array.from({ length: 5 }).map((_, i) => (
                               <svg 
                                 key={i}
-                                className={`h-5 w-5 ${
-                                  i < (review.rating || 0)
-                                    ? 'text-accent-500 fill-accent-500'
-                                    : 'text-neutral-300 fill-neutral-300'
-                                }`}
+                                className={`h-5 w-5 ${i < (review.rating || 0) ? 'text-yellow-400 fill-current' : 'text-neutral-300'}`}
                                 xmlns="http://www.w3.org/2000/svg" 
                                 viewBox="0 0 24 24"
                               >
@@ -611,7 +634,7 @@ export default function RestaurantDetail() {
                         </div>
                         
                         {/* Review Content */}
-                        <p className="text-neutral-700 mb-4">{review.content || 'Great restaurant!'}</p>
+                        <p className="text-neutral-700 leading-relaxed mb-4">{review.content || 'Great restaurant!'}</p>
                         
                         {/* Review Images */}
                         {review.images && review.images.length > 0 && (
@@ -652,7 +675,7 @@ export default function RestaurantDetail() {
                     </div>
                     <h3 className="text-lg font-semibold text-neutral-900 mb-2">No Reviews Yet</h3>
                     <p className="text-neutral-600 mb-6">Be the first to review this restaurant!</p>
-                    <button className="px-6 py-3 bg-primary-500 hover:bg-primary-600 text-white rounded-xl shadow-soft hover:shadow-md transition-colors">
+                    <button className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl shadow-sm hover:shadow-md transition-colors">
                       Write a Review
                     </button>
                   </div>
