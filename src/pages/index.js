@@ -2,6 +2,8 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+const SearchBar = dynamic(() => import('../components/search/SearchBar'), { ssr: false });
 import { useRouter } from 'next/router';
 import useRestaurants from '../hooks/useRestaurants';
 import RestaurantCard from '../components/restaurant/RestaurantCard';
@@ -45,6 +47,8 @@ export default function Home() {
   
   // Micro-interaction utility functions
   const createRippleEffect = (event, element) => {
+    if (typeof document === 'undefined') return;
+    
     const rect = element.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height);
     const x = event.clientX - rect.left - size / 2;
@@ -77,6 +81,8 @@ export default function Home() {
   };
   
   const handleMagneticHover = (event, element) => {
+    if (typeof window === 'undefined') return;
+    
     const rect = element.getBoundingClientRect();
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
@@ -119,8 +125,11 @@ export default function Home() {
     }, 1500);
   };
   
-  // Check if device is mobile
+  // Client-side initialization and mobile detection
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
@@ -134,16 +143,18 @@ export default function Home() {
   
   // Page load animation trigger
   useEffect(() => {
+    if (!isClient) return;
+    
     const timer = setTimeout(() => {
       setIsLoaded(true);
     }, 100);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [isClient]);
   
   // Typing effect for subheading
   useEffect(() => {
-    if (!isLoaded) return;
+    if (!isLoaded || !isClient) return;
     
     if (typingIndex < subheadingText.length) {
       const timer = setTimeout(() => {
@@ -153,11 +164,11 @@ export default function Home() {
       
       return () => clearTimeout(timer);
     }
-  }, [isLoaded, typingIndex, subheadingText]);
+  }, [isLoaded, typingIndex, subheadingText, isClient]);
   
   // Enhanced mouse movement parallax effect (disabled on mobile for performance)
   useEffect(() => {
-    if (isMobile || !isClient) return;
+    if (isMobile || !isClient || typeof window === 'undefined') return;
     
     let animationFrameId;
     let isMoving = false;
@@ -221,7 +232,7 @@ export default function Home() {
   
   // Scroll position tracking for wave parallax
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || typeof window === 'undefined') return;
     
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -233,7 +244,9 @@ export default function Home() {
       setIsScrolling(true);
       
       // Clear scrolling state after scroll ends
-      clearTimeout(window.scrollTimeout);
+      if (window.scrollTimeout) {
+        clearTimeout(window.scrollTimeout);
+      }
       window.scrollTimeout = setTimeout(() => {
         setIsScrolling(false);
       }, 150);
@@ -243,13 +256,15 @@ export default function Home() {
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      clearTimeout(window.scrollTimeout);
+      if (window.scrollTimeout) {
+        clearTimeout(window.scrollTimeout);
+      }
     };
   }, [isClient]);
   
   // Intersection Observer for scroll-triggered animations
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient || typeof window === 'undefined') return;
     
     const observerOptions = {
       threshold: 0.1,
@@ -435,22 +450,23 @@ export default function Home() {
   
   // Detect user's location
   const detectLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          // Could integrate with a geocoding service to get city name
-          // For now, just show coordinates in the search input
-          setSearchQuery(`Near Me (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`);
-        },
-        (error) => {
-          console.error("Error getting location:", error);
-          alert("Could not detect your location. Please enter it manually.");
-        }
-      );
-    } else {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
       alert("Geolocation is not supported by your browser.");
+      return;
     }
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        // Could integrate with a geocoding service to get city name
+        // For now, just show coordinates in the search input
+        setSearchQuery(`Near Me (${latitude.toFixed(2)}, ${longitude.toFixed(2)})`);
+      },
+      (error) => {
+        console.error("Error getting location:", error);
+        alert("Could not detect your location. Please enter it manually.");
+      }
+    );
   };
   
   // Soup type quick filters
@@ -506,15 +522,22 @@ export default function Home() {
       <div className="fixed top-0 left-0 right-0 z-40 h-1 bg-gradient-to-r from-orange-400 to-orange-600 transform origin-left transition-transform duration-300"
            style={{ transform: `scaleX(${scrollProgress})` }}></div>
       
-      {/* Organic Blob Shapes */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+      {/* Organic Blob Shapes (hidden on mobile) */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden hidden md:block">
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-orange-200/20 rounded-full blur-3xl animate-blob"></div>
         <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-orange-300/15 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
         <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-orange-100/25 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
       </div>
       
-      {/* Modern Hero Section with Split Layout */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-50">
+      {/* Compact Mobile Search Header */}
+      <div className="md:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-neutral-200" suppressHydrationWarning>
+        <div className="container mx-auto px-4 py-3">
+          <SearchBar className="w-full" placeholder="Search soup or city..." />
+        </div>
+      </div>
+
+      {/* Modern Hero Section with Split Layout (hidden on mobile) */}
+      <section ref={heroRef} className="relative min-h-screen items-center overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-50 hidden md:flex" suppressHydrationWarning>
         {/* Animated Background Gradients */}
         <div className="absolute inset-0">
           {/* Primary gradient background */}
@@ -557,32 +580,6 @@ export default function Home() {
               transform: 'rotate(45deg)'
             }}
           ></div>
-          
-          {/* Floating spoon element */}
-          <div 
-            className="absolute top-1/2 left-1/4 w-8 h-8 opacity-30 animate-float"
-            style={{
-              animationDelay: '1s',
-              animationDuration: '5s'
-            }}
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-orange-400">
-              <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2M21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4H5V21H19V9Z"/>
-            </svg>
-          </div>
-          
-          {/* Floating bowl element */}
-          <div 
-            className="absolute bottom-1/3 right-1/4 w-10 h-10 opacity-40 animate-float"
-            style={{
-              animationDelay: '3s',
-              animationDuration: '6s'
-            }}
-          >
-            <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full text-orange-500">
-              <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2M21 9V7L15 1H5C3.89 1 3 1.89 3 3V21C3 22.11 3.89 23 5 23H19C20.11 23 21 22.11 21 21V9M19 9H14V4H5V21H19V9Z"/>
-            </svg>
-          </div>
         </div>
 
         {/* Steam Animation Elements */}
@@ -595,7 +592,7 @@ export default function Home() {
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-screen py-20">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 items-center min-h-screen py-20">
             
             {/* Left Content Section */}
             <div className="space-y-8">
@@ -692,8 +689,8 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Right Image Section */}
-            <div className="relative lg:flex lg:justify-center lg:items-center">
+            {/* Right Image Section (hide if it would wrap) */}
+            <div className="relative hidden xl:flex xl:justify-center xl:items-center">
               {/* Main Food Image */}
               <div className="relative w-full max-w-lg mx-auto">
                 {/* Image Container */}
@@ -757,7 +754,7 @@ export default function Home() {
       <section 
         ref={featuredSectionRef}
         className={`py-16 relative overflow-hidden transition-all duration-1000 ${
-          visibleSections.featured ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          isClient && visibleSections.featured ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
         style={{
           '--scroll-progress': scrollProgress,
@@ -991,15 +988,15 @@ export default function Home() {
         </div>
       </section>
       
-      {/* Interactive City Section with Modern Design */}
+      {/* Cities Section */}
       <section 
         ref={citySectionRef}
-        className={`py-16 relative overflow-hidden transition-all duration-1000 ${
-          visibleSections.city ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        className={`py-20 relative overflow-hidden transition-all duration-1000 ${
+          isClient && visibleSections.city ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
         style={{
           '--scroll-progress': scrollProgress,
-          '--section-depth': Math.max(0, Math.min(1, (scrollY - 1200) / 300))
+          '--section-depth': Math.max(0, Math.min(1, (scrollY - 1200) / 200))
         }}
       >
         {/* Geometric Pattern Background */}
@@ -1076,9 +1073,11 @@ export default function Home() {
               <button 
                 className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center border border-orange-200/50 hover:scale-110 transition-transform duration-300 cursor-pointer opacity-60 hover:opacity-100"
                 onClick={() => {
-                  const container = document.querySelector('.city-scroll-container');
-                  if (container) {
-                    container.scrollBy({ left: -400, behavior: 'smooth' });
+                  if (typeof document !== 'undefined') {
+                    const container = document.querySelector('.city-scroll-container');
+                    if (container) {
+                      container.scrollBy({ left: -400, behavior: 'smooth' });
+                    }
                   }
                 }}
               >
@@ -1092,9 +1091,11 @@ export default function Home() {
               <button 
                 className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center border border-orange-200/50 hover:scale-110 transition-transform duration-300 cursor-pointer opacity-60 hover:opacity-100"
                 onClick={() => {
-                  const container = document.querySelector('.city-scroll-container');
-                  if (container) {
-                    container.scrollBy({ left: 400, behavior: 'smooth' });
+                  if (typeof document !== 'undefined') {
+                    const container = document.querySelector('.city-scroll-container');
+                    if (container) {
+                      container.scrollBy({ left: 400, behavior: 'smooth' });
+                    }
                   }
                 }}
               >
@@ -1115,8 +1116,8 @@ export default function Home() {
                       width: '320px',
                       height: '400px',
                       animationDelay: `${index * 150}ms`,
-                      transform: `translateX(${visibleSections.city ? 0 : '50px'})`,
-                      opacity: visibleSections.city ? 1 : 0,
+                      transform: `translateX(${isClient && visibleSections.city ? 0 : '50px'})`,
+                      opacity: isClient && visibleSections.city ? 1 : 0,
                       transition: `all 0.8s cubic-bezier(0.4, 0, 0.2, 1) ${index * 100}ms`
                     }}
                     onClick={(e) => {
@@ -1245,12 +1246,12 @@ export default function Home() {
       {/* Discover Section */}
       <section 
         ref={discoverSectionRef}
-        className={`py-16 relative overflow-hidden transition-all duration-1000 ${
-          visibleSections.discover ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+        className={`py-20 relative overflow-hidden transition-all duration-1000 ${
+          isClient && visibleSections.discover ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
         style={{
           '--scroll-progress': scrollProgress,
-          '--section-depth': Math.max(0, Math.min(1, (scrollY - 1800) / 300))
+          '--section-depth': Math.max(0, Math.min(1, (scrollY - 1800) / 200))
         }}
       >
         {/* Geometric Pattern Background */}

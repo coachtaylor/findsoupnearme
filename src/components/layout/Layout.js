@@ -78,7 +78,7 @@ export default function Layout({ children, title, description }) {
               </Link>
 
               {/* Desktop Navigation */}
-              <nav className="hidden md:flex items-center gap-2 lg:gap-6">
+              <nav className="hidden lg:flex items-center gap-2 xl:gap-6">
                 <Link
                   href="/restaurants"
                   className="relative px-2 py-2 text-neutral-700 hover:text-orange-600 transition-colors group"
@@ -110,7 +110,7 @@ export default function Layout({ children, title, description }) {
               </nav>
 
               {/* Right-side actions */}
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden lg:flex items-center gap-2">
                 {/* Quick Search - subtle, visible when scrolled */}
                 <form action="/restaurants" method="get" className={`relative transition-opacity ${isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'} mr-2`}>
                   <input
@@ -158,7 +158,7 @@ export default function Layout({ children, title, description }) {
 
               {/* Mobile Menu Button */}
               <button
-                className="md:hidden relative inline-flex items-center justify-center w-11 h-11 rounded-xl border border-white/60 bg-white/70 backdrop-blur-xl shadow-sm hover:shadow-md transition-all"
+                className="lg:hidden relative inline-flex items-center justify-center w-11 h-11 rounded-xl border border-white/60 bg-white/70 backdrop-blur-xl shadow-sm hover:shadow-md transition-all"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Toggle menu"
               >
@@ -170,7 +170,7 @@ export default function Layout({ children, title, description }) {
           </div>
 
           {/* Mobile Menu Panel */}
-          <div className={`md:hidden overflow-hidden transition-all duration-300 ${isMobileMenuOpen ? 'max-h-96' : 'max-h-0'}`}>
+          <div className={`lg:hidden overflow-hidden transition-all duration-300 ${isMobileMenuOpen ? 'max-h-96' : 'max-h-0'}`}>
             <div className="px-4 pb-4 pt-2">
               <nav className="flex flex-col">
                 <Link href="/restaurants" className="px-4 py-3 rounded-xl text-neutral-800 hover:text-orange-600 hover:bg-orange-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>

@@ -34,7 +34,7 @@ export default function RestaurantListingPage({
   const soupTypeDropdownRef = useRef(null);
   
   // Fetch restaurants with the given filters
-  const { restaurants, loading, error, totalCount } = useRestaurants({
+  const { restaurants, loading, error, totalCount, refetch } = useRestaurants({
     city,
     state,
     limit: 12,
@@ -43,6 +43,58 @@ export default function RestaurantListingPage({
     priceRange: selectedPriceRanges.length > 0 ? selectedPriceRanges : null,
     page: currentPage
   });
+  
+  // Pull-to-refresh (mobile)
+  useEffect(() => {
+    let startY = 0;
+    let isPulling = false;
+    const threshold = 60;
+    const el = typeof window !== 'undefined' ? window : null;
+    if (!el) return;
+    
+    const onTouchStart = (e) => {
+      if (window.scrollY === 0) {
+        startY = e.touches[0].clientY;
+        isPulling = true;
+      }
+    };
+    const onTouchMove = (e) => {
+      if (!isPulling) return;
+      const delta = e.touches[0].clientY - startY;
+      if (delta > threshold) {
+        isPulling = false;
+        refetch();
+      }
+    };
+    const onTouchEnd = () => {
+      isPulling = false;
+    };
+    
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: true });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [refetch]);
+
+  // IntersectionObserver for scroll reveals
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const elements = document.querySelectorAll('.reveal-on-scroll');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -10% 0px' });
+    elements.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, [restaurants]);
   
   // Show loading state only when actually loading
   const isLoading = loading;
@@ -563,7 +615,7 @@ export default function RestaurantListingPage({
             {restaurants.map((restaurant, index) => (
               <div 
                 key={restaurant.id}
-                className="glassmorphism-card group stagger-animate h-full card-interactive"
+                className="glassmorphism-card group stagger-animate h-full card-interactive reveal-on-scroll will-change-transform will-change-opacity"
                 style={{
                   animationDelay: `${index * 150}ms`,
                   transform: `translateY(${index * 20}px)`

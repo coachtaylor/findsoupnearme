@@ -22,14 +22,14 @@ export default function MobileFilterDrawer({
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}></div>
       
-      {/* Drawer */}
-      <div className="absolute right-0 top-0 h-full w-80 bg-white/85 backdrop-blur-lg border-l border-white/60 shadow-2xl rounded-l-2xl">
+      {/* Bottom Sheet */}
+      <div className="absolute left-0 right-0 bottom-0 max-h-[80%] bg-white/90 backdrop-blur-lg border-t border-white/60 shadow-2xl rounded-t-2xl animate-slide-in-up">
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-white/60">
             <h2 className="text-lg font-semibold text-neutral-900">Filter Restaurants</h2>
-            <button onClick={onClose} className="p-2 rounded-xl text-neutral-600 hover:bg-white/60">
-              <XMarkIcon className="w-5 h-5" />
+            <button onClick={onClose} className="p-3 rounded-xl text-neutral-600 hover:bg-white/60 min-h-[44px] min-w-[44px]">
+              <XMarkIcon className="w-6 h-6" />
             </button>
           </div>
           
@@ -40,7 +40,7 @@ export default function MobileFilterDrawer({
               <h3 className="font-medium text-neutral-800 mb-3">Soup Type</h3>
               <div className="grid grid-cols-2 gap-2">
                 <button 
-                  className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
+                  className={`px-4 py-3 rounded-full text-sm font-medium border transition-all min-h-[44px] ${
                     selectedSoupTypes.length === 0 
                       ? 'bg-orange-500 text-white border-orange-500 shadow-sm' 
                       : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
@@ -53,7 +53,7 @@ export default function MobileFilterDrawer({
                 {soupTypes.map((type) => (
                   <button
                     key={type}
-                    className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
+                    className={`px-4 py-3 rounded-full text-sm font-medium border transition-all min-h-[44px] ${
                       selectedSoupTypes.includes(type)
                         ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
                         : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
@@ -77,7 +77,7 @@ export default function MobileFilterDrawer({
               <h3 className="font-medium text-neutral-800 mb-3">Minimum Rating</h3>
               <div className="grid grid-cols-3 gap-2">
                 <button 
-                  className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
+                  className={`px-4 py-3 rounded-full text-sm font-medium border transition-all min-h-[44px] ${
                     selectedRatings.length === 0 
                       ? 'bg-orange-500 text-white border-orange-500 shadow-sm' 
                       : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
@@ -90,7 +90,7 @@ export default function MobileFilterDrawer({
                 {ratingOptions.map((option) => (
                   <button
                     key={option.value}
-                    className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
+                    className={`px-4 py-3 rounded-full text-sm font-medium border transition-all min-h-[44px] ${
                       selectedRatings.includes(option.value)
                         ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
                         : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
@@ -114,7 +114,7 @@ export default function MobileFilterDrawer({
               <h3 className="font-medium text-neutral-800 mb-3">Price Range</h3>
               <div className="grid grid-cols-4 gap-2">
                 <button 
-                  className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
+                  className={`px-4 py-3 rounded-full text-sm font-medium border transition-all min-h-[44px] ${
                     selectedPriceRanges.length === 0 
                       ? 'bg-orange-500 text-white border-orange-500 shadow-sm' 
                       : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
@@ -127,7 +127,7 @@ export default function MobileFilterDrawer({
                 {priceRangeOptions.map((option) => (
                   <button
                     key={option.value}
-                    className={`px-3 py-2 rounded-full text-sm font-medium border transition-all ${
+                    className={`px-4 py-3 rounded-full text-sm font-medium border transition-all min-h-[44px] ${
                       selectedPriceRanges.includes(option.value)
                         ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
                         : 'bg-white/80 backdrop-blur-sm border-neutral-200 text-neutral-700 hover:bg-orange-50'
@@ -152,7 +152,7 @@ export default function MobileFilterDrawer({
           <div className="p-4 border-t border-white/60 bg-white/70 backdrop-blur-md">
             <button 
               onClick={onClose} 
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-3 rounded-xl shadow-sm transition-colors"
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-3 rounded-xl shadow-sm transition-colors min-h-[44px]"
             >
               Apply Filters
             </button>

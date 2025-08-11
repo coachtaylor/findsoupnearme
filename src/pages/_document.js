@@ -7,7 +7,11 @@ export default function Document() {
       <Head>
         {/* Preconnect to external domains for faster loading */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://maps.googleapis.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://lh3.googleusercontent.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://lh5.googleusercontent.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="//images.unsplash.com" />
         <link rel="dns-prefetch" href="//maps.googleapis.com" />
         <link rel="dns-prefetch" href="//lh3.googleusercontent.com" />

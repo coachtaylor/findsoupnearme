@@ -15,12 +15,11 @@ export default function useRestaurants({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
+  const [refreshIndex, setRefreshIndex] = useState(0);
   
   useEffect(() => {
     const fetchRestaurants = async () => {
-      console.log('Fetching restaurants with params:', { 
-        city, state, limit, featured, soupType, rating, priceRange, page 
-      });
+      // Fetch restaurants with current params
       
       setLoading(true);
       setError(null);
@@ -68,14 +67,12 @@ export default function useRestaurants({
         }
         
         const data = await response.json();
-        console.log('API response data:', data);
         
         if (data.restaurants && Array.isArray(data.restaurants)) {
           const normalized = data.restaurants.map((r) => ({
             ...r,
             price_range: r.price_range || '$$',
           }));
-          console.log('Sample normalized restaurant:', normalized[0]);
           setRestaurants(normalized);
           setTotalCount(data.totalCount || data.restaurants.length);
           setError(null);
@@ -95,7 +92,9 @@ export default function useRestaurants({
     };
     
     fetchRestaurants();
-  }, [city, state, limit, featured, soupType, rating, priceRange, page]);
+  }, [city, state, limit, featured, soupType, rating, priceRange, page, refreshIndex]);
   
-  return { restaurants, loading, error, totalCount };
+  const refetch = () => setRefreshIndex((i) => i + 1);
+  
+  return { restaurants, loading, error, totalCount, refetch };
 }
