@@ -39,25 +39,20 @@ export default function Layout({ children, title, description }) {
           className={
             `rounded-2xl border shadow-lg backdrop-blur-xl bg-white/75 ` +
             `transition-all duration-300 ` +
-            `${isScrolled ? 'py-2 border-white/50 shadow-md bg-white/70' : 'py-3 md:py-4 border-white/60'}`
+            `${isScrolled ? 'py-1 border-white/50 shadow-md bg-white/70' : 'py-2 md:py-3 border-white/60'}`
           }
         >
           <div className="px-4">
             <div className="flex items-center justify-between">
               {/* Logo */}
               <Link href="/" className="flex items-center group" aria-label="Go to homepage">
-                <span className="relative inline-flex items-center justify-center w-20 h-20 mr-3">
+                <span className="relative inline-flex items-center justify-center w-16 h-16 mr-3">
                   <img 
                     src="/images/soup-logo.svg" 
                     alt="Soup bowl logo" 
-                    className="w-16 h-16"
+                    className="w-12 h-12"
                     aria-hidden="true"
                   />
-                </span>
-                <span className={`font-extrabold tracking-tight transition-all ${isScrolled ? 'text-2xl' : 'text-3xl'}`}>
-                  <span className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">Find</span>
-                  <span className="text-neutral-900">Soup</span>
-                  <span className="bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">NearMe</span>
                 </span>
               </Link>
 
@@ -146,9 +141,11 @@ export default function Layout({ children, title, description }) {
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label="Toggle menu"
               >
-                <span className={`block w-5 h-0.5 bg-neutral-800 transition-transform ${isMobileMenuOpen ? 'rotate-45 translate-y-0.5' : ''}`}></span>
-                <span className={`block w-5 h-0.5 bg-neutral-800 transition-opacity ${isMobileMenuOpen ? 'opacity-0' : 'opacity-100'} my-1`}></span>
-                <span className={`block w-5 h-0.5 bg-neutral-800 transition-transform ${isMobileMenuOpen ? '-rotate-45 -translate-y-0.5' : ''}`}></span>
+                <div className="flex flex-col items-center justify-center space-y-1">
+                  <span className="block w-5 h-0.5 bg-neutral-800 rounded-full transition-all duration-200"></span>
+                  <span className="block w-5 h-0.5 bg-neutral-800 rounded-full transition-all duration-200"></span>
+                  <span className="block w-5 h-0.5 bg-neutral-800 rounded-full transition-all duration-200"></span>
+                </div>
               </button>
             </div>
           </div>

@@ -530,26 +530,8 @@ export default function Home() {
       </div>
       
       {/* Compact Mobile Search Header */}
-      <div className="md:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-neutral-200" suppressHydrationWarning>
+      <div className="lg:hidden sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-neutral-200" suppressHydrationWarning>
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between mb-3">
-            {/* Mobile Logo */}
-            <Link href="/" className="flex items-center">
-              <span className="relative inline-flex items-center justify-center w-18 h-18 mr-2">
-                <img 
-                  src="/images/soup-logo.svg" 
-                  alt="Soup bowl logo" 
-                  className="w-14 h-14"
-                  aria-hidden="true"
-                />
-              </span>
-              <span className="font-bold text-lg">
-                <span className="text-orange-600">Find</span>
-                <span className="text-neutral-900">Soup</span>
-                <span className="text-orange-500">NearMe</span>
-              </span>
-            </Link>
-          </div>
           <SearchBar className="w-full" placeholder="Search soup or city..." />
         </div>
       </div>
