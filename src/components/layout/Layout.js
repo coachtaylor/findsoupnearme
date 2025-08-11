@@ -23,7 +23,7 @@ export default function Layout({ children, title, description }) {
       <Head>
         <title>{title ? `${title} | FindSoupNearMe` : 'FindSoupNearMe - Find The Best Soup Near You'}</title>
         <meta name="description" content={description || 'Discover the best soup restaurants near you. Find ramen, pho, chowder, and more at top-rated restaurants.'} />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/images/soup-logo.svg" type="image/svg+xml" />
       </Head>
 
       {/* Floating Glass Navigation */}
@@ -46,29 +46,13 @@ export default function Layout({ children, title, description }) {
             <div className="flex items-center justify-between">
               {/* Logo */}
               <Link href="/" className="flex items-center group" aria-label="Go to homepage">
-                <span className="relative inline-flex items-center justify-center w-10 h-10 mr-3 rounded-xl bg-gradient-to-br from-orange-300 to-orange-400 text-white shadow-sm">
-                  <svg
-                    viewBox="0 0 48 48"
-                    className="w-6 h-6"
+                <span className="relative inline-flex items-center justify-center w-20 h-20 mr-3">
+                  <img 
+                    src="/images/soup-logo.svg" 
+                    alt="Soup bowl logo" 
+                    className="w-16 h-16"
                     aria-hidden="true"
-                    focusable="false"
-                  >
-                    <defs>
-                      <linearGradient id="logoSoupGrad" x1="0" y1="0" x2="1" y2="1">
-                        <stop offset="0%" stopColor="#fb923c" />
-                        <stop offset="100%" stopColor="#f97316" />
-                      </linearGradient>
-                    </defs>
-                    {/* steam */}
-                    <path d="M16 10c2 2 0 4-2 6M24 8c2 2 0 4-2 6M32 10c2 2 0 4-2 6"
-                      fill="none" stroke="url(#logoSoupGrad)" strokeWidth="2.2" strokeLinecap="round"
-                      className="opacity-80" />
-                    {/* bowl */}
-                    <path d="M10 22c0 7 7 12 14 12s14-5 14-12"
-                      fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-                    {/* rim */}
-                    <path d="M8 22h32" stroke="url(#logoSoupGrad)" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
+                  />
                 </span>
                 <span className={`font-extrabold tracking-tight transition-all ${isScrolled ? 'text-2xl' : 'text-3xl'}`}>
                   <span className="bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">Find</span>
