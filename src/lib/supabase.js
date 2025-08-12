@@ -84,6 +84,7 @@ function createDummyClient() {
 export async function getRestaurants({
   city = null,
   state = null,
+  location = null,
   soupType = null,
   rating = null,
   priceRange = null,
@@ -95,63 +96,118 @@ export async function getRestaurants({
 } = {}) {
   try {
     console.log('Fetching restaurants with params:', { 
-      city, state, soupType, rating, priceRange, limit, offset, sortBy, sortOrder, featured 
+      city, state, location, soupType, rating, priceRange, limit, offset, sortBy, sortOrder, featured 
     });
     
-    // Start building the query
-    let query = supabase
+    // Build the base query for both count and data
+    let baseQuery = supabase
+      .from('restaurants')
+      .select('id', { count: 'exact' });
+    
+    // Apply filters to base query
+    if (city) {
+      baseQuery = baseQuery.eq('city', city);
+    }
+    
+    if (state) {
+      baseQuery = baseQuery.eq('state', state);
+    }
+    
+    // Handle location search - search across multiple fields
+    if (location) {
+      const locationLower = location.toLowerCase();
+      baseQuery = baseQuery.or(
+        `city.ilike.%${locationLower}%,state.ilike.%${locationLower}%,name.ilike.%${locationLower}%`
+      );
+    }
+    
+    if (rating) {
+      baseQuery = baseQuery.gte('rating', rating);
+    }
+    
+    if (priceRange) {
+      if (Array.isArray(priceRange)) {
+        baseQuery = baseQuery.in('price_range', priceRange);
+      } else {
+        baseQuery = baseQuery.eq('price_range', priceRange);
+      }
+    }
+    
+    if (featured) {
+      baseQuery = baseQuery.eq('is_featured', true);
+    }
+    
+    // Get total count
+    const { count, error: countError } = await baseQuery;
+    
+    if (countError) {
+      console.error('Error getting count from Supabase:', countError);
+      return { data: [], totalCount: 0 };
+    }
+    
+    // Build the data query with limit and offset
+    let dataQuery = supabase
       .from('restaurants')
       .select(`
         *,
         soups (*)
       `)
-      .order(sortBy, { ascending: sortOrder === 'asc' })
-      .limit(limit);
+      .order(sortBy, { ascending: sortOrder === 'asc' });
     
-    // Add range/offset for pagination
-    if (offset > 0) {
-      query = query.range(offset, offset + limit - 1);
-    }
-
-    // Apply filters if provided
+    // Apply the same filters to data query
     if (city) {
-      query = query.eq('city', city);
+      dataQuery = dataQuery.eq('city', city);
     }
     
     if (state) {
-      query = query.eq('state', state);
+      dataQuery = dataQuery.eq('state', state);
+    }
+    
+    if (location) {
+      const locationLower = location.toLowerCase();
+      dataQuery = dataQuery.or(
+        `city.ilike.%${locationLower}%,state.ilike.%${locationLower}%,name.ilike.%${locationLower}%`
+      );
     }
     
     if (rating) {
-      query = query.gte('rating', rating);
+      dataQuery = dataQuery.gte('rating', rating);
     }
     
     if (priceRange) {
       if (Array.isArray(priceRange)) {
-        query = query.in('price_range', priceRange);
+        dataQuery = dataQuery.in('price_range', priceRange);
       } else {
-        query = query.eq('price_range', priceRange);
+        dataQuery = dataQuery.eq('price_range', priceRange);
       }
     }
     
     if (featured) {
-      query = query.eq('is_featured', true);
-    }
-
-    // Execute the query
-    const { data, error } = await query;
-    
-    if (error) {
-      console.error('Error fetching restaurants from Supabase:', error);
-      // Return empty array on error
-      return [];
+      dataQuery = dataQuery.eq('is_featured', true);
     }
     
-    console.log(`Successfully fetched ${data?.length || 0} restaurants from Supabase`);
-    return data || [];
+    // Add limit and offset for pagination
+    if (limit) {
+      dataQuery = dataQuery.limit(limit);
+    }
+    
+    if (offset > 0) {
+      dataQuery = dataQuery.range(offset, offset + limit - 1);
+    }
+    
+    // Execute the data query
+    const { data, error: dataError } = await dataQuery;
+    
+    if (dataError) {
+      console.error('Error fetching restaurants from Supabase:', dataError);
+      return { data: [], totalCount: count || 0 };
+    }
+    
+    console.log(`Successfully fetched ${data?.length || 0} restaurants from Supabase (total: ${count})`);
+    return { data: data || [], totalCount: count || 0 };
   } catch (err) {
     console.error('Exception when fetching restaurants:', err);
-    return [];
+    return { data: [], totalCount: 0 };
   }
 }
 

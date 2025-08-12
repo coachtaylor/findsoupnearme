@@ -536,106 +536,76 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Modern Hero Section with Split Layout (hidden on mobile) */}
-      <section ref={heroRef} className="relative min-h-screen items-center overflow-hidden bg-gradient-to-br from-orange-50 via-white to-orange-50 hidden md:flex" suppressHydrationWarning>
-        {/* Animated Background Gradients */}
+      {/* Modern Hero Section - Perfect First Page Fit */}
+      <section ref={heroRef} className="relative min-h-[calc(100vh-6rem)] flex items-center bg-gradient-to-br from-white via-orange-50/20 to-orange-100/10 hidden md:flex" suppressHydrationWarning>
+        {/* Subtle Background Elements */}
         <div className="absolute inset-0">
-          {/* Primary gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-100/30 via-white to-orange-50/40"></div>
+          {/* Refined gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white via-orange-50/10 to-orange-100/5"></div>
           
-          {/* Animated gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-200/20 via-transparent to-orange-300/20 animate-pulse"></div>
+          {/* Subtle geometric pattern */}
+          <div className="absolute inset-0 opacity-[0.02]" style={{
+            backgroundImage: `
+              linear-gradient(45deg, #f97316 1px, transparent 1px),
+              linear-gradient(-45deg, #f97316 1px, transparent 1px)
+            `,
+            backgroundSize: '80px 80px'
+          }}></div>
           
-          {/* Radial gradient for depth */}
-          <div className="absolute inset-0 bg-radial-gradient opacity-30"></div>
+          {/* Soft radial accent */}
+          <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-gradient-to-br from-orange-200/8 to-orange-300/4 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-1/3 left-1/4 w-64 h-64 bg-gradient-to-tr from-orange-100/6 to-orange-200/4 rounded-full blur-xl"></div>
         </div>
 
-        {/* Floating Geometric Accent Elements */}
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {/* Large floating circle */}
-          <div 
-            className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-br from-orange-200 to-orange-300 rounded-full opacity-60 blur-xl animate-float"
-            style={{
-              animationDelay: '0s',
-              animationDuration: '6s'
-            }}
-          ></div>
-          
-          {/* Medium floating triangle */}
-          <div 
-            className="absolute top-1/3 left-10 w-16 h-16 bg-gradient-to-br from-orange-300 to-orange-400 opacity-40 animate-float"
-            style={{
-              animationDelay: '2s',
-              animationDuration: '8s',
-              clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)'
-            }}
-          ></div>
-          
-          {/* Small floating square */}
-          <div 
-            className="absolute bottom-1/4 right-1/3 w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 opacity-50 animate-float"
-            style={{
-              animationDelay: '4s',
-              animationDuration: '7s',
-              transform: 'rotate(45deg)'
-            }}
-          ></div>
-        </div>
-
-        {/* Steam Animation Elements */}
-        <div className="absolute top-1/4 right-1/3 pointer-events-none">
-          <div className="steam-container">
-            <div className="steam animate-steam-1"></div>
-            <div className="steam animate-steam-2"></div>
-            <div className="steam animate-steam-3"></div>
-          </div>
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 items-center min-h-screen py-20">
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-12 xl:gap-16 items-center">
             
-            {/* Left Content Section */}
-            <div className="space-y-8">
-              {/* Badge */}
-              <div className="inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-100 to-orange-200 text-orange-700 rounded-full text-sm font-semibold shadow-lg border border-orange-200/50 backdrop-blur-sm">
+            {/* Left Content Section - Proper Typography & Layout */}
+            <div className="space-y-8 max-w-2xl">
+              {/* Premium Badge */}
+              <div className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-orange-500/10 to-orange-600/10 text-orange-700 rounded-full text-sm font-semibold border border-orange-200/30 backdrop-blur-sm shadow-sm">
                 <span className="mr-2">🍜</span>
-                Discover 10,000+ Soup Restaurants
+                <span className="tracking-wide">Discover 10,000+ Soup Restaurants</span>
               </div>
 
-              {/* Main Heading */}
-              <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight">
-                The Best{' '}
-                <span className="bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-                  Soup
-                </span>{' '}
-                Near You
-              </h1>
+              {/* Enhanced Main Heading */}
+              <div className="space-y-4">
+                <h1 className="text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight tracking-tight">
+                  The Best{' '}
+                  <span className="bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 bg-clip-text text-transparent">
+                    Soup
+                  </span>{' '}
+                  Near You
+                </h1>
+                <div className="w-24 h-1 bg-gradient-to-r from-orange-400 to-orange-600 rounded-full"></div>
+              </div>
 
-              {/* Subheading */}
-              <p className="text-xl lg:text-2xl text-neutral-600 max-w-2xl leading-relaxed">
-                From hearty ramen to comforting chowder, find your perfect bowl across 11 major US cities
+              {/* Refined Subheading */}
+              <p className="text-xl lg:text-2xl text-neutral-600 leading-relaxed max-w-xl">
+                From hearty ramen to comforting chowder, find your perfect bowl across{' '}
+                <span className="font-semibold text-orange-600">11 major US cities</span>
               </p>
 
-              {/* Enhanced Search Bar */}
+              {/* Enhanced Search Bar - More Prominent */}
               <div className="max-w-2xl">
                 <form onSubmit={handleSearch} className="relative">
                   <div className="relative flex flex-col sm:flex-row gap-4">
-                    {/* Search Input */}
-                    <div className="relative flex-grow">
-                      <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none">
-                        <span className="text-2xl">📍</span>
+                    {/* Enhanced Search Input */}
+                    <div className="relative flex-grow group">
+                      <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none">
+                        <span className="text-xl text-orange-500 group-focus-within:text-orange-600 transition-colors duration-300">📍</span>
                       </div>
                       <input
                         type="text"
                         placeholder="Enter your city or ZIP code"
-                        className="w-full pl-16 pr-16 py-6 bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-orange-200/50 shadow-xl focus:outline-none focus:ring-4 focus:ring-orange-300/50 focus:border-orange-400 text-lg font-medium transition-all duration-300 hover:shadow-2xl hover:border-orange-300"
+                        className="w-full pl-16 pr-16 py-5 bg-white/95 backdrop-blur-sm rounded-2xl border border-orange-200/30 shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300/20 focus:border-orange-400 text-lg font-medium transition-all duration-300 hover:shadow-xl hover:border-orange-300/50"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                       <button
                         type="button"
                         onClick={detectLocation}
-                        className="absolute inset-y-0 right-0 pr-6 flex items-center text-neutral-500 hover:text-orange-500 transition-colors duration-300"
+                        className="absolute inset-y-0 right-0 pr-5 flex items-center text-neutral-400 hover:text-orange-500 transition-colors duration-300"
                         title="Use my current location"
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -645,108 +615,70 @@ export default function Home() {
                       </button>
                     </div>
                     
-                    {/* Search Button */}
+                    {/* Enhanced Search Button */}
                     <button
                       type="submit"
-                      className="px-8 py-6 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl font-semibold text-lg transition-all duration-300 shadow-xl hover:shadow-2xl hover:scale-105 flex items-center justify-center gap-3 group"
+                      className="px-8 py-5 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 flex items-center justify-center gap-3"
                     >
-                      <MagnifyingGlassIcon className="h-6 w-6 group-hover:scale-110 transition-transform duration-300" />
+                      <MagnifyingGlassIcon className="h-6 w-6" />
                       <span>Search</span>
                     </button>
                   </div>
                 </form>
               </div>
 
-              {/* Quick Filters */}
-              <div className="flex flex-wrap gap-4">
-                {quickFilters.map((filter) => (
-                  <button
-                    key={filter.type}
-                    type="button"
-                    onClick={() => handleQuickFilter(filter.type)}
-                    className="px-6 py-3 bg-white/80 backdrop-blur-sm rounded-full border-2 border-orange-200/50 shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-3 text-neutral-700 hover:bg-orange-50 hover:border-orange-300 hover:scale-105 group"
-                  >
-                    <span className="text-2xl group-hover:scale-110 transition-transform duration-300">{filter.emoji}</span>
-                    <span className="font-semibold">{filter.name}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Popular Cities */}
-              <div className="pt-4">
-                <p className="text-neutral-500 mb-3 text-sm font-medium">Popular Cities:</p>
-                <div className="flex flex-wrap gap-4">
-                  {popularCities.slice(0, 6).map((city) => (
-                    <Link
-                      key={city.name}
-                      href={`/${city.state.toLowerCase()}/${city.name.toLowerCase().replace(/\s+/g, '-')}/restaurants`}
-                      className="text-orange-600 hover:text-orange-700 text-sm font-semibold hover:underline transition-colors duration-300"
+              {/* Enhanced Quick Filters */}
+              <div className="space-y-4">
+                <p className="text-sm font-medium text-neutral-500">Quick Start:</p>
+                <div className="flex flex-wrap gap-3">
+                  {quickFilters.map((filter) => (
+                    <button
+                      key={filter.type}
+                      type="button"
+                      onClick={() => handleQuickFilter(filter.type)}
+                      className="px-5 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-orange-200/30 shadow-sm hover:shadow-md transition-all duration-300 flex items-center gap-3 text-neutral-700 hover:bg-orange-50 hover:border-orange-300 hover:scale-105"
                     >
-                      {city.name}
-                    </Link>
+                      <span className="text-xl">{filter.emoji}</span>
+                      <span className="font-medium">{filter.name}</span>
+                    </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            {/* Right Image Section (hide if it would wrap) */}
-            <div className="relative hidden xl:flex xl:justify-center xl:items-center">
-              {/* Main Food Image */}
-              <div className="relative w-full max-w-lg mx-auto">
-                {/* Image Container */}
-                <div className="relative w-full h-96 lg:h-[500px] rounded-3xl overflow-hidden shadow-2xl">
+            {/* Right Visual Section - Properly Aligned */}
+            <div className="relative flex justify-center items-center">
+              <div className="relative w-full max-w-md">
+                {/* Main Hero Image Container */}
+                <div className="relative w-full h-72 rounded-2xl overflow-hidden shadow-xl group">
                   <img
                     src="/images/soup-pattern.svg"
                     alt="Delicious soup bowl"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     onError={(e) => {
                       e.target.src = 'https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80';
                     }}
                   />
                   
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"></div>
+                  {/* Refined Gradient Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
                   
-                  {/* Floating Elements Over Image */}
-                  <div className="absolute top-4 right-4 w-16 h-16 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center">
-                    <span className="text-3xl">🥣</span>
+                  {/* Elegant Accent Elements - No Floating */}
+                  <div className="absolute top-4 right-4 w-12 h-12 bg-white/95 backdrop-blur-sm rounded-xl shadow-md flex items-center justify-center">
+                    <span className="text-lg">🥣</span>
                   </div>
                   
-                  <div className="absolute bottom-4 left-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full shadow-lg flex items-center justify-center">
-                    <span className="text-2xl">🍜</span>
+                  <div className="absolute bottom-4 left-4 w-10 h-10 bg-white/95 backdrop-blur-sm rounded-xl shadow-md flex items-center justify-center">
+                    <span className="text-base">🍜</span>
                   </div>
                 </div>
 
-                {/* Floating Accent Elements */}
-                <div className="absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-br from-orange-200 to-orange-300 rounded-full opacity-60 animate-float"></div>
-                <div className="absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full opacity-50 animate-float" style={{ animationDelay: '2s' }}></div>
+                {/* Subtle Accent Elements - Integrated Design */}
+                <div className="absolute -top-4 -right-4 w-16 h-16 bg-gradient-to-br from-orange-200/15 to-orange-300/15 rounded-full blur-xl"></div>
+                <div className="absolute -bottom-4 -left-4 w-12 h-12 bg-gradient-to-tr from-orange-100/15 to-orange-200/15 rounded-full blur-xl"></div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Bottom Wave Divider */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden">
-          <svg 
-            className="w-full h-24 lg:h-32"
-            viewBox="0 0 1200 120" 
-            preserveAspectRatio="none"
-          >
-            <path 
-              d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" 
-              opacity=".6" 
-              fill="#fef2f2"
-            />
-            <path 
-              d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" 
-              opacity=".8" 
-              fill="#fef7ed"
-            />
-            <path 
-              d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" 
-              fill="#fef3e2"
-            />
-          </svg>
         </div>
       </section>
       

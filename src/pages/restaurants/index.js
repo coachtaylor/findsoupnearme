@@ -102,7 +102,7 @@ export default function AllRestaurantsPage() {
   const state = locationParts[1] || null;
   
   return (
-    <div className="relative">
+    <div className="min-h-screen bg-gray-50">
       <Head>
         <title>{title} | FindSoupNearMe</title>
         <meta name="description" content={description} />
@@ -112,26 +112,6 @@ export default function AllRestaurantsPage() {
       <div className="fixed top-0 left-0 right-0 z-40 h-1 bg-gradient-to-r from-orange-400 to-orange-600 transform origin-left transition-transform duration-300"
            style={{ transform: `scaleX(${scrollProgress})` }}></div>
       
-      {/* Organic Blob Shapes */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-orange-200/20 rounded-full blur-3xl animate-blob"></div>
-        <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-orange-300/15 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-1/4 left-1/2 w-72 h-72 bg-orange-100/25 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
-      </div>
-      
-
-      
-      {/* Simple Title Section */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-2">
-              {title}
-            </h1>
-          </div>
-        </div>
-      </section>
-
       {/* Content Section */}
       <section 
         ref={contentRef}

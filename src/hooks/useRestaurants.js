@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 export default function useRestaurants({
   city = null,
   state = null,
+  location = null,
   limit = 10,
   featured = false,
   soupType = null,
@@ -29,6 +30,7 @@ export default function useRestaurants({
         const queryParams = new URLSearchParams();
         if (city) queryParams.append('city', city);
         if (state) queryParams.append('state', state);
+        if (location) queryParams.append('location', location);
         if (limit) queryParams.append('limit', limit.toString());
         if (featured) queryParams.append('featured', 'true');
         
@@ -92,7 +94,7 @@ export default function useRestaurants({
     };
     
     fetchRestaurants();
-  }, [city, state, limit, featured, soupType, rating, priceRange, page, refreshIndex]);
+  }, [city, state, location, limit, featured, soupType, rating, priceRange, page, refreshIndex]);
   
   const refetch = () => setRefreshIndex((i) => i + 1);
   

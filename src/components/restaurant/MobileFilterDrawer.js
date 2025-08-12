@@ -13,7 +13,10 @@ export default function MobileFilterDrawer({
   onRatingChange,
   priceRangeOptions = [], 
   selectedPriceRanges = [], 
-  onPriceRangeChange 
+  onPriceRangeChange,
+  locationQuery = '',
+  onLocationChange = () => {},
+  onLocationSearch = () => {}
 }) {
   if (!isOpen) return null;
 
@@ -35,6 +38,31 @@ export default function MobileFilterDrawer({
           
           {/* Content */}
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            {/* Location Search */}
+            <div>
+              <h3 className="font-medium text-neutral-800 mb-3">Search Location or Restaurant</h3>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="City, state, ZIP, or restaurant name..."
+                  value={locationQuery}
+                  onChange={(e) => onLocationChange(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      onLocationSearch();
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 bg-white/80 backdrop-blur-sm rounded-xl border border-neutral-200 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/20 focus:border-orange-400"
+                />
+                <button
+                  onClick={onLocationSearch}
+                  className="px-4 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors text-sm font-medium min-h-[44px]"
+                >
+                  Search
+                </button>
+              </div>
+            </div>
+
             {/* Soup Type Filter */}
             <div>
               <h3 className="font-medium text-neutral-800 mb-3">Soup Type</h3>

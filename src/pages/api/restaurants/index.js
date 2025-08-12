@@ -12,6 +12,7 @@ export default async function handler(req, res) {
     const { 
       city, 
       state, 
+      location,
       limit = 10, 
       page = 1, 
       featured, 
@@ -31,13 +32,14 @@ export default async function handler(req, res) {
     const offset = (page - 1) * parseInt(limit);
     
     console.log('API request params:', { 
-      city, state, limit, page, featured, soupTypes, ratings, priceRanges, sortBy, sortOrder, offset 
+      city, state, location, limit, page, featured, soupTypes, ratings, priceRanges, sortBy, sortOrder, offset 
     });
     
     // Fetch restaurants
-    let restaurants = await getRestaurants({
-      city,
-      state,
+    let result = await getRestaurants({
+      city: city ? city.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : null,
+      state: state ? state.toUpperCase() : null,
+      location,
       rating: ratings.length > 0 ? Math.min(...ratings) : null,
       priceRange: priceRanges.length > 0 ? priceRanges : null,
       limit: parseInt(limit),
@@ -47,106 +49,37 @@ export default async function handler(req, res) {
       featured: featured === 'true'
     });
     
+    let restaurants = result.data;
+    let totalCount = result.totalCount;
+    
     // If no featured restaurants found and this is a featured request, fall back to top-rated restaurants
     if (featured === 'true' && restaurants.length === 0) {
       console.log('No featured restaurants found, falling back to top-rated restaurants');
-      restaurants = await getRestaurants({
-        city,
-        state,
+      const fallbackResult = await getRestaurants({
+        city: city ? city.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : null,
+        state: state ? state.toUpperCase() : null,
         rating: ratings.length > 0 ? Math.min(...ratings) : null,
         priceRange: priceRanges.length > 0 ? priceRanges : null,
         limit: parseInt(limit),
-        offset,
+      offset,
         sortBy: 'rating',
         sortOrder: 'desc',
         featured: false
       });
+      restaurants = fallbackResult.data;
+      totalCount = fallbackResult.totalCount;
     }
     
-    // If still no restaurants found, return fallback data for development
+    // If still no restaurants found, return empty result
     if (restaurants.length === 0) {
-      console.log('No restaurants found in database, returning fallback data');
+      console.log('No restaurants found in database');
       return res.status(200).json({
-        restaurants: [
-          {
-            id: '1',
-            name: 'Soup Heaven',
-            city: 'New York',
-            state: 'NY',
-            rating: 4.5,
-            review_count: 120,
-            soup_types: ['Ramen', 'Pho', 'Clam Chowder'],
-            image_url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-            slug: 'soup-heaven',
-            price_range: '$$'
-          },
-          {
-            id: '2',
-            name: 'Brothy Goodness',
-            city: 'Los Angeles',
-            state: 'CA',
-            rating: 4.2,
-            review_count: 85,
-            soup_types: ['French Onion', 'Tomato Bisque'],
-            image_url: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-            slug: 'brothy-goodness',
-            price_range: '$'
-          },
-          {
-            id: '3',
-            name: 'Ladle & Spoon',
-            city: 'Chicago',
-            state: 'IL',
-            rating: 4.7,
-            review_count: 200,
-            soup_types: ['Chicken Noodle', 'Minestrone', 'Beef Stew'],
-            image_url: 'https://images.unsplash.com/photo-1613844237701-8f3664fc2eff?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-            slug: 'ladle-and-spoon',
-            price_range: '$$$'
-          },
-          {
-            id: '4',
-            name: 'Pho Palace',
-            city: 'San Francisco',
-            state: 'CA',
-            rating: 4.6,
-            review_count: 150,
-            soup_types: ['Pho', 'Bun Bo Hue', 'Tom Yum'],
-            image_url: 'https://images.unsplash.com/photo-1607116667981-ff148a4e754d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-            slug: 'pho-palace',
-            price_range: '$$'
-          },
-          {
-            id: '5',
-            name: 'Ramen House',
-            city: 'Seattle',
-            state: 'WA',
-            rating: 4.4,
-            review_count: 95,
-            soup_types: ['Ramen', 'Miso', 'Tonkotsu'],
-            image_url: 'https://images.unsplash.com/photo-1616501268209-edfff098fdd2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-            slug: 'ramen-house',
-            price_range: '$$'
-          },
-          {
-            id: '6',
-            name: 'Chowder Corner',
-            city: 'Miami',
-            state: 'FL',
-            rating: 4.3,
-            review_count: 75,
-            soup_types: ['Clam Chowder', 'Lobster Bisque', 'Seafood Stew'],
-            image_url: 'https://images.unsplash.com/photo-1604152135912-04a022e23696?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80',
-            slug: 'chowder-corner',
-            price_range: '$$$'
-          }
-        ],
-        totalCount: 6,
-        isFallbackData: true
+        restaurants: [],
+        totalCount: 0
       });
     }
     
-    console.log(`Retrieved ${restaurants.length} restaurants from database`);
+    console.log(`Retrieved ${restaurants.length} restaurants from database (total: ${totalCount})`);
     console.log('Sample restaurant data:', restaurants[0]);
     
     // Process the data for the frontend
@@ -211,41 +144,6 @@ export default async function handler(req, res) {
           : [];
         return soupTypes.some(selectedType => restaurantSoupTypes.includes(selectedType));
       });
-    }
-    
-    // Get total count for pagination
-    let totalCount = 0;
-    
-    try {
-      // Simplified query just to get the count
-      let countQuery = supabase
-        .from('restaurants')
-        .select('id', { count: 'exact' });
-      
-      // Apply the same filters
-      if (city) countQuery = countQuery.eq('city', city);
-      if (state) countQuery = countQuery.eq('state', state);
-      if (featured === 'true') countQuery = countQuery.eq('is_featured', true);
-      if (ratings.length > 0) countQuery = countQuery.in('rating', ratings);
-      if (priceRanges.length > 0) countQuery = countQuery.in('price_range', priceRanges);
-      
-      const { count, error } = await countQuery;
-      
-      if (!error && count !== null) {
-        totalCount = count;
-        // If soup type filtering is applied, we need to adjust the count
-        // This is a simplified approach - in production you might want a more accurate count
-        if (soupTypes.length > 0) {
-          // For now, we'll use the length of filtered results as the count
-          totalCount = processedRestaurants.length;
-        }
-      } else {
-        // If count query fails, use the length of current results
-        totalCount = processedRestaurants.length;
-      }
-    } catch (countError) {
-      console.error('Error getting count:', countError);
-      totalCount = processedRestaurants.length;
     }
     
     // Return the data

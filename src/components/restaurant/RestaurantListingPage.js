@@ -1,5 +1,6 @@
 // src/components/restaurant/RestaurantListingPage.js
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/router';
 import useRestaurants from '../../hooks/useRestaurants';
 import RestaurantCard from './RestaurantCard';
 import SkeletonLoader from '../ui/SkeletonLoader';
@@ -7,7 +8,15 @@ import MobileFilterDrawer from './MobileFilterDrawer';
 import Breadcrumbs from '../ui/Breadcrumbs';
 import Link from 'next/link';
 import Head from 'next/head';
-import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
+import { 
+  AdjustmentsHorizontalIcon, 
+  MagnifyingGlassIcon, 
+  XMarkIcon,
+  StarIcon,
+  MapPinIcon,
+  ClockIcon,
+  CurrencyDollarIcon
+} from '@heroicons/react/24/outline';
 
 export default function RestaurantListingPage({
   title = 'Soup Restaurants',
@@ -17,6 +26,7 @@ export default function RestaurantListingPage({
   initialPage = 1,
   pageSize = 12,
 }) {
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [selectedSoupType, setSelectedSoupType] = useState(null);
   const [selectedRating, setSelectedRating] = useState(null);
@@ -28,15 +38,33 @@ export default function RestaurantListingPage({
   const [selectedPriceRanges, setSelectedPriceRanges] = useState([]);
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
   
+  // Location search state
+  const [locationQuery, setLocationQuery] = useState('');
+  const [locationFilter, setLocationFilter] = useState(null);
+  const [locationDisplay, setLocationDisplay] = useState('');
+  
   // Searchable dropdown state
   const [isSoupTypeDropdownOpen, setIsSoupTypeDropdownOpen] = useState(false);
   const [soupTypeSearchTerm, setSoupTypeSearchTerm] = useState('');
   const soupTypeDropdownRef = useRef(null);
   
+  // Initialize location from URL parameters
+  useEffect(() => {
+    if (router.isReady) {
+      const { location } = router.query;
+      if (location) {
+        setLocationQuery(location);
+        setLocationFilter(location);
+        setLocationDisplay(location);
+      }
+    }
+  }, [router.isReady, router.query]);
+  
   // Fetch restaurants with the given filters
   const { restaurants, loading, error, totalCount, refetch } = useRestaurants({
     city,
     state,
+    location: locationFilter,
     limit: 12,
     soupType: selectedSoupTypes.length > 0 ? selectedSoupTypes : null,
     rating: selectedRatings.length > 0 ? Math.min(...selectedRatings) : null,
@@ -105,7 +133,7 @@ export default function RestaurantListingPage({
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedSoupType, selectedRating, selectedPriceRange, city, state]);
+  }, [selectedSoupType, selectedRating, selectedPriceRange, city, state, locationFilter]);
   
   // All soup types organized by category with restaurant counts
   const soupTypeCategories = [
@@ -216,18 +244,18 @@ export default function RestaurantListingPage({
   
   // Rating options for filtering
   const ratingOptions = [
-    { value: 4.5, label: '4.5+' },
-    { value: 4, label: '4+' },
-    { value: 3.5, label: '3.5+' },
-    { value: 3, label: '3+' },
+    { value: 4.5, label: '4.5+', icon: StarIcon },
+    { value: 4, label: '4+', icon: StarIcon },
+    { value: 3.5, label: '3.5+', icon: StarIcon },
+    { value: 3, label: '3+', icon: StarIcon },
   ];
 
   // Price range options for filtering
   const priceRangeOptions = [
-    { value: '$', label: '$', description: 'Budget Friendly' },
-    { value: '$$', label: '$$', description: 'Moderately Priced' },
-    { value: '$$$', label: '$$$', description: 'Fine Dining' },
-    { value: '$$$$', label: '$$$$', description: 'Luxury' },
+    { value: '$', label: '$', description: 'Budget Friendly', icon: CurrencyDollarIcon },
+    { value: '$$', label: '$$', description: 'Moderately Priced', icon: CurrencyDollarIcon },
+    { value: '$$$', label: '$$$', description: 'Fine Dining', icon: CurrencyDollarIcon },
+    { value: '$$$$', label: '$$$$', description: 'Luxury', icon: CurrencyDollarIcon },
   ];
   
   // Generate page title based on filters
@@ -240,10 +268,48 @@ export default function RestaurantListingPage({
     pageTitle = `Soup Restaurants in ${state}`;
   }
   
+  // Add location filter to page title if active
+  if (locationFilter) {
+    pageTitle = `Soup Restaurants in ${locationDisplay}`;
+  }
+  
   if (selectedSoupType) {
     pageTitle = `${selectedSoupType} ${pageTitle}`;
   }
   
+  // Clear location filter
+  const clearLocationFilter = () => {
+    setLocationFilter(null);
+    setLocationDisplay('');
+    setLocationQuery('');
+    setCurrentPage(1);
+    
+    // Remove location from URL
+    const newQuery = { ...router.query };
+    delete newQuery.location;
+    router.push({
+      pathname: router.pathname,
+      query: newQuery
+    }, undefined, { shallow: true });
+  };
+  
+  // Handle location search with URL update
+  const handleLocationSearch = () => {
+    if (locationQuery.trim()) {
+      const newLocation = locationQuery.trim();
+      setLocationFilter(newLocation);
+      setLocationDisplay(newLocation);
+      setCurrentPage(1); // Reset to page 1 when location changes
+      
+      // Update URL with location parameter
+      const newQuery = { ...router.query, location: newLocation };
+      router.push({
+        pathname: router.pathname,
+        query: newQuery
+      }, undefined, { shallow: true });
+    }
+  };
+
   // Generate custom breadcrumbs
   const generateBreadcrumbs = () => {
     const crumbs = [{ href: '/', label: 'Home' }];
@@ -330,24 +396,388 @@ export default function RestaurantListingPage({
         <meta name="description" content={description} />
       </Head>
       
-      <div className="container mx-auto px-4 py-8">
-        {/* Breadcrumbs */}
-        <Breadcrumbs customCrumbs={generateBreadcrumbs()} />
-        
-        {/* Page Title */}
-        <h1 className="text-2xl md:text-3xl font-bold text-neutral-900 mb-6">
-          {pageTitle}
-        </h1>
-        
-        {/* Mobile Filter Button */}
-        <div className="md:hidden mb-4">
-          <button
-            onClick={() => setIsFilterDrawerOpen(true)}
-            className="w-full flex items-center justify-center gap-2 bg-white/80 backdrop-blur-sm border border-white/60 shadow-sm py-3 px-4 rounded-xl text-neutral-800"
-          >
-            <AdjustmentsHorizontalIcon className="h-5 w-5" />
-            <span>Filter Restaurants</span>
-          </button>
+      <div className="min-h-screen bg-gray-50">
+        {/* Hero Header Section */}
+        <div className="bg-gradient-to-br from-orange-50 via-white to-orange-50 border-b border-gray-100">
+          <div className="container mx-auto px-4 py-12">
+            {/* Breadcrumbs */}
+            <Breadcrumbs customCrumbs={generateBreadcrumbs()} />
+            
+            {/* Page Title */}
+            <div className="text-center mb-8">
+              <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                {pageTitle}
+              </h1>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                Discover amazing soup restaurants near you. Order online and enjoy delicious soups delivered to your door.
+              </p>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="max-w-2xl mx-auto mb-8">
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by city, state, ZIP, or restaurant name..."
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleLocationSearch();
+                    }
+                  }}
+                  className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border-2 border-gray-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300/40 focus:border-orange-400 text-lg transition-all duration-200 hover:border-gray-300 hover:shadow-xl"
+                />
+                <button
+                  onClick={handleLocationSearch}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
+                >
+                  Search
+                </button>
+              </div>
+              {locationFilter && (
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  <span className="text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
+                    📍 Filtering by: <strong>{locationDisplay}</strong>
+                  </span>
+                  <button
+                    onClick={clearLocationFilter}
+                    className="text-xs text-orange-600 hover:text-orange-700 font-medium underline"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content - Two Column Layout */}
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex flex-col lg:flex-row gap-8">
+            
+            {/* Left Column - Filters Sidebar */}
+            <div className="lg:w-1/4">
+              <div className="sticky top-8">
+                {/* Mobile Filter Button */}
+                <div className="lg:hidden mb-6">
+                  <button
+                    onClick={() => setIsFilterDrawerOpen(true)}
+                    className="w-full flex items-center justify-center gap-3 bg-white border border-gray-200 shadow-sm py-4 px-6 rounded-2xl text-gray-800 font-medium hover:shadow-md transition-all duration-300"
+                  >
+                    <AdjustmentsHorizontalIcon className="h-5 w-5" />
+                    <span>Filter Restaurants</span>
+                  </button>
+                </div>
+
+                {/* Desktop Filters */}
+                <div className="hidden lg:block">
+                  <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
+                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                      <AdjustmentsHorizontalIcon className="h-6 w-6 text-orange-500" />
+                      Filters
+                    </h2>
+                    
+                    {/* Soup Type Filter */}
+                    <div className="mb-8">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-lg">🍜</span>
+                        <h3 className="font-semibold text-gray-800">Soup Type</h3>
+                      </div>
+                      
+                      {/* Selected Items Display */}
+                      {selectedSoupTypes.length > 0 && (
+                        <div className="mb-4">
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-sm font-medium text-gray-700">Selected:</span>
+                            <button
+                              onClick={clearAllSoupTypes}
+                              className="text-xs text-orange-600 hover:text-orange-700 font-medium"
+                            >
+                              Clear All
+                            </button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedSoupTypes.map((type) => (
+                              <span
+                                key={type}
+                                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
+                              >
+                                {type}
+                                <button
+                                  onClick={() => removeSoupType(type)}
+                                  className="ml-2 hover:text-orange-800"
+                                  aria-label={`Remove ${type}`}
+                                >
+                                  ✕
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Search Input */}
+                      <div className="relative mb-4">
+                        <input
+                          type="text"
+                          placeholder="Search soup types..."
+                          value={soupTypeSearchTerm}
+                          onChange={(e) => setSoupTypeSearchTerm(e.target.value)}
+                          onFocus={() => setIsSoupTypeDropdownOpen(true)}
+                          className="w-full pl-4 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-300/40 focus:border-orange-400 transition-all duration-200"
+                        />
+                      </div>
+
+                      {/* Dropdown Menu */}
+                      {isSoupTypeDropdownOpen && (
+                        <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-80 overflow-hidden" ref={soupTypeDropdownRef}>
+                          <div className="max-h-80 overflow-y-auto">
+                            {filteredCategories.length > 0 ? (
+                              filteredCategories.map((category) => (
+                                <div key={category.name}>
+                                  <div className="px-4 py-2 bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-200">
+                                    {category.name}
+                                  </div>
+                                  {category.types.map((type) => (
+                                    <label
+                                      key={type.name}
+                                      className="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedSoupTypes.includes(type.name)}
+                                        onChange={() => toggleSoupType(type.name)}
+                                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                      />
+                                      <span className="ml-3 text-sm text-gray-900 flex-1">
+                                        {type.name}
+                                      </span>
+                                      <span className="text-xs text-gray-500">
+                                        ({type.count})
+                                      </span>
+                                    </label>
+                                  ))}
+                                </div>
+                              ))
+                            ) : (
+                              <div className="px-4 py-4 text-center text-gray-500">
+                                No soup types found matching "{soupTypeSearchTerm}"
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Rating Filter */}
+                    <div className="mb-8">
+                      <div className="flex items-center gap-2 mb-4">
+                        <StarIcon className="h-5 w-5 text-yellow-500" />
+                        <h3 className="font-semibold text-gray-800">Minimum Rating</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                            selectedRatings.length === 0
+                              ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                          }`}
+                          onClick={() => setSelectedRatings([])}
+                        >
+                          Any Rating
+                        </button>
+                        
+                        {ratingOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                              selectedRatings.includes(option.value)
+                                ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                            }`}
+                            onClick={() => {
+                              if (selectedRatings.includes(option.value)) {
+                                setSelectedRatings(selectedRatings.filter(r => r !== option.value));
+                              } else {
+                                setSelectedRatings([...selectedRatings, option.value]);
+                              }
+                            }}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Price Range Filter */}
+                    <div className="mb-8">
+                      <div className="flex items-center gap-2 mb-4">
+                        <CurrencyDollarIcon className="h-5 w-5 text-green-500" />
+                        <h3 className="font-semibold text-gray-800">Price Range</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                            selectedPriceRanges.length === 0
+                              ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                              : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                          }`}
+                          onClick={() => setSelectedPriceRanges([])}
+                        >
+                          Any Price
+                        </button>
+                        
+                        {priceRangeOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                              selectedPriceRanges.includes(option.value)
+                                ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                            }`}
+                            onClick={() => {
+                              if (selectedPriceRanges.includes(option.value)) {
+                                setSelectedPriceRanges(selectedPriceRanges.filter(p => p !== option.value));
+                              } else {
+                                setSelectedPriceRanges([...selectedPriceRanges, option.value]);
+                              }
+                            }}
+                            title={option.description}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Restaurant Grid */}
+            <div className="lg:w-3/4">
+              {/* Results Summary */}
+              <div className="mb-8">
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">🍜</span>
+                      <span className="text-lg font-semibold text-gray-800">
+                        {totalCount} restaurant{totalCount !== 1 ? 's' : ''} found
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      Ready to explore
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Error State */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-6 mb-8">
+                  <p className="text-red-800">Error loading restaurants: {error}</p>
+                </div>
+              )}
+
+              {/* Loading State */}
+              {isLoading && (
+                <SkeletonLoader count={6} />
+              )}
+
+              {/* No Results */}
+              {!isLoading && restaurants.length === 0 && !error && (
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-24 h-24 bg-orange-100 rounded-3xl mb-6">
+                    <span className="text-5xl">🍲</span>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">No restaurants found</h3>
+                  <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">
+                    Try adjusting your filters or search in a different area to discover amazing soup spots.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSelectedSoupTypes([]);
+                      setSelectedRatings([]);
+                      setSelectedPriceRanges([]);
+                    }}
+                    className="px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+
+              {/* Restaurant Grid */}
+              {!isLoading && restaurants.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {restaurants.map((restaurant, index) => (
+                    <RestaurantCard
+                      key={restaurant.id}
+                      restaurant={restaurant}
+                      selectedSoupTypes={selectedSoupTypes}
+                      selectedRatings={selectedRatings}
+                      selectedPriceRanges={selectedPriceRanges}
+                      animationIndex={index}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Pagination */}
+              {!isLoading && totalPages > 1 && (
+                <div className="flex justify-center mt-12">
+                  <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-6 py-4 shadow-sm">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed font-medium rounded-xl hover:bg-gray-100 transition-colors disabled:hover:bg-transparent"
+                    >
+                      ← Previous
+                    </button>
+                    
+                    <div className="flex items-center gap-2">
+                      {[...Array(totalPages)].map((_, i) => {
+                        const page = i + 1;
+                        const isCurrentPage = page === currentPage;
+                        const isNearCurrent = Math.abs(page - currentPage) <= 2;
+                        const isFirstOrLast = page === 1 || page === totalPages;
+                        
+                        if (isCurrentPage || isNearCurrent || isFirstOrLast) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => setCurrentPage(page)}
+                              className={`px-4 py-2 rounded-xl font-semibold transition-all duration-200 ${
+                                isCurrentPage
+                                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg'
+                                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        } else if (page === currentPage - 3 || page === currentPage + 3) {
+                          return <span key={page} className="px-2 text-gray-400">...</span>;
+                        }
+                        return null;
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 text-gray-600 hover:text-gray-900 disabled:opacity-50 disabled:cursor-not-allowed font-medium rounded-xl hover:bg-gray-100 transition-colors disabled:hover:bg-transparent"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
         
         {/* Mobile Filter Drawer */}
@@ -363,436 +793,10 @@ export default function RestaurantListingPage({
           priceRangeOptions={priceRangeOptions}
           selectedPriceRanges={selectedPriceRanges}
           onPriceRangeChange={setSelectedPriceRanges}
+          locationQuery={locationQuery}
+          onLocationChange={setLocationQuery}
+          onLocationSearch={handleLocationSearch}
         />
-        
-        {/* Desktop Filters Section */}
-        <div className="hidden md:block">
-          <div className="flex items-center mb-3">
-            <h2 className="text-lg font-semibold text-neutral-800">Filter Restaurants</h2>
-          </div>
-          
-          <div className="relative z-20 rounded-2xl p-6 mb-6 bg-white/70 backdrop-blur-md border border-white/60 shadow-sm">
-            <div className="flex justify-between items-start gap-8">
-              {/* Soup Type Filter - Searchable Dropdown */}
-              <div className="flex-1">
-                <label className="block text-neutral-700 mb-3 font-medium">Soup Type</label>
-                <div className={`relative ${isSoupTypeDropdownOpen ? 'mb-48' : ''}`} ref={soupTypeDropdownRef}>
-                  {/* Selected Items Display */}
-                  {selectedSoupTypes.length > 0 && (
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-neutral-700">Selected:</span>
-                        <button
-                          onClick={clearAllSoupTypes}
-                          className="text-xs text-orange-600 hover:text-orange-700 font-medium"
-                        >
-                          Clear All
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedSoupTypes.map((type) => (
-                          <span
-                            key={type}
-                            className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-orange-500 text-white border border-orange-500 shadow-sm transition transform hover:scale-105"
-                          >
-                            {type}
-                            <button
-                              onClick={() => removeSoupType(type)}
-                              className="ml-2 hover:text-orange-100"
-                              aria-label={`Remove ${type}`}
-                            >
-                              ✕
-                            </button>
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Dropdown Trigger as Search Input (single search bar) */}
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder={selectedSoupTypes.length > 0 ? `${selectedSoupTypes.length} selected • search to add more...` : 'Select or search soup types...'}
-                      value={soupTypeSearchTerm}
-                      onChange={(e) => setSoupTypeSearchTerm(e.target.value)}
-                      onFocus={() => setIsSoupTypeDropdownOpen(true)}
-                      className="w-full pl-10 pr-10 py-3 bg-white/80 backdrop-blur-md border border-white/60 rounded-xl text-neutral-700 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-orange-300/60"
-                    />
-                    <svg className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  <button
-                      type="button"
-                      aria-label="Toggle soup type dropdown"
-                    onClick={() => setIsSoupTypeDropdownOpen(!isSoupTypeDropdownOpen)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600"
-                    >
-                      <svg className={`w-5 h-5 transition-transform ${isSoupTypeDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  </div>
-
-                  {/* Dropdown Menu */}
-                  {isSoupTypeDropdownOpen && (
-                    <div className="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-md border border-white/60 rounded-xl shadow-xl max-h-96 overflow-hidden animate-fade-in">
-
-                      {/* Categories and Options */}
-                      <div className="max-h-80 overflow-y-auto">
-                        {filteredCategories.length > 0 ? (
-                          filteredCategories.map((category) => (
-                            <div key={category.name}>
-                              <div className="px-3 py-2 bg-neutral-50 text-sm font-medium text-neutral-700 border-b border-neutral-200/70">
-                                {category.name}
-                              </div>
-                              {category.types.map((type) => (
-                                <label
-                                  key={type.name}
-                                  className="flex items-center px-3 py-2 hover:bg-neutral-50 cursor-pointer"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedSoupTypes.includes(type.name)}
-                                    onChange={() => toggleSoupType(type.name)}
-                                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-neutral-300 rounded"
-                                  />
-                                  <span className="ml-3 text-sm text-neutral-900 flex-1">
-                                    {type.name}
-                                  </span>
-                                  <span className="text-xs text-neutral-500">
-                                    ({type.count})
-                                  </span>
-                                </label>
-                              ))}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="px-3 py-4 text-center text-neutral-500">
-                            No soup types found matching "{soupTypeSearchTerm}"
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Rating and Price Range Stacked */}
-              <div className="flex-1 space-y-6">
-                {/* Rating Filter */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-neutral-700 font-medium">Minimum Rating</label>
-                    {selectedRatings.length > 0 && (
-                      <span className="text-xs text-orange-600 font-medium">{selectedRatings.length} selected</span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
-                        selectedRatings.length === 0
-                          ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                          : 'bg-white/80 backdrop-blur-sm text-neutral-700 border-neutral-200 hover:bg-orange-50'
-                      }`}
-                      onClick={() => setSelectedRatings([])}
-                    >
-                      Any Rating
-                    </button>
-                    
-                    {ratingOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
-                          selectedRatings.includes(option.value)
-                            ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                            : 'bg-white/80 backdrop-blur-sm text-neutral-700 border-neutral-200 hover:bg-orange-50'
-                        }`}
-                        onClick={() => {
-                          if (selectedRatings.includes(option.value)) {
-                            setSelectedRatings(selectedRatings.filter(r => r !== option.value));
-                          } else {
-                            setSelectedRatings([...selectedRatings, option.value]);
-                          }
-                        }}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Price Range Filter */}
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <label className="block text-neutral-700 font-medium">Price Range</label>
-                    {selectedPriceRanges.length > 0 && (
-                      <span className="text-xs text-orange-600 font-medium">{selectedPriceRanges.length} selected</span>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
-                        selectedPriceRanges.length === 0
-                          ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                          : 'bg-white/80 backdrop-blur-sm text-neutral-700 border-neutral-200 hover:bg-orange-50'
-                      }`}
-                      onClick={() => setSelectedPriceRanges([])}
-                    >
-                      Any Price
-                    </button>
-                    
-                    {priceRangeOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        className={`px-3 py-2 rounded-full text-sm font-medium transition-all border ${
-                          selectedPriceRanges.includes(option.value)
-                            ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
-                            : 'bg-white/80 backdrop-blur-sm text-neutral-700 border-neutral-200 hover:bg-orange-50'
-                        }`}
-                        onClick={() => {
-                          if (selectedPriceRanges.includes(option.value)) {
-                            setSelectedPriceRanges(selectedPriceRanges.filter(p => p !== option.value));
-                          } else {
-                            setSelectedPriceRanges([...selectedPriceRanges, option.value]);
-                          }
-                        }}
-                        title={option.description}
-                      >
-                        {option.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Results Count */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-neutral-600">
-            {loading ? 'Loading...' : `${totalCount} restaurant${totalCount !== 1 ? 's' : ''} found`}
-          </p>
-        </div>
-
-        {/* Error State */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-800">Error loading restaurants: {error}</p>
-          </div>
-        )}
-
-        {/* Loading State */}
-        {isLoading && (
-          <SkeletonLoader count={6} />
-        )}
-
-        {/* No Results */}
-        {!isLoading && restaurants.length === 0 && !error && (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">🍲</div>
-            <h3 className="text-xl font-semibold text-neutral-900 mb-2">No restaurants found</h3>
-            <p className="text-neutral-600 mb-6">
-              Try adjusting your filters or search in a different area.
-            </p>
-            <button
-              onClick={() => {
-                setSelectedSoupTypes([]);
-                setSelectedRatings([]);
-                setSelectedPriceRanges([]);
-              }}
-              className="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-medium transition-colors"
-            >
-              Clear All Filters
-            </button>
-          </div>
-        )}
-
-        {/* Restaurant Grid */}
-        {!isLoading && restaurants.length > 0 && (
-          <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch">
-            {restaurants.map((restaurant, index) => (
-              <div 
-                key={restaurant.id}
-                className="glassmorphism-card group stagger-animate h-full card-interactive reveal-on-scroll will-change-transform will-change-opacity"
-                style={{
-                  animationDelay: `${index * 150}ms`,
-                  transform: `translateY(${index * 20}px)`
-                }}
-              >
-                <div className="relative h-48 w-full overflow-hidden rounded-t-xl">
-                  <img
-                    src={restaurant.image_url || '/images/soup-pattern.svg'}
-                    alt={restaurant.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    onError={(e) => {
-                      e.target.src = '/images/soup-pattern.svg';
-                    }}
-                  />
-                  
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  
-                  {/* Steam Animation */}
-                  <div className="steam-container absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                    <div className="steam animate-steam-1"></div>
-                    <div className="steam animate-steam-2"></div>
-                    <div className="steam animate-steam-3"></div>
-                  </div>
-                  
-                  {/* Price range label - Top right */}
-                  {restaurant.price_range && (
-                    <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs font-medium shadow-lg border border-white/20 hover-reveal"
-                         data-hover-text={`Price range: ${restaurant.price_range}`}>
-                      {restaurant.price_range}
-                    </div>
-                  )}
-                  
-                  {/* Verified badge if applicable - Top left */}
-                  {restaurant.is_verified && (
-                    <div className="absolute top-3 left-3 bg-white rounded-full px-2 py-1 text-xs font-medium flex items-center shadow-soft hover-reveal"
-                         data-hover-text="Verified restaurant">
-                      <span className="text-orange-500 mr-1">✓</span> Verified
-                    </div>
-                  )}
-                </div>
-                
-                <div className="p-6 relative z-10 flex flex-col flex-1">
-                  <div className="flex-1 space-y-4">
-                    {/* Restaurant Name */}
-                    <h3 className="text-xl font-bold text-neutral-900 group-hover:text-orange-600 transition-colors duration-300 line-clamp-1">
-                      {restaurant.name}
-                    </h3>
-                    
-                    {/* Star Rating */}
-                    <div className="flex items-center">
-                      <div className="flex mr-2">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`h-4 w-4 transition-all duration-300 ${
-                              i < Math.floor(restaurant.rating || 0)
-                                ? 'text-yellow-400 fill-current'
-                                : 'text-neutral-300'
-                            }`}
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="text-neutral-600 text-sm">
-                        {restaurant.rating ? restaurant.rating.toFixed(1) : 'N/A'}
-                        {restaurant.review_count ? ` (${restaurant.review_count})` : ''}
-                      </span>
-                    </div>
-                    
-                    {/* Location with Animated Icon */}
-                    <div className="flex items-center space-x-2">
-                      <div className="map-pin-container">
-                        <svg className="h-4 w-4 text-orange-500 transition-transform duration-300 group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-                        </svg>
-                      </div>
-                      <span className="text-neutral-600 text-sm line-clamp-1">
-                        {restaurant.city}, {restaurant.state}
-                      </span>
-                    </div>
-                    
-                    {/* Soup Types - Always Visible */}
-                    {restaurant.soup_types && restaurant.soup_types.length > 0 && (
-                      <div className="flex flex-wrap gap-2 min-h-[3rem]">
-                        {restaurant.soup_types.slice(0, 3).map((type, typeIndex) => (
-                          <span
-                            key={typeIndex}
-                            className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 transition-colors duration-200 micro-interaction"
-                            style={{ animationDelay: `${typeIndex * 50}ms` }}
-                          >
-                            <span className="mr-1">{getSoupEmoji(type)}</span> {type}
-                          </span>
-                        ))}
-                        {restaurant.soup_types.length > 3 && (
-                          <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-600 border border-neutral-200">
-                            +{restaurant.soup_types.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* View Details Button with Enhanced Hover */}
-                  <Link
-                    href={restaurant.slug && restaurant.city && restaurant.state
-                      ? `/${restaurant.state.toLowerCase()}/${restaurant.city.toLowerCase().replace(/\s+/g, '-')}/${restaurant.slug}`
-                      : `/restaurants/${restaurant.id}`
-                    }
-                    className="block w-full text-center py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform group-hover:animate-pulse mt-6 btn-enhanced click-feedback"
-                  >
-                    <span className="flex items-center justify-center space-x-2">
-                      <span>View Details</span>
-                      <svg className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </span>
-                  </Link>
-                </div>
-                
-                {/* Subtle Border Glow Effect */}
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-orange-400/30 via-transparent to-orange-600/30 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none blur-sm"></div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {!isLoading && totalPages > 1 && (
-          <div className="flex justify-center mt-8">
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-2 text-neutral-600 hover:text-neutral-900 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              
-              {[...Array(totalPages)].map((_, i) => {
-                const page = i + 1;
-                const isCurrentPage = page === currentPage;
-                const isNearCurrent = Math.abs(page - currentPage) <= 2;
-                const isFirstOrLast = page === 1 || page === totalPages;
-                
-                if (isCurrentPage || isNearCurrent || isFirstOrLast) {
-                  return (
-                    <button
-                      key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`px-3 py-2 rounded-lg font-medium ${
-                        isCurrentPage
-                          ? 'bg-orange-500 text-white'
-                          : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100'
-                      }`}
-                    >
-                      {page}
-                    </button>
-                  );
-                } else if (page === currentPage - 3 || page === currentPage + 3) {
-                  return <span key={page} className="px-2 text-neutral-400">...</span>;
-                }
-                return null;
-              })}
-              
-              <button
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-2 text-neutral-600 hover:text-neutral-900 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );
