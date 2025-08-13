@@ -63,6 +63,7 @@ export default async function handler(req, res) {
         review_count: reviewCount,
         soup_types,
         image_url: restaurant.image_url || null,
+        google_photos: restaurant.photo_urls || null,
         address: restaurant.address
       };
     });

@@ -25,6 +25,7 @@ export default function RestaurantCard({
     rating,
     review_count,
     image_url,
+    google_photos,
     soup_types = [],
     price_range,
     is_verified,
@@ -35,26 +36,60 @@ export default function RestaurantCard({
     ? `/${state.toLowerCase()}/${city.toLowerCase().replace(/\s+/g, '-')}/${slug}`
     : `/restaurants/${id}`;
   
+  // Get the best available image source
+  const getImageSource = () => {
+    console.log('🔍 getImageSource called for:', name);
+    console.log('🔍 google_photos:', google_photos);
+    console.log('🔍 image_url:', image_url);
+    
+    if (google_photos && 
+        Array.isArray(google_photos) && 
+        google_photos.length > 0) {
+      // Prioritize food_photo_2, then food_photo_1, then fallback
+      if (google_photos.length >= 2) {
+        console.log('✅ Using google_photos[1] (food_photo_2):', google_photos[1]);
+        return google_photos[1]; // food_photo_2 (index 1)
+      } else if (google_photos.length >= 1) {
+        console.log('✅ Using google_photos[0] (food_photo_1):', google_photos[0]);
+        return google_photos[0]; // food_photo_1 (index 0)
+      }
+    }
+    
+    // Fall back to image_url if no photos available
+    if (image_url) {
+      console.log('✅ Using image_url:', image_url);
+      return image_url;
+    }
+    
+    // Last resort: placeholder
+    console.log('✅ Using placeholder image');
+    return '/images/soup-pattern.svg';
+  };
+  
   // Handle missing or error in image loading
   const handleImageError = () => {
     setImageError(true);
   };
 
-  // Progressive image wrapper
-  const ProgressiveImage = ({ src, alt, className, onError }) => {
+  // Progressive image wrapper with better loading states
+  const ProgressiveImage = ({ src, alt, className, onError, style }) => {
     return (
       <>
         {!imageLoaded && (
-          <div className="absolute inset-0 bg-gray-200 animate-pulse rounded-t-2xl" />
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse rounded-t-2xl flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-gray-400 border-t-orange-500 rounded-full animate-spin"></div>
+          </div>
         )}
         <img
           src={src}
           alt={alt}
-          className={`${className} ${imageLoaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-300`}
+          className={`${className} ${imageLoaded ? 'opacity-100' : 'opacity-0'} transition-all duration-500 ease-out`}
+          style={style}
           loading="lazy"
           decoding="async"
           onLoad={() => setImageLoaded(true)}
           onError={onError}
+          crossOrigin="anonymous"
         />
       </>
     );
@@ -113,125 +148,129 @@ export default function RestaurantCard({
   };
 
   // Decide what to show for price
-  const displayPriceRange = price_range && price_range !== '0' ? price_range : '$$';
+  const displayPriceRange = price_range && price_range !== 0 && price_range !== '0' ? price_range : '$$';
   
   // Generate estimated delivery time (random for demo purposes)
   const estimatedDeliveryTime = `${Math.floor(Math.random() * 15) + 15}-${Math.floor(Math.random() * 15) + 25} min`;
   
   return (
     <div
-      className="group bg-white rounded-2xl shadow-sm hover:shadow-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 will-change-transform"
+      className="group bg-white rounded-3xl shadow-soft hover:shadow-xl border-0 overflow-hidden transition-all duration-500 hover:scale-[1.02] transform backdrop-blur-sm"
       style={{ animationDelay: `${animationIndex * 100}ms` }}
       ref={cardRef}
     >
       <Link href={restaurantUrl} className="block">
-        {/* Image Container - 16:9 Aspect Ratio */}
-        <div className="relative h-48 w-full overflow-hidden">
+        {/* Hero Image Section - Better food showcase */}
+        <div className="relative h-64 w-full overflow-hidden bg-gray-50">
           {/* Background Image */}
           {imageError ? (
-            <div className="flex items-center justify-center h-full bg-gradient-to-br from-orange-100 to-orange-200">
-              <span className="text-6xl">🍲</span>
+            <div className="flex items-center justify-center h-full bg-gradient-to-br from-orange-100 to-orange-200 rounded-t-2xl">
+              <div className="text-center">
+                <span className="text-4xl mb-2 block">🍲</span>
+                <span className="text-xs text-orange-600 font-medium">Image unavailable</span>
+              </div>
             </div>
           ) : (
             <ProgressiveImage
-              src={image_url || `/api/mock/soup-images?id=${id}`}
+              src={getImageSource()}
               alt={`${name} - Soup Restaurant`}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
               onError={handleImageError}
+              style={{
+                objectPosition: 'center 25%',
+                minHeight: '100%',
+                minWidth: '100%'
+              }}
             />
           )}
           
-          {/* Semi-transparent gradient overlay for text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+          {/* Subtle gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           
-          {/* Top Right Badges */}
-          <div className="absolute top-3 right-3 flex flex-col gap-2">
+          {/* Floating Badges */}
+          <div className="absolute top-4 right-4 flex flex-col gap-2">
             {/* Price Range Badge */}
             {displayPriceRange && displayPriceRange !== '0' && (
-              <div className="bg-white/95 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-semibold text-gray-800 shadow-lg border border-white/60 flex items-center gap-1">
-                <CurrencyDollarIcon className="h-3 w-3 text-green-600" />
+              <div className="bg-white/90 backdrop-blur-md rounded-2xl px-3 py-2 text-sm font-semibold text-gray-800 shadow-lg border border-white/40 flex items-center gap-1.5">
                 {displayPriceRange}
               </div>
             )}
-            
-            {/* Rating Badge */}
-            {rating && rating > 0 && (
-              <div className="bg-orange-500/95 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-lg border border-orange-400/60 flex items-center gap-1">
-                <StarIcon className="h-3 w-3 text-yellow-300" />
-                {rating.toFixed(1)}
-              </div>
-            )}
           </div>
           
-          {/* Top Left Badges */}
-          <div className="absolute top-3 left-3 flex flex-col gap-2">
-            {/* Verified Badge */}
-            {is_verified && (
-              <div className="bg-emerald-500/95 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-semibold text-white shadow-lg border border-emerald-400/60 flex items-center gap-1">
-                <span className="text-xs">✓</span>
-                Verified
-              </div>
-            )}
-          </div>
+          {/* Verified Badge */}
+          {is_verified && (
+            <div className="absolute top-4 left-4 bg-emerald-500/90 backdrop-blur-md rounded-2xl px-3 py-2 text-xs font-semibold text-white shadow-lg border border-emerald-400/40 flex items-center gap-1.5">
+              <span className="text-sm">✓</span>
+              Verified
+            </div>
+          )}
           
-          {/* Delivery Time Badge - Bottom Right */}
-          <div className="absolute bottom-3 right-3">
-            <div className="bg-black/80 backdrop-blur-sm rounded-full px-3 py-1.5 text-xs font-medium text-white shadow-lg border border-white/20 flex items-center gap-1">
-              <ClockIcon className="h-3 w-3" />
+          {/* Delivery Time Badge */}
+          <div className="absolute bottom-4 right-4">
+            <div className="bg-black/80 backdrop-blur-md rounded-2xl px-3 py-2 text-sm font-medium text-white shadow-lg border border-white/20 flex items-center gap-2">
+              <ClockIcon className="h-4 w-4" />
               {estimatedDeliveryTime}
             </div>
           </div>
         </div>
         
-        {/* Content Container */}
-        <div className="p-5">
+        {/* Content Section */}
+        <div className="p-6">
           {/* Restaurant Name */}
           <h3 className="text-xl font-bold text-gray-900 group-hover:text-orange-600 transition-colors duration-300 mb-3 line-clamp-2 leading-tight">
             {name}
           </h3>
           
-          {/* Rating and Review Count */}
-          {rating && rating > 0 && (
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex items-center gap-1">
-                <StarIcon className="h-4 w-4 text-yellow-400" />
-                <span className="text-sm font-semibold text-gray-900">{rating.toFixed(1)}</span>
-              </div>
-              {review_count && review_count > 0 && (
-                <span className="text-sm text-gray-500">
-                  ({review_count} review{review_count !== 1 ? 's' : ''})
-                </span>
-              )}
+          {/* Star Rating - Always Display */}
+          <div className="flex items-center mb-3">
+            <div className="flex mr-2">
+              {[...Array(5)].map((_, i) => (
+                <svg
+                  key={i}
+                  className={`h-4 w-4 transition-all duration-300 ${
+                    i < Math.floor(rating || 0)
+                      ? 'text-yellow-400 fill-current'
+                      : 'text-gray-300'
+                  }`}
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
             </div>
-          )}
+            <span className="text-neutral-600 text-sm">
+              {rating ? rating.toFixed(1) : 'N/A'}
+              {review_count ? ` (${review_count} review${review_count !== 1 ? 's' : ''})` : ''}
+            </span>
+          </div>
           
           {/* Location */}
           <div className="flex items-center gap-2 mb-4">
-            <MapPinIcon className="h-4 w-4 text-gray-400" />
-            <span className="text-sm text-gray-600">
+            <MapPinIcon className="h-4 w-4 text-orange-500" />
+            <span className="text-sm text-gray-600 font-medium">
               {city}, {state}
             </span>
           </div>
           
-          {/* Soup Types - Horizontal Layout */}
+          {/* Soup Types */}
           {soup_types && soup_types.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-6">
               <div className="flex flex-wrap gap-2">
                 {soup_types.slice(0, 3).map((type, typeIndex) => (
                   <span
                     key={typeIndex}
-                    className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-200 ${
+                    className={`inline-flex items-center px-3 py-2 rounded-2xl text-sm font-medium transition-all duration-300 ${
                       isSoupTypeSelected(type)
-                        ? 'bg-orange-100 text-orange-700 border-orange-200 group-hover:bg-orange-200'
-                        : 'bg-gray-100 text-gray-700 border-gray-200'
+                        ? 'bg-orange-100 text-orange-700 border border-orange-200 group-hover:bg-orange-200 group-hover:scale-105'
+                        : 'bg-gray-50 text-gray-700 border border-gray-200 group-hover:bg-gray-100 group-hover:scale-105'
                     }`}
                   >
-                    <span className="mr-1.5 text-sm">{getSoupEmoji(type)}</span> 
+                    <span className="mr-2 text-base">{getSoupEmoji(type)}</span> 
                     {type}
                   </span>
                 ))}
                 {soup_types.length > 3 && (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+                  <span className="inline-flex items-center px-3 py-2 rounded-2xl text-sm font-medium bg-gray-50 text-gray-600 border border-gray-200">
                     +{soup_types.length - 3} more
                   </span>
                 )}
@@ -239,21 +278,22 @@ export default function RestaurantCard({
             </div>
           )}
           
-          {/* Price Range Description */}
-          <div className="mb-4">
-            <span className="text-xs text-gray-500 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
+          {/* Price Range & CTA Row */}
+          <div className="flex items-center justify-between">
+            {/* Price Range */}
+            <span className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-2xl border border-gray-200 font-medium">
               {getPriceRangeLabel()}
             </span>
-          </div>
-          
-          {/* CTA Button */}
-          <div className="w-full text-center py-3 px-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform group-hover:animate-pulse">
-            <span className="flex items-center justify-center gap-2">
-              <span>View Details</span>
-              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </span>
+            
+            {/* CTA Button */}
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl px-6 py-2.5 font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform group-hover:animate-pulse">
+              <span className="flex items-center justify-center gap-2">
+                <span>View</span>
+                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
+            </div>
           </div>
         </div>
       </Link>

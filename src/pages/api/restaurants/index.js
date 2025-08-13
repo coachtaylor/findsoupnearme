@@ -24,7 +24,13 @@ export default async function handler(req, res) {
     } = req.query;
     
     // Handle multiple values for filters
-    const soupTypes = Array.isArray(soupType) ? soupType : soupType ? [soupType] : [];
+    let soupTypes = [];
+    if (req.query.soupTypes === 'all') {
+      // Special case: fetch all soup types for filter population
+      soupTypes = ['all'];
+    } else {
+      soupTypes = Array.isArray(soupType) ? soupType : soupType ? [soupType] : [];
+    }
     const ratings = Array.isArray(rating) ? rating.map(r => parseFloat(r)) : rating ? [parseFloat(rating)] : [];
     const priceRanges = Array.isArray(priceRange) ? priceRange : priceRange ? [priceRange] : [];
     
@@ -81,6 +87,8 @@ export default async function handler(req, res) {
     
     console.log(`Retrieved ${restaurants.length} restaurants from database (total: ${totalCount})`);
     console.log('Sample restaurant data:', restaurants[0]);
+    console.log('🔍 Sample restaurant google_photos:', restaurants[0]?.google_photos);
+    console.log('🔍 Sample restaurant image_url:', restaurants[0]?.image_url);
     
     // Process the data for the frontend
     let processedRestaurants = restaurants.map(restaurant => {
@@ -124,8 +132,11 @@ export default async function handler(req, res) {
         rating: restaurant.rating || avgRating || 0,
         review_count: reviewCount,
         soup_types,
+        soups: restaurant.soups || [], // Include the full soups data for the filter
         // Use restaurant's image if available, otherwise use a fallback
         image_url: restaurant.image_url || fallbackImage,
+        // Include photos from database (using photo_urls field)
+        google_photos: restaurant.photo_urls || null,
         address: restaurant.address,
         phone: restaurant.phone,
         website: restaurant.website,
@@ -134,16 +145,23 @@ export default async function handler(req, res) {
     });
     
     // Filter by soup type if specified (done in JavaScript since Supabase foreign key filtering is complex)
-    if (soupTypes.length > 0) {
+    if (soupTypes.length > 0 && !soupTypes.includes('all')) {
+      console.log('Filtering by soup types:', soupTypes);
+      console.log('Before filtering, restaurants count:', processedRestaurants.length);
+      
       processedRestaurants = processedRestaurants.filter(restaurant => {
-        // Use soups from the database, not detectedSoupTypes from data files
-        const restaurantSoupTypes = restaurant.soups 
-          ? restaurant.soups
-              .filter(soup => soup && soup.soup_type)
-              .map(soup => soup.soup_type)
-          : [];
-        return soupTypes.some(selectedType => restaurantSoupTypes.includes(selectedType));
+        // Use soup_types field for consistency with the display data
+        const restaurantSoupTypes = restaurant.soup_types || [];
+        
+        console.log(`Restaurant ${restaurant.name} has soup types:`, restaurantSoupTypes);
+        
+        const matches = soupTypes.some(selectedType => restaurantSoupTypes.includes(selectedType));
+        console.log(`Restaurant ${restaurant.name} matches filter:`, matches);
+        
+        return matches;
       });
+      
+      console.log('After filtering, restaurants count:', processedRestaurants.length);
     }
     
     // Return the data

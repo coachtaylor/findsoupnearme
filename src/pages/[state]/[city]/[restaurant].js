@@ -35,9 +35,23 @@ export default function RestaurantDetail() {
   };
 
   const getRestaurantPhotos = (restaurant) => {
-    // Check for photo_urls array
+    // Check for photo_urls array with same priority logic as RestaurantCard
     if (restaurant.photo_urls && Array.isArray(restaurant.photo_urls) && restaurant.photo_urls.length > 0) {
-      return restaurant.photo_urls.filter(url => url && typeof url === 'string' && url.startsWith('http'));
+      // Filter valid URLs and apply priority logic
+      const validPhotos = restaurant.photo_urls.filter(url => url && typeof url === 'string' && url.startsWith('http'));
+      
+      // Prioritize food_photo_2, then food_photo_1, then others
+      if (validPhotos.length >= 2) {
+        // Reorder: food_photo_2 first, then food_photo_1, then others
+        const reorderedPhotos = [
+          validPhotos[1], // food_photo_2 (index 1)
+          validPhotos[0], // food_photo_1 (index 0)
+          ...validPhotos.slice(2) // remaining photos
+        ];
+        return reorderedPhotos;
+      }
+      
+      return validPhotos;
     }
     
     // Return empty array if no valid photos

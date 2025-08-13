@@ -59,6 +59,87 @@ export default function RestaurantListingPage({
       }
     }
   }, [router.isReady, router.query]);
+
+  // Fetch soup types from database
+  useEffect(() => {
+    const fetchSoupTypes = async () => {
+      try {
+        setSoupTypesLoading(true);
+        
+        // Fetch all soup types from the database
+        const response = await fetch('/api/restaurants?soupTypes=all&limit=1000');
+        const data = await response.json();
+        
+        console.log('API response for soup types:', data);
+        
+        if (data.restaurants && data.restaurants.length > 0) {
+          // Extract all soup types from restaurants
+          const allSoupTypes = new Map();
+          
+          data.restaurants.forEach(restaurant => {
+            if (restaurant.soups && Array.isArray(restaurant.soups)) {
+              restaurant.soups.forEach(soup => {
+                if (soup.soup_type) {
+                  const count = allSoupTypes.get(soup.soup_type) || 0;
+                  allSoupTypes.set(soup.soup_type, count + 1);
+                }
+              });
+            }
+          });
+          
+          console.log('Extracted soup types:', allSoupTypes);
+          
+          // Convert to array and sort by count
+          const sortedSoupTypes = Array.from(allSoupTypes.entries())
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count);
+          
+          // Organize into categories based on soup type names
+          const categories = [
+            {
+              name: '🍜 Asian Soups',
+              types: sortedSoupTypes.filter(soup => 
+                /pho|ramen|udon|miso|wonton|congee|kimchi|bun bo hue|shoyu|tonkotsu|tom yum|tom kha|egg drop|hot and sour|samgyetang|bun bo hue/i.test(soup.name)
+              )
+            },
+            {
+              name: '🥣 Western Soups',
+              types: sortedSoupTypes.filter(soup => 
+                /cream|bisque|borscht|chowder|minestrone|vegetable|lentil|split pea|chicken noodle|beef stew|clam|lobster|french onion|vichyssoise|bouillabaisse|tomato|stracciatella|ribollita|bone broth|corn|avgolemono/i.test(soup.name)
+              )
+            },
+            {
+              name: '🌶️ Latin & Caribbean',
+              types: sortedSoupTypes.filter(soup => 
+                /gumbo|tortilla|tomatillo|lemongrass|lemon basil|caldo de res|gazpacho/i.test(soup.name)
+              )
+            },
+            {
+              name: '🥘 Specialty & Regional',
+              types: sortedSoupTypes.filter(soup => 
+                /house special|vegan|cioppino|mushroom|cabbage|fruit|apple|sweet potato|pumpkin|potato leek|pickle|matzo ball|cauliflower|butternut squash|ajiaco|cherry/i.test(soup.name)
+              )
+            }
+          ];
+          
+          // Filter out empty categories and set state
+          const nonEmptyCategories = categories.filter(cat => cat.types.length > 0);
+          setSoupTypeCategories(nonEmptyCategories);
+        } else {
+          // If no restaurants found, set empty categories
+          setSoupTypeCategories([]);
+        }
+      } catch (error) {
+        console.error('Error fetching soup types:', error);
+        // Fallback to empty categories if API fails
+        setSoupTypeCategories([]);
+      } finally {
+        setSoupTypesLoading(false);
+      }
+    };
+    
+    fetchSoupTypes();
+  }, []);
   
   // Fetch restaurants with the given filters
   const { restaurants, loading, error, totalCount, refetch } = useRestaurants({
@@ -135,73 +216,9 @@ export default function RestaurantListingPage({
     setCurrentPage(1);
   }, [selectedSoupType, selectedRating, selectedPriceRange, city, state, locationFilter]);
   
-  // All soup types organized by category with restaurant counts
-  const soupTypeCategories = [
-    {
-      name: '🍜 Asian Soups',
-      types: [
-        { name: 'Pho', count: 85 },
-        { name: 'Ramen', count: 81 },
-        { name: 'Udon', count: 71 },
-        { name: 'Wonton', count: 19 },
-        { name: 'Egg Drop', count: 15 },
-        { name: 'Hot and Sour', count: 14 },
-        { name: 'Miso', count: 11 },
-        { name: 'Tom Yum', count: 10 },
-        { name: 'Tom Kha', count: 10 },
-        { name: 'Tonkotsu', count: 9 },
-        { name: 'Shoyu', count: 2 },
-        { name: 'Congee', count: 2 },
-        { name: 'Samgyetang', count: 7 },
-        { name: 'Kimchi', count: 7 },
-        { name: 'Bun Bo Hue', count: 8 }
-      ]
-    },
-    {
-      name: '🥣 Western Soups',
-      types: [
-        { name: 'Clam Chowder', count: 12 },
-        { name: 'Lobster Bisque', count: 10 },
-        { name: 'French Onion', count: 8 },
-        { name: 'Vichyssoise', count: 8 },
-        { name: 'Bouillabaisse', count: 8 },
-        { name: 'Tomato', count: 5 },
-        { name: 'Minestrone', count: 5 },
-        { name: 'Chowder', count: 5 },
-        { name: 'Vegetable', count: 4 },
-        { name: 'Stracciatella', count: 4 },
-        { name: 'Ribollita', count: 4 },
-        { name: 'Chicken Noodle', count: 3 },
-        { name: 'Bone Broth', count: 3 },
-        { name: 'Bisque', count: 2 },
-        { name: 'Corn Chowder', count: 1 },
-        { name: 'Avgolemono', count: 1 }
-      ]
-    },
-    {
-      name: '⭐ Specialty Soups',
-      types: [
-        { name: 'House Special', count: 28 },
-        { name: 'Vegan', count: 12 },
-        { name: 'Cioppino', count: 9 },
-        { name: 'Mushroom', count: 6 },
-        { name: 'Cabbage', count: 5 },
-        { name: 'Fruit', count: 4 },
-        { name: 'Apple', count: 4 },
-        { name: 'Tortilla', count: 3 },
-        { name: 'Lentil', count: 3 },
-        { name: 'Sweet Potato', count: 1 },
-        { name: 'Pumpkin', count: 1 },
-        { name: 'Potato Leek', count: 1 },
-        { name: 'Pickle', count: 1 },
-        { name: 'Matzo Ball', count: 1 },
-        { name: 'Cauliflower', count: 1 },
-        { name: 'Butternut Squash', count: 1 },
-        { name: 'Ajiaco', count: 1 },
-        { name: 'Cherry', count: 2 }
-      ]
-    }
-  ];
+  // Dynamic soup types from database - will be populated by useEffect
+  const [soupTypeCategories, setSoupTypeCategories] = useState([]);
+  const [soupTypesLoading, setSoupTypesLoading] = useState(true);
 
   // Filter soup types based on search term
   const filteredCategories = soupTypeCategories.map(category => ({
@@ -534,7 +551,12 @@ export default function RestaurantListingPage({
                       {isSoupTypeDropdownOpen && (
                         <div className="absolute z-50 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-xl max-h-80 overflow-hidden" ref={soupTypeDropdownRef}>
                           <div className="max-h-80 overflow-y-auto">
-                            {filteredCategories.length > 0 ? (
+                            {soupTypesLoading ? (
+                              <div className="px-4 py-4 text-center text-gray-500">
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mx-auto mb-2"></div>
+                                Loading soup types...
+                              </div>
+                            ) : filteredCategories.length > 0 ? (
                               filteredCategories.map((category) => (
                                 <div key={category.name}>
                                   <div className="px-4 py-2 bg-gray-50 text-sm font-medium text-gray-700 border-b border-gray-200">
@@ -563,7 +585,7 @@ export default function RestaurantListingPage({
                               ))
                             ) : (
                               <div className="px-4 py-4 text-center text-gray-500">
-                                No soup types found matching "{soupTypeSearchTerm}"
+                                {soupTypeSearchTerm ? `No soup types found matching "${soupTypeSearchTerm}"` : 'No soup types available'}
                               </div>
                             )}
                           </div>

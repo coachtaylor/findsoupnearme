@@ -469,33 +469,83 @@ export default function Home() {
     );
   };
   
-  // Soup type quick filters
+  // Soup type quick filters - updated based on database
   const quickFilters = [
-    { name: 'Ramen', emoji: '🍜', type: 'ramen' },
-    { name: 'Stew', emoji: '🍲', type: 'stew' },
-    { name: 'Chowder', emoji: '🥣', type: 'chowder' }
+    { name: 'Pho', emoji: '🍜', type: 'pho' },
+    { name: 'Cream of Mushroom', emoji: '🍄', type: 'cream-of-mushroom' },
+    { name: 'Bisque', emoji: '🥣', type: 'bisque' },
+    { name: 'Chicken Tortilla', emoji: '🌶️', type: 'chicken-tortilla' }
   ];
   
   const handleQuickFilter = (soupType) => {
     router.push(`/restaurants?soupType=${soupType}`);
   };
 
-  // Map soup types to emojis
+  // Map soup types to emojis - updated based on database
   const getSoupEmoji = (soupType) => {
     const emojiMap = {
+      'pho': '🍜',
       'ramen': '🍜',
-      'pho': '🍲',
-      'chowder': '🥣',
-      'tomato': '🍅',
-      'chicken': '🐓',
-      'vegetable': '🥕',
+      'udon': '🍜',
       'miso': '🥢',
-      'stew': '🍲',
-      'noodle': '🍝',
-      'seafood': '🦞',
-      'bean': '🫘',
-      'corn': '🌽',
-      'mushroom': '🍄'
+      'wonton': '🥟',
+      'chowder': '🥣',
+      'bisque': '🥣',
+      'gazpacho': '🥣',
+      'minestrone': '🥣',
+      'cream of mushroom': '🍄',
+      'borscht': '🥘',
+      'chicken tortilla': '🌶️',
+      'caldo de res': '🥘',
+      'gumbo': '🥘',
+      'tom yum': '🌶️',
+      'tom kha': '🥥',
+      'tonkotsu': '🍜',
+      'shoyu': '🍜',
+      'congee': '🍚',
+      'kimchi': '🥬',
+      'bun bo hue': '🍜',
+      'egg drop': '🥚',
+      'hot and sour': '🌶️',
+      'samgyetang': '🍗',
+      'clam chowder': '🦪',
+      'lobster bisque': '🦞',
+      'french onion': '🧅',
+      'vichyssoise': '🥔',
+      'bouillabaisse': '🐟',
+      'tomato': '🍅',
+      'vegetable': '🥕',
+      'stracciatella': '🥚',
+      'ribollita': '🥖',
+      'chicken noodle': '🍜',
+      'bone broth': '🦴',
+      'corn chowder': '🌽',
+      'avgolemono': '🍋',
+      'seafood chowder': '🦞',
+      'lentil': '🫘',
+      'split pea': '🫘',
+      'beef stew': '🥘',
+      'beef pho': '🍜',
+      'chicken tomatillo': '🌶️',
+      'sweet potato lemongrass': '🍠',
+      'lemon basil': '🌿',
+      'tortilla': '🌶️',
+      'house special': '⭐',
+      'vegan': '🌱',
+      'cioppino': '🐟',
+      'mushroom': '🍄',
+      'cabbage': '🥬',
+      'fruit': '🍎',
+      'apple': '🍎',
+      'sweet potato': '🍠',
+      'pumpkin': '🎃',
+      'potato leek': '🥔',
+      'pickle': '🥒',
+      'matzo ball': '🥚',
+      'cauliflower': '🥦',
+      'butternut squash': '🎃',
+      'ajiaco': '🥘',
+      'cherry': '🍒'
     };
     
     const lowerType = soupType.toLowerCase();
@@ -778,7 +828,27 @@ export default function Home() {
                   
                   <div className="relative h-48 w-full overflow-hidden rounded-t-xl">
                     <img
-                      src={restaurant.image_url || '/images/soup-pattern.svg'}
+                      src={(() => {
+                        // Same image priority logic as RestaurantCard
+                        if (restaurant.google_photos && 
+                            Array.isArray(restaurant.google_photos) && 
+                            restaurant.google_photos.length > 0) {
+                          // Prioritize food_photo_2, then food_photo_1, then fallback
+                          if (restaurant.google_photos.length >= 2) {
+                            return restaurant.google_photos[1]; // food_photo_2 (index 1)
+                          } else if (restaurant.google_photos.length >= 1) {
+                            return restaurant.google_photos[0]; // food_photo_1 (index 0)
+                          }
+                        }
+                        
+                        // Fall back to image_url if no photos available
+                        if (restaurant.image_url) {
+                          return restaurant.image_url;
+                        }
+                        
+                        // Last resort: placeholder
+                        return '/images/soup-pattern.svg';
+                      })()}
                       alt={restaurant.name}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                       onError={(e) => {

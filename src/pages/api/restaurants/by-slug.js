@@ -97,7 +97,8 @@ export default async function handler(req, res) {
         images: review.images || []
       })),
       image_url: restaurant.exterior_image_url,
-      photo_urls: restaurant.photo_urls || []
+      photo_urls: restaurant.photo_urls || [],
+      google_photos: restaurant.photo_urls || null
     };
     
     return res.status(200).json(processedRestaurant);

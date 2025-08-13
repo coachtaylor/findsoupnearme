@@ -79,7 +79,8 @@ export default async function handler(req, res) {
         created_at: review.created_at,
         images: review.images || []
       })),
-      image_url: restaurant.image_url
+      image_url: restaurant.image_url,
+      google_photos: restaurant.photo_urls || null
     };
     
     return res.status(200).json(processedRestaurant);
