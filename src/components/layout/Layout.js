@@ -12,7 +12,7 @@ export default function Layout({ children, title, description }) {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 24);
+      setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
@@ -24,195 +24,216 @@ export default function Layout({ children, title, description }) {
         <title>{title ? `${title} | FindSoupNearMe` : 'FindSoupNearMe - Find The Best Soup Near You'}</title>
         <meta name="description" content={description || 'Discover the best soup restaurants near you. Find ramen, pho, chowder, and more at top-rated restaurants.'} />
         <link rel="icon" href="/images/soup-logo.svg" type="image/svg+xml" />
+        {/* Modern Google Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
-      {/* Floating Glass Navigation */}
+      {/* Modern Navigation Bar */}
       <header
-        className={
-          `fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ` +
-          `w-[min(100%-2rem,theme(maxWidth.7xl))] ` +
-          `${isScrolled ? 'scale-[0.99]' : 'scale-100'}`
-        }
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled 
+            ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-neutral-100/50' 
+            : 'bg-white'
+        }`}
         aria-label="Site navigation"
       >
-        <div
-          className={
-            `rounded-2xl border shadow-lg backdrop-blur-xl bg-white/75 ` +
-            `transition-all duration-300 ` +
-            `${isScrolled ? 'py-1 border-white/50 shadow-md bg-white/70' : 'py-2 md:py-3 border-white/60'}`
-          }
-        >
-          <div className="px-4">
-            <div className="flex items-center justify-between">
-              {/* Logo */}
-              <Link href="/" className="flex items-center group" aria-label="Go to homepage">
-                <span className="relative inline-flex items-center justify-center w-16 h-16 mr-3">
-                  <img 
-                    src="/images/soup-logo.svg" 
-                    alt="Soup bowl logo" 
-                    className="w-12 h-12"
-                    aria-hidden="true"
-                  />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-20">
+            
+            {/* Logo */}
+            <Link href="/" className="flex items-center gap-3 group" aria-label="Go to homepage">
+              <div className="relative w-10 h-10 flex items-center justify-center">
+                <img 
+                  src="/images/logo.svg" 
+                  alt="FindSoup Logo" 
+                  className="w-10 h-10 transition-transform duration-200 group-hover:scale-110"
+                />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-['Outfit'] font-bold text-neutral-900 tracking-tight">
+                  FindSoup
                 </span>
-              </Link>
+                <span className="text-[10px] font-['Inter'] font-medium text-orange-600 -mt-1 tracking-wide">
+                  NEAR ME
+                </span>
+              </div>
+            </Link>
 
-              {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center gap-2 xl:gap-6">
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center gap-1">
+              <Link
+                href="/restaurants"
+                className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
+              >
+                Restaurants
+              </Link>
+              <Link
+                href="/cities"
+                className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
+              >
+                Cities
+              </Link>
+              <Link
+                href="/soup-types"
+                className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
+              >
+                Soup Types
+              </Link>
+              <Link
+                href="/about"
+                className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
+              >
+                About
+              </Link>
+            </nav>
+
+            {/* Right Side Actions */}
+            <div className="hidden lg:flex items-center gap-3">
+              {/* Search Icon Button - Shows when scrolled */}
+              {isScrolled && (
                 <Link
                   href="/restaurants"
-                  className="relative px-2 py-2 text-neutral-700 hover:text-orange-600 transition-colors group"
+                  className="flex items-center justify-center w-10 h-10 rounded-lg hover:bg-neutral-100 transition-colors"
+                  aria-label="Search"
                 >
-                  <span className="font-medium">All Restaurants</span>
-                  <span className="absolute left-0 -bottom-1 h-0.5 w-0 bg-orange-500 transition-all duration-300 group-hover:w-full" />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-neutral-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
                 </Link>
-                <Link
-                  href="/cities"
-                  className="relative px-2 py-2 text-neutral-700 hover:text-orange-600 transition-colors group"
-                >
-                  <span className="font-medium">Cities</span>
-                  <span className="absolute left-0 -bottom-1 h-0.5 w-0 bg-orange-500 transition-all duration-300 group-hover:w-full" />
-                </Link>
-                <Link
-                  href="/soup-types"
-                  className="relative px-2 py-2 text-neutral-700 hover:text-orange-600 transition-colors group"
-                >
-                  <span className="font-medium">Soup Types</span>
-                  <span className="absolute left-0 -bottom-1 h-0.5 w-0 bg-orange-500 transition-all duration-300 group-hover:w-full" />
-                </Link>
-                <Link
-                  href="/about"
-                  className="relative px-2 py-2 text-neutral-700 hover:text-orange-600 transition-colors group"
-                >
-                  <span className="font-medium">About</span>
-                  <span className="absolute left-0 -bottom-1 h-0.5 w-0 bg-orange-500 transition-all duration-300 group-hover:w-full" />
-                </Link>
-              </nav>
+              )}
 
-              {/* Right-side actions */}
-              <div className="hidden lg:flex items-center gap-2">
-                {/* Quick Search - subtle, visible when scrolled */}
-                <form action="/restaurants" method="get" className={`relative transition-opacity ${isScrolled ? 'opacity-100' : 'opacity-0 pointer-events-none'} mr-2`}>
-                  <input
-                    type="text"
-                    name="location"
-                    placeholder="Quick search..."
-                    className="pl-4 pr-10 py-2 bg-white/70 border border-white/60 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/60 focus:border-orange-400/60 shadow-sm"
-                  />
-                  <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
+              {/* Auth Buttons */}
+              {!user ? (
+                <>
+                  <Link 
+                    href="/auth/login" 
+                    className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
+                  >
+                    Sign in
+                  </Link>
+                  <Link 
+                    href="/auth/register" 
+                    className="px-5 py-2.5 text-[15px] font-['Inter'] font-semibold text-white bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-lg shadow-sm hover:shadow-md transition-all"
+                  >
+                    Get Started
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    href="/dashboard" 
+                    className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={async () => { await signOut(); }}
+                    className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
+                  >
+                    Sign out
                   </button>
-                </form>
-
-                {/* Auth */}
-                {!user ? (
-                  <div className="flex items-center gap-2">
-                    <Link href="/auth/login" className="px-4 py-2 rounded-full text-sm font-medium text-neutral-700 hover:text-orange-600 transition-colors">
-                      Sign in
-                    </Link>
-                    <Link href="/auth/register" className="px-4 py-2 rounded-full text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-orange-600 shadow-sm hover:from-orange-600 hover:to-orange-700 transition-colors">
-                      Get Started
-                    </Link>
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center font-['Inter'] font-bold text-sm shadow-sm">
+                    {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
                   </div>
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <Link href="/dashboard" className="px-3 py-2 rounded-full text-sm font-medium text-neutral-700 hover:text-orange-600 transition-colors">
-                      Dashboard
-                    </Link>
-                    <button
-                      onClick={async () => { await signOut(); }}
-                      className="px-3 py-2 rounded-full text-sm font-medium text-neutral-700 hover:text-orange-600 transition-colors"
-                    >
-                      Sign out
-                    </button>
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white flex items-center justify-center font-bold shadow-sm">
-                      {user?.email ? user.email.charAt(0).toUpperCase() : 'U'}
-                    </div>
-                  </div>
-                )}
+                </>
+              )}
+            </div>
 
-                {/* Mobile Menu Button placeholder to align layout */}
+            {/* Mobile Menu Button */}
+            <button
+              className="lg:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-neutral-100 transition-colors"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <span className={`block w-5 h-0.5 bg-neutral-800 rounded-full transition-all duration-200 ${isMobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+                <span className={`block w-5 h-0.5 bg-neutral-800 rounded-full transition-all duration-200 ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
+                <span className={`block w-5 h-0.5 bg-neutral-800 rounded-full transition-all duration-200 ${isMobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
               </div>
-
-              {/* Mobile Menu Button */}
-              <button
-                className="lg:hidden relative inline-flex items-center justify-center w-11 h-11 rounded-xl border border-white/60 bg-white/70 backdrop-blur-xl shadow-sm hover:shadow-md transition-all"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label="Toggle menu"
-              >
-                <div className="flex flex-col items-center justify-center space-y-1">
-                  <span className="block w-5 h-0.5 bg-neutral-800 rounded-full transition-all duration-200"></span>
-                  <span className="block w-5 h-0.5 bg-neutral-800 rounded-full transition-all duration-200"></span>
-                  <span className="block w-5 h-0.5 bg-neutral-800 rounded-full transition-all duration-200"></span>
-                </div>
-              </button>
-            </div>
+            </button>
           </div>
+        </div>
 
-          {/* Mobile Menu Panel */}
-          <div className={`lg:hidden overflow-hidden transition-all duration-300 ${isMobileMenuOpen ? 'max-h-96' : 'max-h-0'}`}>
-            <div className="px-4 pb-4 pt-2">
-              <nav className="flex flex-col">
-                <Link href="/restaurants" className="px-4 py-3 rounded-xl text-neutral-800 hover:text-orange-600 hover:bg-orange-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                  All Restaurants
-                </Link>
-                <Link href="/cities" className="px-4 py-3 rounded-xl text-neutral-800 hover:text-orange-600 hover:bg-orange-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                  Cities
-                </Link>
-                <Link href="/soup-types" className="px-4 py-3 rounded-xl text-neutral-800 hover:text-orange-600 hover:bg-orange-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                  Soup Types
-                </Link>
-                <Link href="/about" className="px-4 py-3 rounded-xl text-neutral-800 hover:text-orange-600 hover:bg-orange-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                  About
-                </Link>
+        {/* Mobile Menu */}
+        <div 
+          className={`lg:hidden bg-white border-t border-neutral-100 transition-all duration-300 overflow-hidden ${
+            isMobileMenuOpen ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="px-4 py-6 space-y-1">
+            <Link 
+              href="/restaurants" 
+              className="block px-4 py-3 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Restaurants
+            </Link>
+            <Link 
+              href="/cities" 
+              className="block px-4 py-3 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Cities
+            </Link>
+            <Link 
+              href="/soup-types" 
+              className="block px-4 py-3 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Soup Types
+            </Link>
+            <Link 
+              href="/about" 
+              className="block px-4 py-3 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              About
+            </Link>
 
-                <form action="/restaurants" method="get" className="relative mt-2" onSubmit={() => setIsMobileMenuOpen(false)}>
-                  <input
-                    type="text"
-                    name="location"
-                    placeholder="Search soups near you..."
-                    className="w-full pl-4 pr-10 py-3 bg-white/70 border border-white/60 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-300/60 focus:border-orange-400/60 shadow-sm"
-                  />
-                  <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                  </button>
-                </form>
+            <div className="h-px bg-neutral-100 my-4"></div>
 
-                <div className="mt-2 flex items-center gap-2">
-                  {!user ? (
-                    <>
-                      <Link href="/auth/login" className="flex-1 px-4 py-3 rounded-xl text-center font-medium text-neutral-800 hover:text-orange-600 hover:bg-orange-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                        Sign in
-                      </Link>
-                      <Link href="/auth/register" className="flex-1 px-4 py-3 rounded-xl text-center font-semibold text-white bg-gradient-to-r from-orange-500 to-orange-600 shadow-sm hover:from-orange-600 hover:to-orange-700 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                        Get Started
-                      </Link>
-                    </>
-                  ) : (
-                    <>
-                      <Link href="/dashboard" className="flex-1 px-4 py-3 rounded-xl text-center font-medium text-neutral-800 hover:text-orange-600 hover:bg-orange-50 transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
-                        Dashboard
-                      </Link>
-                      <button
-                        onClick={async () => { await signOut(); setIsMobileMenuOpen(false); }}
-                        className="flex-1 px-4 py-3 rounded-xl text-center font-medium text-neutral-800 hover:text-orange-600 hover:bg-orange-50 transition-colors"
-                      >
-                        Sign out
-                      </button>
-                    </>
-                  )}
-                </div>
-              </nav>
-            </div>
+            {!user ? (
+              <div className="space-y-2 pt-2">
+                <Link 
+                  href="/auth/login" 
+                  className="block w-full px-4 py-3 text-center text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-neutral-900 bg-neutral-50 rounded-lg transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Sign in
+                </Link>
+                <Link 
+                  href="/auth/register" 
+                  className="block w-full px-4 py-3 text-center text-[15px] font-['Inter'] font-semibold text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg shadow-sm transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2 pt-2">
+                <Link 
+                  href="/dashboard" 
+                  className="block w-full px-4 py-3 text-center text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-neutral-900 bg-neutral-50 rounded-lg transition-colors"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <button
+                  onClick={async () => { await signOut(); setIsMobileMenuOpen(false); }}
+                  className="block w-full px-4 py-3 text-center text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-neutral-900 bg-neutral-50 rounded-lg transition-colors"
+                >
+                  Sign out
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow pt-24 sm:pt-28">{children}</main>
+      <main className="flex-grow pt-20">{children}</main>
 
       {/* Footer */}
       <Footer />
