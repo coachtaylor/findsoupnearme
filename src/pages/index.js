@@ -143,12 +143,21 @@ export default function Home() {
               {soupCategories.map((category) => (
                 <button
                   key={category.name}
-                  onClick={() => router.push(`/restaurants?soupType=${category.name.toLowerCase()}`)}
+                  onClick={() => router.push(`/soup-types/${category.name.toLowerCase()}`)}
                   className="px-4 py-2 bg-white rounded-lg border border-neutral-200 hover:border-orange-400 hover:shadow-sm transition-all duration-200 group"
                 >
                   <span className="text-sm font-['Inter'] font-medium text-neutral-700 group-hover:text-orange-600 transition-colors">{category.name}</span>
                 </button>
               ))}
+              <Link
+                href="/soup-types"
+                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 shadow-sm hover:shadow-md transition-all duration-200 group flex items-center gap-2"
+              >
+                <span className="text-sm font-['Inter'] font-semibold">View All</span>
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
             </div>
 
             {/* Stats */}
