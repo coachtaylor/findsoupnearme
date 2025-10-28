@@ -384,7 +384,6 @@ export default function RestaurantListingPage({
       case 'Bisque': return '🥣';
       case 'Corn Chowder': return '🌽';
       case 'Avgolemono': return '🥣';
-      case 'House Special': return '🍲';
       case 'Vegan': return '🥗';
       case 'Cioppino': return '🍷';
       case 'Mushroom': return '🍄';

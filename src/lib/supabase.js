@@ -85,7 +85,7 @@ export async function getRestaurants({
   city = null,
   state = null,
   location = null,
-  soupType = null,
+  soupTypes = [],
   rating = null,
   priceRange = null,
   limit = 20,
@@ -95,9 +95,41 @@ export async function getRestaurants({
   featured = false,
 } = {}) {
   try {
+    const normalizedSoupTypes = Array.isArray(soupTypes)
+      ? soupTypes.filter(Boolean)
+      : soupTypes
+        ? [soupTypes]
+        : [];
+
     console.log('Fetching restaurants with params:', { 
-      city, state, location, soupType, rating, priceRange, limit, offset, sortBy, sortOrder, featured 
+      city, state, location, soupTypes: normalizedSoupTypes, rating, priceRange, limit, offset, sortBy, sortOrder, featured 
     });
+
+    let soupTypeRestaurantIds = [];
+    if (normalizedSoupTypes.length > 0) {
+      const { data: soupRows, error: soupError } = await supabase
+        .from('soups')
+        .select('restaurant_id')
+        .in('soup_type', normalizedSoupTypes);
+
+      if (soupError) {
+        console.error('Error fetching soup-type matches from Supabase:', soupError);
+        return { data: [], totalCount: 0 };
+      }
+
+      soupTypeRestaurantIds = Array.from(
+        new Set(
+          (soupRows || [])
+            .map((row) => row?.restaurant_id)
+            .filter(Boolean)
+        )
+      );
+
+      if (soupTypeRestaurantIds.length === 0) {
+        console.log('No restaurants matched requested soup types.');
+        return { data: [], totalCount: 0 };
+      }
+    }
     
     // Build the base query for both count and data
     let baseQuery = supabase
@@ -135,6 +167,10 @@ export async function getRestaurants({
     
     if (featured) {
       baseQuery = baseQuery.eq('is_featured', true);
+    }
+
+    if (soupTypeRestaurantIds.length > 0) {
+      baseQuery = baseQuery.in('id', soupTypeRestaurantIds);
     }
     
     // Get total count
@@ -184,6 +220,10 @@ export async function getRestaurants({
     
     if (featured) {
       dataQuery = dataQuery.eq('is_featured', true);
+    }
+
+    if (soupTypeRestaurantIds.length > 0) {
+      dataQuery = dataQuery.in('id', soupTypeRestaurantIds);
     }
     
     // Add limit and offset for pagination

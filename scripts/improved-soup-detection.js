@@ -59,7 +59,6 @@ const SOUP_DATABASE = {
       keywords: ['soup', 'bowl', 'broth'],
       soups: [
         { name: 'Vegetable', keywords: ['vegetable soup', 'veggie soup'], cuisines: [] },
-        { name: 'House Special', keywords: ['house soup', 'specialty soup', 'signature soup'], cuisines: [] },
       ]
     }
   };
@@ -163,10 +162,6 @@ const SOUP_DATABASE = {
           detectedSoups.add('Chicken Noodle');
           detectedSoups.add('Tomato');
           console.log(`  ✓ Default American: Chicken Noodle, Tomato`);
-        } else {
-          // Generic soup restaurant
-          detectedSoups.add('House Special');
-          console.log(`  ✓ Default Generic: House Special`);
         }
       }
     }
@@ -174,10 +169,7 @@ const SOUP_DATABASE = {
     // Strategy 3: If still nothing, check if it's really a soup restaurant
     if (detectedSoups.size === 0) {
       if (/soup/i.test(restaurant.name)) {
-        // It has "soup" in the name but we couldn't detect specifics
-        // This might be a soup-focused place serving multiple types
-        detectedSoups.add('House Special');
-        console.log(`  ✓ Fallback: House Special (soup in name)`);
+        console.log('  ⚠︎ No specific soup detected despite "soup" in name.');
       }
     }
     

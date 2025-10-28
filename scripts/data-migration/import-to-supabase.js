@@ -97,26 +97,7 @@ async function importData(filePath) {
             }
           }
         } else {
-          // Add a generic soup if no types detected
-          const soupData = {
-            restaurant_id: insertedRestaurant.id,
-            name: 'House Soup',
-            description: `${restaurant.name}'s signature soup`,
-            soup_type: 'House Special',
-            dietary_info: [],
-            is_seasonal: false,
-            available_days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-          };
-          
-          const { error: soupError } = await supabase
-            .from('soups')
-            .insert(soupData);
-          
-          if (soupError) {
-            console.error(`Error inserting generic soup for ${restaurant.name}:`, soupError);
-          } else {
-            console.log(`Inserted generic soup for ${restaurant.name}`);
-          }
+          console.log(`No specific soup types detected for ${restaurant.name}; skipping soup insertion.`);
         }
       } catch (error) {
         console.error(`Error processing restaurant ${restaurant.name}:`, error);

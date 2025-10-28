@@ -31,6 +31,7 @@ export default async function handler(req, res) {
     } else {
       soupTypes = Array.isArray(soupType) ? soupType : soupType ? [soupType] : [];
     }
+    const shouldFilterBySoupType = soupTypes.length > 0 && !soupTypes.includes('all');
     const ratings = Array.isArray(rating) ? rating.map(r => parseFloat(r)) : rating ? [parseFloat(rating)] : [];
     const priceRanges = Array.isArray(priceRange) ? priceRange : priceRange ? [priceRange] : [];
     
@@ -48,6 +49,7 @@ export default async function handler(req, res) {
       location,
       rating: ratings.length > 0 ? Math.min(...ratings) : null,
       priceRange: priceRanges.length > 0 ? priceRanges : null,
+      soupTypes: shouldFilterBySoupType ? soupTypes : [],
       limit: parseInt(limit),
       offset,
       sortBy,
@@ -66,6 +68,7 @@ export default async function handler(req, res) {
         state: state ? state.toUpperCase() : null,
         rating: ratings.length > 0 ? Math.min(...ratings) : null,
         priceRange: priceRanges.length > 0 ? priceRanges : null,
+        soupTypes: shouldFilterBySoupType ? soupTypes : [],
         limit: parseInt(limit),
       offset,
         sortBy: 'rating',
@@ -92,11 +95,14 @@ export default async function handler(req, res) {
     
     // Process the data for the frontend
     let processedRestaurants = restaurants.map(restaurant => {
+      // Remove deprecated generic soup assignments
+      const filteredSoups = (restaurant.soups || []).filter(
+        (soup) => soup && soup.soup_type && soup.soup_type !== 'House Special'
+      );
+
       // Extract soup types from soups relationship table
-      const soup_types = restaurant.soups 
-        ? [...new Set(restaurant.soups
-            .filter(soup => soup && soup.soup_type) // Filter out null or undefined soups
-            .map(soup => soup.soup_type))]
+      const soup_types = filteredSoups.length
+        ? [...new Set(filteredSoups.map((soup) => soup.soup_type))]
         : [];
       
       // Calculate review stats
@@ -132,7 +138,7 @@ export default async function handler(req, res) {
         rating: restaurant.rating || avgRating || 0,
         review_count: reviewCount,
         soup_types,
-        soups: restaurant.soups || [], // Include the full soups data for the filter
+        soups: filteredSoups, // Include the full soups data for the filter
         // Use restaurant's image if available, otherwise use a fallback
         image_url: restaurant.image_url || fallbackImage,
         // Include photos from database (using photo_urls field)
@@ -145,7 +151,7 @@ export default async function handler(req, res) {
     });
     
     // Filter by soup type if specified (done in JavaScript since Supabase foreign key filtering is complex)
-    if (soupTypes.length > 0 && !soupTypes.includes('all')) {
+    if (shouldFilterBySoupType) {
       console.log('Filtering by soup types:', soupTypes);
       console.log('Before filtering, restaurants count:', processedRestaurants.length);
       
@@ -165,16 +171,18 @@ export default async function handler(req, res) {
     }
     
     // Return the data
+    const responsePayload = {
+      restaurants: processedRestaurants,
+      totalCount
+    };
+    
     console.log('API returning:', {
       restaurantsCount: processedRestaurants.length,
-      totalCount,
+      totalCount: responsePayload.totalCount,
       sampleRestaurant: processedRestaurants[0]
     });
     
-    return res.status(200).json({
-      restaurants: processedRestaurants,
-      totalCount
-    });
+    return res.status(200).json(responsePayload);
     
   } catch (error) {
     console.error('Error in restaurants API:', error);

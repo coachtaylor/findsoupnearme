@@ -262,8 +262,8 @@ function detectSoupTypes(restaurant) {
   // (contains words like "soup", "broth", "bowl", etc.)
   if (soupTypes.size === 0 && 
      /\b(soup|broth|bowl|stew|chowder|bisque)\b/i.test(textToAnalyze)) {
-    // Add a generic "House Special" type
-    soupTypes.add('House Special');
+    // Previously we added a generic fallback here, but that led to false positives.
+    // Keep the set empty so only confidently matched types are stored.
   }
   
   return [...soupTypes];
