@@ -7,7 +7,7 @@ import Link from 'next/link';
 export default function RestaurantDetail() {
   const router = useRouter();
   const { state, city, restaurant: slug } = router.query;
-  const [activeTab, setActiveTab] = useState('menu');
+  const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(true);
   const [restaurantData, setRestaurantData] = useState(null);
   const [error, setError] = useState(null);
@@ -386,16 +386,6 @@ export default function RestaurantDetail() {
             <div className="flex gap-6 md:gap-10">
               <button
                 className={`py-4 px-1 border-b-2 font-semibold text-sm tracking-wide transition-all ${
-                  activeTab === 'menu'
-                    ? 'border-orange-500 text-orange-600'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
-                }`}
-                onClick={() => setActiveTab('menu')}
-              >
-                Soup Menu
-              </button>
-              <button
-                className={`py-4 px-1 border-b-2 font-semibold text-sm tracking-wide transition-all ${
                   activeTab === 'info'
                     ? 'border-orange-500 text-orange-600'
                     : 'border-transparent text-neutral-500 hover:text-neutral-700'
@@ -403,6 +393,16 @@ export default function RestaurantDetail() {
                 onClick={() => setActiveTab('info')}
               >
                 Restaurant Info
+              </button>
+              <button
+                className={`py-4 px-1 border-b-2 font-semibold text-sm tracking-wide transition-all ${
+                  activeTab === 'menu'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                }`}
+                onClick={() => setActiveTab('menu')}
+              >
+                Soup Menu
               </button>
               <button
                 className={`py-4 px-1 border-b-2 font-semibold text-sm tracking-wide transition-all ${

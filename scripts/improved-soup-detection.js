@@ -47,8 +47,8 @@ const SOUP_DATABASE = {
     
     // Jewish/Deli
     jewish: {
-      keywords: ['deli', 'jewish', 'kosher'],
-      soups: [
+        keywords: ['jewish deli', 'kosher deli', 'jewish cuisine'],  // ← FIXED
+        soups: [
         { name: 'Matzo Ball', keywords: ['matzo ball', 'matzah ball', 'matzo'], cuisines: ['jewish'] },
         { name: 'Chicken Soup', keywords: ['chicken soup', 'jewish penicillin'], cuisines: ['jewish'] },
       ]
@@ -65,25 +65,28 @@ const SOUP_DATABASE = {
   
   // Cuisine indicators in restaurant names/descriptions
   const CUISINE_INDICATORS = {
-    vietnamese: ['viet', 'saigon', 'hanoi', 'pho'],
-    japanese: ['japan', 'sushi', 'ramen', 'tokyo', 'kyoto'],
-    chinese: ['china', 'chinese', 'beijing', 'shanghai', 'szechuan', 'canton'],
-    thai: ['thai', 'bangkok', 'siam'],
-    korean: ['korea', 'seoul'],
-    italian: ['italian', 'pizza', 'pasta', 'trattoria', 'osteria'],
-    french: ['french', 'bistro', 'brasserie', 'cafe'],
-    mexican: ['mexican', 'taco', 'burrito', 'cantina'],
-    american: ['american', 'diner', 'grill', 'tavern'],
-    jewish: ['deli', 'jewish', 'kosher', 'bagel'],
-    greek: ['greek', 'gyro', 'taverna'],
-    mediterranean: ['mediterranean', 'med'],
-    middle_eastern: ['middle eastern', 'lebanese', 'persian']
+    vietnamese: ['vietnam', 'vietnamese', 'saigon', 'hanoi', 'bánh mì', 'bún bò', 'nha trang', 'ngon', 'nón lá'],
+    japanese: ['japanese', 'japan', 'izakaya', 'tokyo', 'kyoto', 'osaka', 'sapporo'],
+    chinese: ['chinese', 'china', 'beijing', 'shanghai', 'szechuan', 'sichuan', 'canton', 'cantonese', 'hunan', 'dim sum', 'nom wah'],
+    thai: ['thai', 'thailand', 'bangkok', 'siam'],
+    korean: ['korean', 'korea', 'seoul', 'kimchi jjigae', 'bulgogi'],
+    italian: ['italian', 'italy', 'trattoria', 'osteria', 'ristorante', 'pizzeria'],
+    french: ['french', 'france', 'bistro français', 'brasserie française'],
+    mexican: ['mexican', 'mexico', 'taqueria', 'cantina mexicana'],
+    american: ['american diner', 'steakhouse', 'burger bar', 'american grill'],
+    jewish: ['jewish deli', 'kosher restaurant', 'jewish cuisine', 'kosher deli'],
+    greek: ['greek taverna', 'greek restaurant', 'hellenic'],
+    mediterranean: ['mediterranean cuisine', 'mediterranean restaurant'],
+    middle_eastern: ['middle eastern', 'lebanese restaurant', 'persian cuisine']
   };
   
   /**
    * Detect the primary cuisine type of a restaurant
    */
-  function detectCuisineType(restaurant) {
+/**
+ * Detect the primary cuisine type of a restaurant
+ */
+function detectCuisineType(restaurant) {
     const textToAnalyze = [
       restaurant.name || '',
       restaurant.description || ''
@@ -91,6 +94,7 @@ const SOUP_DATABASE = {
     
     const detectedCuisines = [];
     
+    // First pass: Check explicit cuisine indicators
     for (const [cuisine, indicators] of Object.entries(CUISINE_INDICATORS)) {
       for (const indicator of indicators) {
         if (textToAnalyze.includes(indicator.toLowerCase())) {
@@ -100,8 +104,42 @@ const SOUP_DATABASE = {
       }
     }
     
-    return detectedCuisines;
+    // Second pass: Infer cuisine from soup-specific terms in NAME
+    const nameLower = restaurant.name.toLowerCase();
+    
+    if (/\bpho\b|phở|vietnamese/.test(nameLower) && !detectedCuisines.includes('vietnamese')) {
+      detectedCuisines.push('vietnamese');
+    }
+    if (/ramen|tonkotsu|izakaya|shoyu ramen|miso ramen/.test(nameLower) && !detectedCuisines.includes('japanese')) {
+      detectedCuisines.push('japanese');
+    }
+    if (/wonton|won ton|dim sum|szechuan/.test(nameLower) && !detectedCuisines.includes('chinese')) {
+      detectedCuisines.push('chinese');
+    }
+    if (/\budon\b|soba|tempura/.test(nameLower) && !detectedCuisines.includes('japanese')) {
+      detectedCuisines.push('japanese');
+    }
+    if (/tom yum|tom kha|pad thai/.test(nameLower) && !detectedCuisines.includes('thai')) {
+      detectedCuisines.push('thai');
+    }
+    if (/kimchi|bulgogi|korean bbq/.test(nameLower) && !detectedCuisines.includes('korean')) {
+      detectedCuisines.push('korean');
+    }
+    if (/kimchi|bulgogi|korean bbq/.test(nameLower) && !detectedCuisines.includes('korean')) {
+    detectedCuisines.push('korean');
   }
+  
+  // Third pass: Generic "noodle" restaurants - try to infer from context
+  if (detectedCuisines.length === 0 && /noodle/i.test(nameLower)) {
+    // Look for Asian noodle indicators
+    if (/panda|village|love|bar|bird/i.test(nameLower)) {
+      // Generic Asian noodle place - default to Chinese
+      detectedCuisines.push('chinese');
+    }
+  }
+  
+  return detectedCuisines;
+}
   
   /**
    * Enhanced soup type detection with cuisine-aware logic
@@ -141,6 +179,34 @@ const SOUP_DATABASE = {
         }
       }
     }
+
+    // Strategy 1.5: Cuisine-based defaults when no keywords found
+  if (detectedSoups.size === 0 && cuisines.length > 0) {
+    console.log('  No soup keywords found, using cuisine-based defaults...');
+    
+    if (cuisines.includes('vietnamese')) {
+      detectedSoups.add('Pho');
+      console.log(`  ✓ Default Vietnamese: Pho`);
+    }
+    if (cuisines.includes('japanese')) {
+      detectedSoups.add('Ramen');
+      detectedSoups.add('Miso');
+      console.log(`  ✓ Default Japanese: Ramen, Miso`);
+    }
+    if (cuisines.includes('chinese')) {
+      detectedSoups.add('Wonton');
+      detectedSoups.add('Hot and Sour');
+      console.log(`  ✓ Default Chinese: Wonton, Hot and Sour`);
+    }
+    if (cuisines.includes('thai')) {
+      detectedSoups.add('Tom Yum');
+      console.log(`  ✓ Default Thai: Tom Yum`);
+    }
+    if (cuisines.includes('korean')) {
+      detectedSoups.add('Kimchi');
+      console.log(`  ✓ Default Korean: Kimchi Jjigae`);
+    }
+  }
     
     // Strategy 2: Fallback based on restaurant name
     if (detectedSoups.size === 0) {
