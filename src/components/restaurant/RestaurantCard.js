@@ -14,6 +14,7 @@ export default function RestaurantCard({
   const [imageError, setImageError] = useState(false);
   const cardRef = useRef(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   // Format restaurant information
   const {
@@ -26,6 +27,7 @@ export default function RestaurantCard({
     review_count,
     image_url,
     google_photos,
+    photo_urls,
     soup_types = [],
     price_range,
     is_verified,
@@ -36,34 +38,56 @@ export default function RestaurantCard({
     ? `/${state.toLowerCase()}/${city.toLowerCase().replace(/\s+/g, '-')}/${slug}`
     : `/restaurants/${id}`;
   
-  // Get the best available image source
-  const getImageSource = () => {
-    console.log('🔍 getImageSource called for:', name);
-    console.log('🔍 google_photos:', google_photos);
-    console.log('🔍 image_url:', image_url);
+  // Get all available images for this restaurant
+  const getAllImages = () => {
+    const images = [];
     
-    if (google_photos && 
-        Array.isArray(google_photos) && 
-        google_photos.length > 0) {
-      // Prioritize food_photo_2, then food_photo_1, then fallback
-      if (google_photos.length >= 2) {
-        console.log('✅ Using google_photos[1] (food_photo_2):', google_photos[1]);
-        return google_photos[1]; // food_photo_2 (index 1)
-      } else if (google_photos.length >= 1) {
-        console.log('✅ Using google_photos[0] (food_photo_1):', google_photos[0]);
-        return google_photos[0]; // food_photo_1 (index 0)
-      }
+    // First, try photo_urls array
+    if (photo_urls && Array.isArray(photo_urls) && photo_urls.length > 0) {
+      const validPhotos = photo_urls.filter(url => url && typeof url === 'string' && url.startsWith('http'));
+      images.push(...validPhotos);
     }
     
-    // Fall back to image_url if no photos available
-    if (image_url) {
-      console.log('✅ Using image_url:', image_url);
-      return image_url;
+    // Then try google_photos
+    if (google_photos && Array.isArray(google_photos) && google_photos.length > 0) {
+      const validGooglePhotos = google_photos.filter(url => url && typeof url === 'string' && url.startsWith('http'));
+      images.push(...validGooglePhotos);
     }
     
-    // Last resort: placeholder
-    console.log('✅ Using placeholder image');
-    return '/images/soup-pattern.svg';
+    // Then try image_url
+    if (image_url && typeof image_url === 'string' && image_url.startsWith('http')) {
+      images.push(image_url);
+    }
+    
+    // Return unique images only
+    return [...new Set(images)];
+  };
+  
+  const availableImages = getAllImages();
+  const hasMultipleImages = availableImages.length > 1;
+  
+  // Get current image or fallback to placeholder
+  const getCurrentImage = () => {
+    if (availableImages.length > 0) {
+      return availableImages[currentImageIndex] || availableImages[0];
+    }
+    return null; // Will show placeholder
+  };
+  
+  // Navigate to next image
+  const nextImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev + 1) % availableImages.length);
+    setImageLoaded(false);
+  };
+  
+  // Navigate to previous image
+  const prevImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setCurrentImageIndex((prev) => (prev - 1 + availableImages.length) % availableImages.length);
+    setImageLoaded(false);
   };
   
   // Handle missing or error in image loading
@@ -161,18 +185,21 @@ export default function RestaurantCard({
     >
       <Link href={restaurantUrl} className="block">
         {/* Hero Image Section - Better food showcase */}
-        <div className="relative h-64 w-full overflow-hidden bg-gray-50">
+        <div className="relative h-64 w-full overflow-hidden bg-gray-50 group/image">
           {/* Background Image */}
-          {imageError ? (
-            <div className="flex items-center justify-center h-full bg-gradient-to-br from-orange-100 to-orange-200 rounded-t-2xl">
-              <div className="text-center">
-                <span className="text-4xl mb-2 block">🍲</span>
-                <span className="text-xs text-orange-600 font-medium">Image unavailable</span>
+          {imageError || !getCurrentImage() ? (
+            <div className="flex items-center justify-center h-full bg-gradient-to-br from-neutral-100 to-neutral-200 rounded-t-2xl">
+              <div className="text-center px-6">
+                <svg className="w-16 h-16 mx-auto mb-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm text-neutral-600 font-medium block">Images Coming Soon</span>
+                <span className="text-xs text-neutral-500 block mt-1">Check back later</span>
               </div>
             </div>
           ) : (
             <ProgressiveImage
-              src={getImageSource()}
+              src={getCurrentImage()}
               alt={`${name} - Soup Restaurant`}
               className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110"
               onError={handleImageError}
@@ -186,6 +213,59 @@ export default function RestaurantCard({
           
           {/* Subtle gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+          
+          {/* Image Navigation Arrows - Only show if multiple images */}
+          {hasMultipleImages && !imageError && (
+            <>
+              {/* Previous Arrow */}
+              <button
+                onClick={prevImage}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 z-10"
+                aria-label="Previous image"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              {/* Next Arrow */}
+              <button
+                onClick={nextImage}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 z-10"
+                aria-label="Next image"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+              
+              {/* Image Indicators */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+                {availableImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCurrentImageIndex(index);
+                      setImageLoaded(false);
+                    }}
+                    className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                      index === currentImageIndex
+                        ? 'bg-white w-6'
+                        : 'bg-white/50 hover:bg-white/75'
+                    }`}
+                    aria-label={`View image ${index + 1}`}
+                  />
+                ))}
+              </div>
+              
+              {/* Image Counter */}
+              <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-full">
+                {currentImageIndex + 1} / {availableImages.length}
+              </div>
+            </>
+          )}
           
           {/* Floating Badges */}
           <div className="absolute top-4 right-4 flex flex-col gap-2">

@@ -152,16 +152,27 @@ export default async function handler(req, res) {
     
     // Filter by soup type if specified (done in JavaScript since Supabase foreign key filtering is complex)
     if (shouldFilterBySoupType) {
+      const normalizedSelectedTypes = soupTypes
+        .filter((type) => typeof type === 'string')
+        .map((type) => type.trim().toLowerCase())
+        .filter(Boolean);
+
       console.log('Filtering by soup types:', soupTypes);
       console.log('Before filtering, restaurants count:', processedRestaurants.length);
       
       processedRestaurants = processedRestaurants.filter(restaurant => {
         // Use soup_types field for consistency with the display data
         const restaurantSoupTypes = restaurant.soup_types || [];
+        const restaurantSoupTypesNormalized = restaurantSoupTypes
+          .filter((type) => typeof type === 'string')
+          .map((type) => type.trim().toLowerCase())
+          .filter(Boolean);
         
         console.log(`Restaurant ${restaurant.name} has soup types:`, restaurantSoupTypes);
         
-        const matches = soupTypes.some(selectedType => restaurantSoupTypes.includes(selectedType));
+        const matches = normalizedSelectedTypes.some((selectedType) =>
+          restaurantSoupTypesNormalized.includes(selectedType)
+        );
         console.log(`Restaurant ${restaurant.name} matches filter:`, matches);
         
         return matches;

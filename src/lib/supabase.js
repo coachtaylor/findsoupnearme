@@ -95,11 +95,9 @@ export async function getRestaurants({
   featured = false,
 } = {}) {
   try {
-    const normalizedSoupTypes = Array.isArray(soupTypes)
-      ? soupTypes.filter(Boolean)
-      : soupTypes
-        ? [soupTypes]
-        : [];
+    const normalizedSoupTypes = (Array.isArray(soupTypes) ? soupTypes : soupTypes ? [soupTypes] : [])
+      .filter((type) => typeof type === 'string' && type.trim().length > 0)
+      .map((type) => type.trim());
 
     console.log('Fetching restaurants with params:', { 
       city, state, location, soupTypes: normalizedSoupTypes, rating, priceRange, limit, offset, sortBy, sortOrder, featured 
@@ -107,10 +105,26 @@ export async function getRestaurants({
 
     let soupTypeRestaurantIds = [];
     if (normalizedSoupTypes.length > 0) {
+      const soupTypeVariants = Array.from(
+        new Set(
+          normalizedSoupTypes.flatMap((type) => {
+            const trimmed = type.trim();
+            const lower = trimmed.toLowerCase();
+            const upper = trimmed.toUpperCase();
+            const title = trimmed
+              .split(' ')
+              .filter(Boolean)
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join(' ');
+            return [trimmed, lower, upper, title];
+          })
+        )
+      );
+
       const { data: soupRows, error: soupError } = await supabase
         .from('soups')
         .select('restaurant_id')
-        .in('soup_type', normalizedSoupTypes);
+        .in('soup_type', soupTypeVariants);
 
       if (soupError) {
         console.error('Error fetching soup-type matches from Supabase:', soupError);
@@ -130,121 +144,105 @@ export async function getRestaurants({
         return { data: [], totalCount: 0 };
       }
     }
-    
-    // Build the base query for both count and data
-    let baseQuery = supabase
-      .from('restaurants')
-      .select('id', { count: 'exact' });
-    
-    // Apply filters to base query
-    if (city) {
-      baseQuery = baseQuery.eq('city', city);
-    }
-    
-    if (state) {
-      baseQuery = baseQuery.eq('state', state);
-    }
-    
-    // Handle location search - search across multiple fields
-    if (location) {
-      const locationLower = location.toLowerCase();
-      baseQuery = baseQuery.or(
-        `city.ilike.%${locationLower}%,state.ilike.%${locationLower}%,name.ilike.%${locationLower}%`
-      );
-    }
-    
-    if (rating) {
-      baseQuery = baseQuery.gte('rating', rating);
-    }
-    
-    if (priceRange) {
-      if (Array.isArray(priceRange)) {
-        baseQuery = baseQuery.in('price_range', priceRange);
-      } else {
-        baseQuery = baseQuery.eq('price_range', priceRange);
-      }
-    }
-    
-    if (featured) {
-      baseQuery = baseQuery.eq('is_featured', true);
-    }
 
-    if (soupTypeRestaurantIds.length > 0) {
-      baseQuery = baseQuery.in('id', soupTypeRestaurantIds);
-    }
-    
-    // Get total count
-    const { count, error: countError } = await baseQuery;
-    
+    const restrictToIds = soupTypeRestaurantIds.length > 0 ? soupTypeRestaurantIds : null;
+
+    const applyFilters = (query) => {
+      if (restrictToIds) {
+        query = query.in('id', restrictToIds);
+      }
+
+      if (city) {
+        query = query.eq('city', city);
+      }
+
+      if (state) {
+        query = query.eq('state', state);
+      }
+
+      if (location) {
+        const locationLower = location.toLowerCase();
+        query = query.or(
+          `city.ilike.%${locationLower}%,state.ilike.%${locationLower}%,name.ilike.%${locationLower}%`
+        );
+      }
+
+      if (rating) {
+        query = query.gte('rating', rating);
+      }
+
+      if (priceRange) {
+        if (Array.isArray(priceRange)) {
+          query = query.in('price_range', priceRange);
+        } else {
+          query = query.eq('price_range', priceRange);
+        }
+      }
+
+      if (featured) {
+        query = query.eq('is_featured', true);
+      }
+
+      return query;
+    };
+
+    const { count, error: countError } = await applyFilters(
+      supabase.from('restaurants').select('id', { count: 'exact', head: true })
+    );
+
     if (countError) {
-      console.error('Error getting count from Supabase:', countError);
+      console.error('Error getting filtered restaurant count from Supabase:', countError);
       return { data: [], totalCount: 0 };
     }
-    
-    // Build the data query with limit and offset
-    let dataQuery = supabase
-      .from('restaurants')
-      .select(`
-        *,
-        soups (*)
-      `)
-      .order(sortBy, { ascending: sortOrder === 'asc' });
-    
-    // Apply the same filters to data query
-    if (city) {
-      dataQuery = dataQuery.eq('city', city);
-    }
-    
-    if (state) {
-      dataQuery = dataQuery.eq('state', state);
-    }
-    
-    if (location) {
-      const locationLower = location.toLowerCase();
-      dataQuery = dataQuery.or(
-        `city.ilike.%${locationLower}%,state.ilike.%${locationLower}%,name.ilike.%${locationLower}%`
+
+    let totalMatches = typeof count === 'number' ? count : 0;
+
+    if (totalMatches === 0) {
+      // As a fallback, attempt to compute count manually if head=true was not supported
+      const { data: filteredIdRows, error: idError } = await applyFilters(
+        supabase.from('restaurants').select('id')
       );
-    }
-    
-    if (rating) {
-      dataQuery = dataQuery.gte('rating', rating);
-    }
-    
-    if (priceRange) {
-      if (Array.isArray(priceRange)) {
-        dataQuery = dataQuery.in('price_range', priceRange);
-      } else {
-        dataQuery = dataQuery.eq('price_range', priceRange);
+
+      if (idError) {
+        console.error('Error retrieving filtered restaurant ids:', idError);
+        return { data: [], totalCount: 0 };
       }
-    }
-    
-    if (featured) {
-      dataQuery = dataQuery.eq('is_featured', true);
+
+      totalMatches = new Set((filteredIdRows || []).map((row) => row?.id).filter(Boolean)).size;
     }
 
-    if (soupTypeRestaurantIds.length > 0) {
-      dataQuery = dataQuery.in('id', soupTypeRestaurantIds);
+    if (!totalMatches) {
+      console.log('Filters resulted in zero matching restaurants.');
+      return { data: [], totalCount: 0 };
     }
-    
-    // Add limit and offset for pagination
+
+    let dataQuery = applyFilters(
+      supabase
+        .from('restaurants')
+        .select(
+          `
+          *,
+          soups (*)
+        `
+        )
+        .order(sortBy, { ascending: sortOrder === 'asc' })
+    );
+
     if (limit) {
-      dataQuery = dataQuery.limit(limit);
+      const start = Math.max(0, offset);
+      const end = Math.max(start, start + limit - 1);
+      dataQuery = dataQuery.range(start, end);
     }
-    
-    if (offset > 0) {
-      dataQuery = dataQuery.range(offset, offset + limit - 1);
-    }
-    
-    // Execute the data query
+
     const { data, error: dataError } = await dataQuery;
-    
+
     if (dataError) {
       console.error('Error fetching restaurants from Supabase:', dataError);
-      return { data: [], totalCount: count || 0 };
+      return { data: [], totalCount: totalMatches };
     }
-    
-    console.log(`Successfully fetched ${data?.length || 0} restaurants from Supabase (total: ${count})`);
-    return { data: data || [], totalCount: count || 0 };
+
+    console.log(`Successfully fetched ${data?.length || 0} restaurants from Supabase (matches: ${totalMatches})`);
+    return { data: data || [], totalCount: totalMatches };
   } catch (err) {
     console.error('Exception when fetching restaurants:', err);
     return { data: [], totalCount: 0 };

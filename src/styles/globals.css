@@ -2494,3 +2494,12 @@ html {
     transform: none;
   }
 }
+
+/* Animated Gradient Button Utilities */
+.bg-size-200 {
+  background-size: 200% auto;
+}
+
+.hover\:bg-pos-100:hover {
+  background-position: right center;
+}

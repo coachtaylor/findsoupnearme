@@ -362,7 +362,7 @@ export default function SoupTypes() {
               {popularSoups.map((soup, index) => (
                 <Link
                   key={index}
-                  href={`/restaurants?soupType=${soup.name.toLowerCase()}`}
+                  href={{ pathname: '/restaurants', query: { soupType: soup.name } }}
                   className="group relative bg-white rounded-2xl p-6 shadow-sm border border-neutral-100 hover:shadow-lg hover:border-orange-200 transition-all duration-300 hover:-translate-y-1"
                 >
                   <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${soup.categoryColor} rounded-t-2xl`}></div>
@@ -412,7 +412,7 @@ export default function SoupTypes() {
                   {category.soups.map((soup, index) => (
                     <Link
                       key={index}
-                      href={`/restaurants?soupType=${soup.name.toLowerCase()}`}
+                      href={{ pathname: '/restaurants', query: { soupType: soup.name } }}
                       className="group bg-white rounded-xl p-6 border border-neutral-200 hover:border-orange-300 hover:shadow-md transition-all duration-200"
                     >
                       <h3 className="text-lg font-['Outfit'] font-bold text-neutral-900 mb-2 group-hover:text-orange-600 transition-colors">
@@ -449,7 +449,7 @@ export default function SoupTypes() {
                   {filteredSoups.map((soup, index) => (
                     <Link
                       key={index}
-                      href={`/restaurants?soupType=${soup.name.toLowerCase()}`}
+                      href={{ pathname: '/restaurants', query: { soupType: soup.name } }}
                       className="group bg-white rounded-xl p-6 border border-neutral-200 hover:border-orange-300 hover:shadow-md transition-all duration-200"
                     >
                       <div className={`inline-block px-2 py-1 bg-gradient-to-r ${soup.categoryColor} text-white rounded text-xs font-['Inter'] font-semibold mb-3`}>
@@ -530,4 +530,3 @@ export default function SoupTypes() {
     </div>
   );
 }
-

@@ -47,18 +47,50 @@ export default function RestaurantListingPage({
   const [isSoupTypeDropdownOpen, setIsSoupTypeDropdownOpen] = useState(false);
   const [soupTypeSearchTerm, setSoupTypeSearchTerm] = useState('');
   const soupTypeDropdownRef = useRef(null);
+  const [pendingQuerySoupTypes, setPendingQuerySoupTypes] = useState([]);
+  const [initialQuerySoupTypesApplied, setInitialQuerySoupTypesApplied] = useState(false);
   
   // Initialize location from URL parameters
   useEffect(() => {
-    if (router.isReady) {
-      const { location } = router.query;
-      if (location) {
-        setLocationQuery(location);
-        setLocationFilter(location);
-        setLocationDisplay(location);
-      }
+    if (!router.isReady) return;
+
+    const locationParam = Array.isArray(router.query.location)
+      ? router.query.location[0]
+      : router.query.location || '';
+
+    if (locationParam) {
+      setLocationQuery(locationParam);
+      setLocationFilter(locationParam);
+      setLocationDisplay(locationParam);
+    } else {
+      setLocationQuery('');
+      setLocationFilter(null);
+      setLocationDisplay('');
     }
-  }, [router.isReady, router.query]);
+
+    const soupTypeParam = router.query.soupType;
+    const soupTypeParams = Array.isArray(soupTypeParam)
+      ? soupTypeParam
+      : soupTypeParam
+      ? [soupTypeParam]
+      : [];
+
+    if (soupTypeParams.length) {
+      const decodedTypes = soupTypeParams
+        .map((type) => decodeURIComponent(type))
+        .map((type) => type.replace(/\+/g, ' '))
+        .map((type) => type.trim())
+        .filter(Boolean);
+
+      setPendingQuerySoupTypes(decodedTypes);
+      setInitialQuerySoupTypesApplied(false);
+    } else {
+      setPendingQuerySoupTypes([]);
+      setInitialQuerySoupTypesApplied(false);
+      setSelectedSoupTypes([]);
+      setSelectedSoupType(null);
+    }
+  }, [router.isReady, router.query.location, router.query.soupType]);
 
   // Fetch soup types from database
   useEffect(() => {
@@ -117,7 +149,7 @@ export default function RestaurantListingPage({
             {
               name: '🥘 Specialty & Regional',
               types: sortedSoupTypes.filter(soup => 
-                /house special|vegan|cioppino|mushroom|cabbage|fruit|apple|sweet potato|pumpkin|potato leek|pickle|matzo ball|cauliflower|butternut squash|ajiaco|cherry/i.test(soup.name)
+                /vegan|cioppino|mushroom|cabbage|fruit|apple|sweet potato|pumpkin|potato leek|pickle|matzo ball|cauliflower|butternut squash|ajiaco|cherry/i.test(soup.name)
               )
             }
           ];
@@ -214,11 +246,38 @@ export default function RestaurantListingPage({
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedSoupType, selectedRating, selectedPriceRange, city, state, locationFilter]);
+  }, [selectedSoupType, selectedSoupTypes, selectedRating, selectedPriceRange, city, state, locationFilter]);
   
   // Dynamic soup types from database - will be populated by useEffect
   const [soupTypeCategories, setSoupTypeCategories] = useState([]);
   const [soupTypesLoading, setSoupTypesLoading] = useState(true);
+
+  useEffect(() => {
+    if (initialQuerySoupTypesApplied) return;
+    if (!pendingQuerySoupTypes.length) return;
+
+    const availableSoupNames = soupTypeCategories.flatMap((category) =>
+      (category.types || []).map((type) => type.name)
+    );
+
+    const resolvedSelections = pendingQuerySoupTypes
+      .map((type) => {
+        const match = availableSoupNames.find((name) => name.toLowerCase() === type.toLowerCase());
+        if (match) return match;
+        return type
+          .split(' ')
+          .filter(Boolean)
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+      })
+      .filter(Boolean);
+
+    if (!resolvedSelections.length) return;
+
+    setSelectedSoupTypes(resolvedSelections);
+    setSelectedSoupType(resolvedSelections[0] || null);
+    setInitialQuerySoupTypesApplied(true);
+  }, [initialQuerySoupTypesApplied, pendingQuerySoupTypes, soupTypeCategories]);
 
   // Filter soup types based on search term
   const filteredCategories = soupTypeCategories.map(category => ({
@@ -243,20 +302,27 @@ export default function RestaurantListingPage({
   // Toggle soup type selection
   const toggleSoupType = (soupType) => {
     if (selectedSoupTypes.includes(soupType)) {
-      setSelectedSoupTypes(selectedSoupTypes.filter(type => type !== soupType));
+      const updated = selectedSoupTypes.filter(type => type !== soupType);
+      setSelectedSoupTypes(updated);
+      setSelectedSoupType(updated[0] || null);
     } else {
-      setSelectedSoupTypes([...selectedSoupTypes, soupType]);
+      const updated = [...selectedSoupTypes, soupType];
+      setSelectedSoupTypes(updated);
+      setSelectedSoupType(updated[0] || soupType);
     }
   };
 
   // Remove selected soup type
   const removeSoupType = (soupType) => {
-    setSelectedSoupTypes(selectedSoupTypes.filter(type => type !== soupType));
+    const updated = selectedSoupTypes.filter(type => type !== soupType);
+    setSelectedSoupTypes(updated);
+    setSelectedSoupType(updated[0] || null);
   };
 
   // Clear all soup type selections
   const clearAllSoupTypes = () => {
     setSelectedSoupTypes([]);
+    setSelectedSoupType(null);
   };
   
   // Rating options for filtering
@@ -723,6 +789,7 @@ export default function RestaurantListingPage({
                       setSelectedSoupTypes([]);
                       setSelectedRatings([]);
                       setSelectedPriceRanges([]);
+                      setSelectedSoupType(null);
                     }}
                     className="px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-2xl font-semibold transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform"
                   >

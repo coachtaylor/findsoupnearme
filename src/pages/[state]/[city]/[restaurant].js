@@ -12,6 +12,7 @@ export default function RestaurantDetail() {
   const [restaurantData, setRestaurantData] = useState(null);
   const [error, setError] = useState(null);
   const [scrollY, setScrollY] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     const onScroll = () => setScrollY(window.scrollY || 0);
@@ -197,9 +198,6 @@ export default function RestaurantDetail() {
     const restaurant = restaurantData;
     const soupTypes = getSoupTypes(restaurant);
     
-    // Default fallback image if needed
-    const fallbackImage = 'https://images.unsplash.com/photo-1547592166-23ac45744acd?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80';
-    
     return (
       <>
         <Head>
@@ -210,7 +208,7 @@ export default function RestaurantDetail() {
         <div className="bg-white">
           {/* Breadcrumbs */}
           <div className="bg-neutral-50 border-b border-neutral-200">
-            <div className="container mx-auto px-4 py-3">
+            <div className="container mx-auto px-4 py-2">
               <nav className="text-sm">
                 <ol className="flex flex-wrap items-center">
                   <li className="flex items-center">
@@ -245,144 +243,254 @@ export default function RestaurantDetail() {
             </div>
           </div>
           
-          {/* Hero Header */}
-          <section className="relative">
-            {/* Background Image with Parallax */}
-            <div className="absolute inset-0 overflow-hidden">
-              <div
-                className="w-full h-[42vh] md:h-[52vh]"
-                style={{
-                  transform: `translateY(${Math.min(scrollY * 0.2, 80)}px)`,
-                  transition: 'transform 80ms linear'
-                }}
-              >
-                <img
-                  src={restaurant.exterior_image_url || fallbackImage}
-                  alt={`${restaurant.name} hero`}
-                  className="w-full h-full object-cover"
-                  onError={(e) => { e.target.src = fallbackImage; }}
-                />
-              </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-            </div>
-
-            {/* Content Overlay */}
-            <div className="relative container mx-auto px-4 pt-24 md:pt-28 pb-6 md:pb-10">
-              <div className="max-w-5xl">
-                <div className="inline-flex items-center px-3 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white text-xs mb-3">
-                  {restaurant.city}, {restaurant.state}
-                </div>
-                <h1 className="text-3xl md:text-5xl font-extrabold text-white drop-shadow-sm">
+          {/* Hero Header - Modern Professional Design */}
+          <section className="bg-white border-b border-neutral-200 shadow-sm">
+            <div className="container mx-auto px-4 py-6">
+              <div className="max-w-7xl mx-auto">
+                <div className="grid lg:grid-cols-3 gap-8 items-center">
+                  {/* Left Side - Restaurant Info */}
+                  <div className="lg:col-span-2 flex flex-col gap-3">
+                {/* Restaurant Name */}
+                    <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 tracking-tight leading-tight">
                   {restaurant.name}
                 </h1>
-                <div className="mt-3 flex flex-wrap items-center gap-3 text-white/90">
-                {/* Rating */}
-                  <div className="flex items-center">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <svg 
-                      key={i}
-                        className={`h-5 w-5 ${i < Math.floor(restaurant.rating || 0) ? 'text-yellow-400 fill-current' : 'text-white/40'}`}
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                    <span className="ml-2">
-                    {restaurant.rating ? restaurant.rating.toFixed(1) : 'No ratings'} 
-                      {restaurant.review_count ? ` (${restaurant.review_count})` : ''}
+
+                    {/* Rating & Price Row */}
+                    <div className="flex flex-wrap items-center gap-3 text-sm">
+                      {/* Rating */}
+                      <div className="flex items-center gap-1.5">
+                        <div className="flex items-center">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <svg 
+                          key={i}
+                              className={`h-4 w-4 ${i < Math.floor(restaurant.rating || 0) ? 'text-orange-500 fill-current' : 'text-neutral-300'}`}
+                          viewBox="0 0 20 20"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ))}
+                    </div>
+                        <span className="font-semibold text-neutral-700">
+                        {restaurant.rating ? restaurant.rating.toFixed(1) : 'New'}
+                      </span>
+                        {restaurant.rating && restaurant.review_count && (
+                          <span className="text-neutral-500">
+                          ({restaurant.review_count})
+                        </span>
+                      )}
+                    </div>
+
+                      {/* Divider */}
+                      <span className="text-neutral-300">•</span>
+
+                      {/* Price Range */}
+                  {restaurant.price_range && (
+                        <>
+                          <span className="font-semibold text-neutral-700">{restaurant.price_range}</span>
+                          <span className="text-neutral-600">
+                        {restaurant.price_range === '$' && 'Budget Friendly'}
+                        {restaurant.price_range === '$$' && 'Moderate'}
+                        {restaurant.price_range === '$$$' && 'Upscale'}
+                        {restaurant.price_range === '$$$$' && 'Fine Dining'}
+                      </span>
+                        </>
+                  )}
+                </div>
+
+                {/* Address */}
+                    <div className="flex items-start gap-2 text-neutral-600">
+                      <svg className="w-4 h-4 text-neutral-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                      <span className="text-sm leading-relaxed">
+                    {restaurant.address ? `${restaurant.address}, ` : ''}
+                    {restaurant.city ? `${restaurant.city}, ` : ''}
+                    {restaurant.state || ''} 
+                    {restaurant.zip_code ? ` ${restaurant.zip_code}` : ''}
                   </span>
                 </div>
-                  {/* Address */}
-                  <div className="hidden md:block text-sm">
-                  {restaurant.address ? `${restaurant.address}, ` : ''}
-                  {restaurant.city ? `${restaurant.city}, ` : ''}
-                  {restaurant.state || ''} 
-                  {restaurant.zip_code ? ` ${restaurant.zip_code}` : ''}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-2.5 pt-1">
+                      {/* Primary Order Button */}
+                  <a 
+                    href={getOrderUrl(restaurant)}
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-semibold transition-colors text-sm shadow-sm"
+                  >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx="9" cy="19" r="2" />
+                      <circle cx="17" cy="19" r="2" />
+                    </svg>
+                        Order Online
+                      </a>
+
+                      {/* Secondary Buttons */}
+                      {restaurant.phone && (
+                        <a 
+                          href={`tel:${restaurant.phone}`}
+                          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-white hover:bg-neutral-50 text-neutral-700 font-semibold border border-neutral-300 transition-colors text-sm shadow-sm"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                          </svg>
+                          Call
+                        </a>
+                      )}
+
+                      <a 
+                        href={getGoogleMapsUrl(restaurant)}
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-white hover:bg-neutral-50 text-neutral-700 font-semibold border border-neutral-300 transition-colors text-sm shadow-sm"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                        Directions
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Right Side - Interactive Photo Carousel */}
+                  <div className="lg:col-span-1">
+                    {(() => {
+                      const photos = getRestaurantPhotos(restaurant);
+                      const allPhotos = [];
+                      
+                      // Add exterior image first if available
+                      if (restaurant.exterior_image_url) {
+                        allPhotos.push(restaurant.exterior_image_url);
+                      }
+                      
+                      // Add all other photos
+                      photos.forEach(url => {
+                        if (url !== restaurant.exterior_image_url) {
+                          allPhotos.push(url);
+                        }
+                      });
+                      
+                      const hasPhotos = allPhotos.length > 0;
+                      const totalPhotos = allPhotos.length;
+                      
+                      const nextImage = () => {
+                        setCurrentImageIndex((prev) => (prev + 1) % totalPhotos);
+                      };
+                      
+                      const prevImage = () => {
+                        setCurrentImageIndex((prev) => (prev - 1 + totalPhotos) % totalPhotos);
+                      };
+                      
+                      const goToPhotosTab = () => {
+                        setActiveTab('photos');
+                        // Smooth scroll to tabs section
+                        setTimeout(() => {
+                          document.querySelector('[role="tablist"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                      };
+                      
+                      return (
+                        <div 
+                          className="relative aspect-[4/3] rounded-xl overflow-hidden bg-neutral-100 cursor-pointer group shadow-md hover:shadow-lg transition-shadow"
+                          onClick={goToPhotosTab}
+                        >
+                          {hasPhotos ? (
+                            <>
+                              {/* Main Image */}
+                              <img 
+                                src={allPhotos[currentImageIndex]} 
+                                alt={`${restaurant.name} - Photo ${currentImageIndex + 1}`}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                              
+                              {/* Navigation Arrows - only show if multiple photos */}
+                              {totalPhotos > 1 && (
+                                <>
+                                  {/* Previous Button */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      prevImage();
+                                    }}
+                                    className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-md z-10"
+                                    aria-label="Previous photo"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                  </button>
+                                  
+                                  {/* Next Button */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      nextImage();
+                                    }}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white hover:bg-neutral-100 text-neutral-900 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 shadow-md z-10"
+                                    aria-label="Next photo"
+                                  >
+                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </button>
+                                  
+                                  {/* Dot Indicators */}
+                                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
+                                    {allPhotos.map((_, index) => (
+                                      <button
+                                        key={index}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setCurrentImageIndex(index);
+                                        }}
+                                        className={`h-1.5 rounded-full transition-all ${
+                                          index === currentImageIndex 
+                                            ? 'bg-white w-6' 
+                                            : 'bg-white/60 hover:bg-white/80 w-1.5'
+                                        }`}
+                                        aria-label={`Go to photo ${index + 1}`}
+                                      />
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                              
+                              {/* Click to view all photos indicator */}
+                              <div className="absolute top-3 right-3 px-3 py-1.5 bg-white/90 backdrop-blur-sm text-neutral-900 text-xs font-semibold rounded-md flex items-center gap-1.5 shadow-sm">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span>{currentImageIndex + 1} / {totalPhotos}</span>
+                              </div>
+                            </>
+                          ) : (
+                            // Fallback illustration when no image
+                            <div className="w-full h-full flex items-center justify-center bg-neutral-50">
+                              <div className="text-center text-neutral-400">
+                                <svg className="w-16 h-16 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <p className="text-sm">No photos</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
-                {/* Soup types */}
-                {soupTypes.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {soupTypes.map((type, index) => (
-                      <span key={index} className="px-3 py-1.5 rounded-full text-xs font-medium bg-white/20 backdrop-blur-md border border-white/30 text-white">
-                        {type}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {/* Floating FAB */}
-              <div className="fixed bottom-6 right-6 z-40">
-                <a 
-                  href={getOrderUrl(restaurant)}
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="group inline-flex items-center gap-2 px-5 py-3 rounded-full text-white bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all hover:shadow-xl"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M3 3h2l.4 2M7 13h10l4-8H5.4" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="9" cy="19" r="2" />
-                    <circle cx="17" cy="19" r="2" />
-                  </svg>
-                  <span className="font-semibold">Order Now</span>
-                </a>
               </div>
             </div>
           </section>
           
-          {/* Photo Strip */}
-          <div className="container mx-auto px-4 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Main Photo */}
-              <div className="md:col-span-2 h-64 md:h-96 rounded-2xl overflow-hidden bg-neutral-100 relative">
-                {restaurant.exterior_image_url ? (
-                  <img 
-                    src={restaurant.exterior_image_url} 
-                    alt={`${restaurant.name} exterior`} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = fallbackImage;
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <img 
-                      src={fallbackImage}
-                      alt={`${restaurant.name}`} 
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-              </div>
-              
-              {/* Food Photos */}
-              <div className="grid grid-cols-2 gap-4 h-64 md:h-96">
-                {getRestaurantPhotos(restaurant).length > 0 ? (
-                  getRestaurantPhotos(restaurant).slice(0, 2).map((url, index) => (
-                    <div key={index} className="rounded-2xl overflow-hidden bg-neutral-100">
-                      <img 
-                        src={url} 
-                        alt={`${restaurant.name} food ${index + 1}`} 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.target.src = fallbackImage;
-                        }}
-                      />
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-2 rounded-2xl overflow-hidden bg-neutral-100 flex items-center justify-center">
-                    <span className="text-neutral-400">No food photos available</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-          
           {/* Tabs Navigation */}
-          <div className="container mx-auto px-4 mt-2 md:mt-6 border-b border-neutral-200">
+          <div className="container mx-auto px-4 border-b border-neutral-200" role="tablist">
             <div className="flex gap-6 md:gap-10">
               <button
                 className={`py-4 px-1 border-b-2 font-semibold text-sm tracking-wide transition-all ${
@@ -414,15 +522,25 @@ export default function RestaurantDetail() {
               >
                 Reviews
               </button>
+              <button
+                className={`py-4 px-1 border-b-2 font-semibold text-sm tracking-wide transition-all ${
+                  activeTab === 'photos'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
+                }`}
+                onClick={() => setActiveTab('photos')}
+              >
+                Photos
+              </button>
             </div>
           </div>
           
           {/* Tab Content */}
-          <div className="container mx-auto px-4 py-8">
+          <div className="container mx-auto px-4 pt-[126px] pb-10">
             {/* Menu Tab */}
             {activeTab === 'menu' && (
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold text-neutral-900 mb-6">Soup Menu</h2>
+              <div className="max-w-4xl mx-auto mt-8">
+                {/* Removed tab header: Soup Menu */}
                 
                 {restaurant.soups && restaurant.soups.length > 0 ? (
                   <div className="grid gap-6">
@@ -490,8 +608,8 @@ export default function RestaurantDetail() {
             
             {/* Info Tab */}
             {activeTab === 'info' && (
-              <div className="max-w-4xl mx-auto">
-                <h2 className="text-2xl font-bold text-neutral-900 mb-6">Restaurant Information</h2>
+              <div className="max-w-4xl mx-auto mt-8">
+                {/* Removed tab header: Restaurant Information */}
                 
                 <div className="grid md:grid-cols-2 gap-8">
                   {/* Left Column */}
@@ -499,14 +617,14 @@ export default function RestaurantDetail() {
                     {/* Description */}
                     {restaurant.description && (
                       <div className="mb-8">
-                        <h3 className="text-lg font-semibold text-neutral-900 mb-2">About</h3>
+                        <h3 className="text-lg font-semibold text-neutral-900 mb-3 mt-6 first:mt-0">About</h3>
                         <p className="text-neutral-700">{restaurant.description}</p>
                       </div>
                     )}
                     
                     {/* Contact Info */}
                     <div className="mb-8">
-                      <h3 className="text-lg font-semibold text-neutral-900 mb-2">Contact Information</h3>
+                      <h3 className="text-lg font-semibold text-neutral-900 mb-3 mt-6 first:mt-0">Contact Information</h3>
                       <ul className="space-y-3">
                         <li className="flex items-start">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-neutral-500 mr-2 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -562,7 +680,7 @@ export default function RestaurantDetail() {
                   <div>
                     {/* Hours */}
                     <div className="mb-8">
-                      <h3 className="text-lg font-semibold text-neutral-900 mb-2">Hours of Operation</h3>
+                      <h3 className="text-lg font-semibold text-neutral-900 mb-3 mt-6 first:mt-0">Hours of Operation</h3>
                       {formatHoursOfOperation(restaurant.hours_of_operation).length > 0 ? (
                         <ul className="space-y-2">
                           {formatHoursOfOperation(restaurant.hours_of_operation).map((hours, index) => (
@@ -579,7 +697,7 @@ export default function RestaurantDetail() {
                     
                     {/* Map */}
                     <div>
-                      <h3 className="text-lg font-semibold text-neutral-900 mb-2">Location</h3>
+                      <h3 className="text-lg font-semibold text-neutral-900 mb-3 mt-6 first:mt-0">Location</h3>
                       <div className="relative h-60 bg-neutral-100 rounded-2xl overflow-hidden border border-white/60 shadow-sm">
                         <a 
                           href={getGoogleMapsUrl(restaurant)} 
@@ -603,9 +721,9 @@ export default function RestaurantDetail() {
             
             {/* Reviews Tab */}
             {activeTab === 'reviews' && (
-              <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-bold text-neutral-900">Reviews</h2>
+              <div className="max-w-4xl mx-auto mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  {/* Removed tab header: Reviews */}
                   <button className="px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl shadow-sm hover:shadow-md transition-colors">
                     Write a Review
                   </button>
@@ -692,6 +810,72 @@ export default function RestaurantDetail() {
                     <button className="px-6 py-3 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white rounded-xl shadow-sm hover:shadow-md transition-colors">
                       Write a Review
                     </button>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Photos Tab */}
+            {activeTab === 'photos' && (
+              <div className="max-w-6xl mx-auto mt-8">
+                <div className="flex items-center justify-between mb-4">
+                  {/* Removed tab header: Photos */}
+                  <span className="text-sm text-neutral-600">
+                    {(() => {
+                      const uniquePhotos = new Set();
+                      if (restaurant.exterior_image_url) uniquePhotos.add(restaurant.exterior_image_url);
+                      getRestaurantPhotos(restaurant).forEach(url => uniquePhotos.add(url));
+                      const count = uniquePhotos.size;
+                      return count > 0 ? `${count} photo${count !== 1 ? 's' : ''}` : 'No photos available';
+                    })()}
+                  </span>
+                </div>
+                
+                {getRestaurantPhotos(restaurant).length > 0 || restaurant.exterior_image_url ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Get all unique photos */}
+                    {(() => {
+                      const allPhotos = [];
+                      const seen = new Set();
+                      
+                      // Add exterior image first if available
+                      if (restaurant.exterior_image_url && !seen.has(restaurant.exterior_image_url)) {
+                        allPhotos.push({ url: restaurant.exterior_image_url, label: 'Exterior' });
+                        seen.add(restaurant.exterior_image_url);
+                      }
+                      
+                      // Add all other photos
+                      getRestaurantPhotos(restaurant).forEach((url, index) => {
+                        if (!seen.has(url)) {
+                          allPhotos.push({ url, label: `Photo ${allPhotos.length + 1}` });
+                          seen.add(url);
+                        }
+                      });
+                      
+                      return allPhotos.map((photo, index) => (
+                        <div key={index} className="relative group rounded-2xl overflow-hidden bg-neutral-100 aspect-square cursor-pointer">
+                          <img 
+                            src={photo.url} 
+                            alt={`${restaurant.name} ${photo.label.toLowerCase()}`} 
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+                          <div className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium">
+                            {photo.label}
+                          </div>
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                ) : (
+                  <div className="text-center py-16 bg-neutral-50 rounded-xl">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-neutral-100 mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-semibold text-neutral-900 mb-2">No Photos Yet</h3>
+                    <p className="text-neutral-600 mb-6">Photos for this restaurant will be added soon.</p>
                   </div>
                 )}
               </div>
