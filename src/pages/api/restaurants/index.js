@@ -43,7 +43,11 @@ export default async function handler(req, res) {
     });
     
     // Fetch restaurants
-    let result = await getRestaurants({
+    let {
+      data: restaurantsData,
+      totalCount: totalMatches,
+      soupTypeFilterApplied
+    } = await getRestaurants({
       city: city ? city.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()).join(' ') : null,
       state: state ? state.toUpperCase() : null,
       location,
@@ -57,8 +61,8 @@ export default async function handler(req, res) {
       featured: featured === 'true'
     });
     
-    let restaurants = result.data;
-    let totalCount = result.totalCount;
+    let restaurants = restaurantsData;
+    let totalCount = totalMatches;
     
     // If no featured restaurants found and this is a featured request, fall back to top-rated restaurants
     if (featured === 'true' && restaurants.length === 0) {
@@ -77,6 +81,7 @@ export default async function handler(req, res) {
       });
       restaurants = fallbackResult.data;
       totalCount = fallbackResult.totalCount;
+      soupTypeFilterApplied = fallbackResult.soupTypeFilterApplied;
     }
     
     // If still no restaurants found, return empty result
@@ -179,6 +184,11 @@ export default async function handler(req, res) {
       });
       
       console.log('After filtering, restaurants count:', processedRestaurants.length);
+
+      // Ensure total count reflects applied soup-type filtering
+      if (!soupTypeFilterApplied) {
+        totalCount = processedRestaurants.length;
+      }
     }
     
     // Return the data

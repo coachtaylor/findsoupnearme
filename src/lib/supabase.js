@@ -128,7 +128,7 @@ export async function getRestaurants({
 
       if (soupError) {
         console.error('Error fetching soup-type matches from Supabase:', soupError);
-        return { data: [], totalCount: 0 };
+        return { data: [], totalCount: 0, soupTypeFilterApplied: normalizedSoupTypes.length > 0 };
       }
 
       soupTypeRestaurantIds = Array.from(
@@ -141,11 +141,12 @@ export async function getRestaurants({
 
       if (soupTypeRestaurantIds.length === 0) {
         console.log('No restaurants matched requested soup types.');
-        return { data: [], totalCount: 0 };
+        return { data: [], totalCount: 0, soupTypeFilterApplied: true };
       }
     }
 
     const restrictToIds = soupTypeRestaurantIds.length > 0 ? soupTypeRestaurantIds : null;
+    const soupTypeFilterApplied = !!restrictToIds;
 
     const applyFilters = (query) => {
       if (restrictToIds) {
@@ -192,7 +193,7 @@ export async function getRestaurants({
 
     if (countError) {
       console.error('Error getting filtered restaurant count from Supabase:', countError);
-      return { data: [], totalCount: 0 };
+      return { data: [], totalCount: 0, soupTypeFilterApplied };
     }
 
     let totalMatches = typeof count === 'number' ? count : 0;
@@ -205,7 +206,7 @@ export async function getRestaurants({
 
       if (idError) {
         console.error('Error retrieving filtered restaurant ids:', idError);
-        return { data: [], totalCount: 0 };
+        return { data: [], totalCount: 0, soupTypeFilterApplied };
       }
 
       totalMatches = new Set((filteredIdRows || []).map((row) => row?.id).filter(Boolean)).size;
@@ -213,7 +214,7 @@ export async function getRestaurants({
 
     if (!totalMatches) {
       console.log('Filters resulted in zero matching restaurants.');
-      return { data: [], totalCount: 0 };
+      return { data: [], totalCount: 0, soupTypeFilterApplied };
     }
 
     let dataQuery = applyFilters(
@@ -238,14 +239,15 @@ export async function getRestaurants({
 
     if (dataError) {
       console.error('Error fetching restaurants from Supabase:', dataError);
-      return { data: [], totalCount: totalMatches };
+      return { data: [], totalCount: totalMatches, soupTypeFilterApplied };
     }
 
     console.log(`Successfully fetched ${data?.length || 0} restaurants from Supabase (matches: ${totalMatches})`);
-    return { data: data || [], totalCount: totalMatches };
+    return { data: data || [], totalCount: totalMatches, soupTypeFilterApplied };
   } catch (err) {
     console.error('Exception when fetching restaurants:', err);
-    return { data: [], totalCount: 0 };
+    const filterApplied = (Array.isArray(soupTypes) ? soupTypes : soupTypes ? [soupTypes] : []).length > 0;
+    return { data: [], totalCount: 0, soupTypeFilterApplied: filterApplied };
   }
 }
 

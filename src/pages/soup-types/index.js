@@ -1,12 +1,21 @@
 // src/pages/soup-types/index.js
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
+const slugifySoupName = (value) =>
+  (value || '')
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 export default function SoupTypes() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [soupCounts, setSoupCounts] = useState({});
 
   // Comprehensive soup types organized by category
   const soupCategories = {
@@ -33,12 +42,14 @@ export default function SoupTypes() {
           name: 'Miso Soup', 
           description: 'Japanese soup with fermented soybean paste',
           origin: 'Japan',
+          aliases: ['Miso'],
           count: 156
         },
         { 
           name: 'Wonton Soup', 
           description: 'Chinese soup with meat-filled dumplings',
           origin: 'China',
+          aliases: ['Wonton'],
           count: 143
         },
         { 
@@ -51,6 +62,7 @@ export default function SoupTypes() {
           name: 'Tom Kha', 
           description: 'Thai coconut soup with galangal and lime',
           origin: 'Thailand',
+          aliases: ['Tom Kha Gai'],
           count: 76
         },
         { 
@@ -63,6 +75,7 @@ export default function SoupTypes() {
           name: 'Hot and Sour Soup', 
           description: 'Chinese soup with vinegar, spices, and tofu',
           origin: 'China',
+          aliases: ['Hot and Sour'],
           count: 54
         },
       ]
@@ -90,6 +103,7 @@ export default function SoupTypes() {
           name: 'Tomato Soup', 
           description: 'Smooth and creamy tomato-based soup',
           origin: 'United States',
+          aliases: ['Tomato'],
           count: 145
         },
         { 
@@ -217,6 +231,7 @@ export default function SoupTypes() {
           name: 'Lentil Soup', 
           description: 'Hearty soup with lentils and vegetables',
           origin: 'Various',
+          aliases: ['Lentil'],
           popular: true,
           count: 145
         },
@@ -236,20 +251,198 @@ export default function SoupTypes() {
           name: 'Vegetable Soup', 
           description: 'Classic mixed vegetable soup',
           origin: 'Various',
+          aliases: ['Vegetable'],
           count: 167
         },
         { 
           name: 'Mushroom Soup', 
           description: 'Creamy soup with various mushrooms',
           origin: 'Various',
+          aliases: ['Mushroom'],
           count: 123
         },
       ]
     },
   };
 
+  const soupDefinitions = useMemo(() => {
+    const definitions = [];
+
+    Object.entries(soupCategories).forEach(([categoryKey, category]) => {
+      category.soups.forEach((soup) => {
+        const slugVariants = new Set();
+        const baseSlug = slugifySoupName(soup.name);
+        if (baseSlug) slugVariants.add(baseSlug);
+
+        if (!baseSlug.includes('soup')) {
+          const withSuffix = slugifySoupName(`${soup.name} Soup`);
+          if (withSuffix) slugVariants.add(withSuffix);
+        }
+
+        (soup.aliases || []).forEach((alias) => {
+          const aliasSlug = slugifySoupName(alias);
+          if (aliasSlug) slugVariants.add(aliasSlug);
+          if (!aliasSlug.includes('soup')) {
+            const aliasWithSuffix = slugifySoupName(`${alias} Soup`);
+            if (aliasWithSuffix) slugVariants.add(aliasWithSuffix);
+          }
+        });
+
+        if (baseSlug.includes('-soup')) {
+          const withoutSuffix = baseSlug.replace(/-soup$/, '');
+          if (withoutSuffix) slugVariants.add(withoutSuffix);
+        }
+
+        definitions.push({
+          name: soup.name,
+          categoryKey,
+          slugVariants,
+        });
+      });
+    });
+
+    return definitions;
+  }, []);
+
+  const slugToDisplayNames = useMemo(() => {
+    const map = new Map();
+    soupDefinitions.forEach((definition) => {
+      definition.slugVariants.forEach((slug) => {
+        if (!map.has(slug)) {
+          map.set(slug, new Set());
+        }
+        map.get(slug).add(definition.name);
+      });
+    });
+    return map;
+  }, [soupDefinitions]);
+
+  const slugKeys = useMemo(() => Array.from(slugToDisplayNames.keys()), [slugToDisplayNames]);
+
+  const definitionByName = useMemo(() => {
+    const map = new Map();
+    soupDefinitions.forEach((definition) => {
+      map.set(definition.name, definition);
+    });
+    return map;
+  }, [soupDefinitions]);
+
+  const enhanceSoup = (soup) => {
+    const variants = [
+      soup.name,
+      ...(soup.aliases || []),
+    ];
+
+    if (/\b(soup|stew)\b$/i.test(soup.name.trim())) {
+      variants.push(soup.name.replace(/\s+(soup|stew)\s*$/i, '').trim());
+    } else {
+      variants.push(`${soup.name} Soup`);
+    }
+
+    const slugs = Array.from(
+      new Set(
+        variants
+          .map(slugifySoupName)
+          .filter(Boolean)
+      )
+    );
+
+    let resolvedCount = soupCounts[soup.name];
+    if (typeof resolvedCount !== 'number') {
+      const values = slugs
+        .map((slug) => soupCounts[slug])
+        .filter((value) => typeof value === 'number');
+
+      if (values.length > 0) {
+        resolvedCount = values.reduce((sum, value) => sum + value, 0);
+      } else {
+        resolvedCount = 0;
+      }
+    }
+
+    return {
+      ...soup,
+      count: resolvedCount,
+      slugs,
+    };
+  };
+
+  const enhancedCategories = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(soupCategories).map(([key, category]) => [
+        key,
+        {
+          ...category,
+          soups: category.soups.map(enhanceSoup),
+        },
+      ])
+    );
+  }, [soupCounts]);
+
+  useEffect(() => {
+    const loadCounts = async () => {
+      try {
+        const response = await fetch('/api/restaurants?soupTypes=all&limit=1000');
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        const data = await response.json();
+
+        const countsByName = new Map();
+
+        (data.restaurants || []).forEach((restaurant) => {
+          const restaurantId = restaurant.id;
+          if (!restaurantId) return;
+
+          const matchedNames = new Set();
+
+          (restaurant.soups || []).forEach((soup) => {
+            const slug = slugifySoupName(soup?.soup_type);
+            if (!slug) return;
+
+            const directMatches = slugToDisplayNames.get(slug);
+            if (directMatches?.size) {
+              directMatches.forEach((name) => matchedNames.add(name));
+              return;
+            }
+
+            slugKeys.forEach((key) => {
+              if (slug.startsWith(key) || key.startsWith(slug)) {
+                const names = slugToDisplayNames.get(key);
+                names?.forEach((name) => matchedNames.add(name));
+              }
+            });
+          });
+
+          matchedNames.forEach((name) => {
+            if (!countsByName.has(name)) {
+              countsByName.set(name, new Set());
+            }
+            countsByName.get(name).add(restaurantId);
+          });
+        });
+
+        const nextCounts = {};
+        countsByName.forEach((set, name) => {
+          const count = set.size;
+          nextCounts[name] = count;
+          const definition = definitionByName.get(name);
+          definition?.slugVariants.forEach((slug) => {
+            nextCounts[slug] = count;
+          });
+        });
+
+        setSoupCounts(nextCounts);
+      } catch (error) {
+        console.error('Failed to load soup counts:', error);
+      }
+    };
+
+    loadCounts();
+  }, [definitionByName, slugKeys, slugToDisplayNames]);
+
   // Get all soups in a flat array for searching
-  const allSoups = Object.entries(soupCategories).flatMap(([categoryKey, category]) =>
+  const allSoups = Object.entries(enhancedCategories).flatMap(([categoryKey, category]) =>
     category.soups.map(soup => ({
       ...soup,
       category: category.name,
@@ -277,9 +470,6 @@ export default function SoupTypes() {
       <Head>
         <title>Soup Types | FindSoupNearMe</title>
         <meta name="description" content="Explore different types of soup from around the world. Find restaurants serving ramen, pho, chowder, bisque, and more." />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
       {/* Hero Section */}
@@ -325,7 +515,7 @@ export default function SoupTypes() {
             >
               All Types
             </button>
-            {Object.entries(soupCategories).map(([key, category]) => (
+            {Object.entries(enhancedCategories).map(([key, category]) => (
               <button
                 key={key}
                 onClick={() => setSelectedCategory(key)}
@@ -394,7 +584,7 @@ export default function SoupTypes() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {searchQuery === '' && selectedCategory === 'all' ? (
             // Show by category
-            Object.entries(soupCategories).map(([categoryKey, category]) => (
+            Object.entries(enhancedCategories).map(([categoryKey, category]) => (
               <div key={categoryKey} className="mb-16 last:mb-0">
                 <div className="mb-8">
                   <div className={`inline-block px-4 py-1 bg-gradient-to-r ${category.color} text-white rounded-full text-sm font-['Inter'] font-semibold mb-3`}>
@@ -439,7 +629,7 @@ export default function SoupTypes() {
                 </h2>
                 {searchQuery && (
                   <p className="text-lg font-['Inter'] text-neutral-600">
-                    Searching for "{searchQuery}"
+                    Searching for &ldquo;{searchQuery}&rdquo;
                   </p>
                 )}
               </div>

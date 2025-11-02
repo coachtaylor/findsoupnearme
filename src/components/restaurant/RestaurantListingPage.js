@@ -102,8 +102,6 @@ export default function RestaurantListingPage({
         const response = await fetch('/api/restaurants?soupTypes=all&limit=1000');
         const data = await response.json();
         
-        console.log('API response for soup types:', data);
-        
         if (data.restaurants && data.restaurants.length > 0) {
           // Extract all soup types from restaurants
           const allSoupTypes = new Map();
@@ -118,8 +116,6 @@ export default function RestaurantListingPage({
               });
             }
           });
-          
-          console.log('Extracted soup types:', allSoupTypes);
           
           // Convert to array and sort by count
           const sortedSoupTypes = Array.from(allSoupTypes.entries())
@@ -256,6 +252,20 @@ export default function RestaurantListingPage({
     if (initialQuerySoupTypesApplied) return;
     if (!pendingQuerySoupTypes.length) return;
 
+    if (soupTypeCategories.length === 0) {
+      const normalizedTypes = pendingQuerySoupTypes.map((type) =>
+        type
+          .split(' ')
+          .filter(Boolean)
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ')
+      );
+      setSelectedSoupTypes(normalizedTypes);
+      setSelectedSoupType(normalizedTypes[0] || null);
+      setInitialQuerySoupTypesApplied(true);
+      return;
+    }
+
     const availableSoupNames = soupTypeCategories.flatMap((category) =>
       (category.types || []).map((type) => type.name)
     );
@@ -263,17 +273,21 @@ export default function RestaurantListingPage({
     const resolvedSelections = pendingQuerySoupTypes
       .map((type) => {
         const match = availableSoupNames.find((name) => name.toLowerCase() === type.toLowerCase());
-        if (match) return match;
-        return type
+        if (match) {
+          return match;
+        }
+        const normalized = type
           .split(' ')
           .filter(Boolean)
           .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(' ');
+        return normalized;
       })
       .filter(Boolean);
 
-    if (!resolvedSelections.length) return;
-
+    if (!resolvedSelections.length) {
+      return;
+    }
     setSelectedSoupTypes(resolvedSelections);
     setSelectedSoupType(resolvedSelections[0] || null);
     setInitialQuerySoupTypesApplied(true);

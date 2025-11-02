@@ -167,9 +167,6 @@ export default function SoupTypePage() {
       <Head>
         <title>{soupName} Restaurants | FindSoupNearMe</title>
         <meta name="description" content={`Find the best ${soupName} restaurants near you. ${currentSoupInfo.description}`} />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
       {/* Hero Section */}
@@ -400,4 +397,3 @@ export default function SoupTypePage() {
     </div>
   );
 }
-

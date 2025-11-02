@@ -24,10 +24,6 @@ export default function Layout({ children, title, description }) {
         <title>{title ? `${title} | FindSoupNearMe` : 'FindSoupNearMe - Find The Best Soup Near You'}</title>
         <meta name="description" content={description || 'Discover the best soup restaurants near you. Find ramen, pho, chowder, and more at top-rated restaurants.'} />
         <link rel="icon" href="/images/soup-logo.svg" type="image/svg+xml" />
-        {/* Modern Google Fonts */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet" />
       </Head>
 
       {/* Modern Navigation Bar */}

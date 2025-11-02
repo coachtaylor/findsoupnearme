@@ -1,6 +1,7 @@
 // src/pages/restaurants/search.js
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 export default function SearchPage() {
@@ -148,36 +149,36 @@ export default function SearchPage() {
             </h2>
 
             <div className="flex flex-wrap gap-2">
-              <a
+              <Link
                 href="/ny/new-york/restaurants"
                 className="inline-block px-3 py-1 bg-orange-100 text-neutral-700 rounded-full hover:bg-orange-200"
               >
                 Ramen in New York
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/ca/los-angeles/restaurants"
                 className="inline-block px-3 py-1 bg-orange-100 text-neutral-700 rounded-full hover:bg-orange-200"
               >
                 Pho in Los Angeles
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/il/chicago/restaurants"
                 className="inline-block px-3 py-1 bg-orange-100 text-neutral-700 rounded-full hover:bg-orange-200"
               >
                 Chowder in Chicago
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/wa/seattle/restaurants"
                 className="inline-block px-3 py-1 bg-orange-100 text-neutral-700 rounded-full hover:bg-orange-200"
               >
                 Ramen in Seattle
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/tx/austin/restaurants"
                 className="inline-block px-3 py-1 bg-orange-100 text-neutral-700 rounded-full hover:bg-orange-200"
               >
                 Tortilla Soup in Austin
-              </a>
+              </Link>
             </div>
           </div>
         </div>
