@@ -7,6 +7,7 @@ const SearchBar = dynamic(() => import('../components/search/SearchBar'), { ssr:
 import { useRouter } from 'next/router';
 import useRestaurants from '../hooks/useRestaurants';
 import RestaurantCard from '../components/restaurant/RestaurantCard';
+import { MapPinIcon, Squares2X2Icon, StarIcon } from '@heroicons/react/24/outline';
 
 export default function Home() {
   const router = useRouter();
@@ -37,14 +38,26 @@ export default function Home() {
     { name: 'Miami', state: 'FL', count: 178 },
   ];
 
-  // Top soup categories
-  const topCategories = [
+  // Popular cuisines (primary browsing method)
+  const popularCuisines = [
+    { name: 'Japanese', slug: 'japanese', description: 'Ramen, miso, udon' },
+    { name: 'Vietnamese', slug: 'vietnamese', description: 'Pho, bun bo hue' },
+    { name: 'Chinese', slug: 'chinese', description: 'Wonton, hot & sour' },
+    { name: 'Thai', slug: 'thai', description: 'Tom yum, tom kha' },
+    { name: 'Korean', slug: 'korean', description: 'Kimchi jjigae' },
+    { name: 'Mexican', slug: 'mexican', description: 'Pozole, menudo' },
+    { name: 'Italian', slug: 'italian', description: 'Minestrone, pasta e fagioli' },
+    { name: 'American', slug: 'american', description: 'Chicken noodle, clam chowder' },
+  ];
+
+  // Popular specialty tags (secondary filters)
+  const popularSpecialties = [
     { name: 'Ramen', href: '/soup-types/ramen' },
     { name: 'Pho', href: '/soup-types/pho' },
     { name: 'Chowder', href: '/soup-types/chowder' },
-    { name: 'Tomato Soup', href: '/soup-types/tomato' },
-    { name: 'Chicken Noodle', href: '/soup-types/chicken-noodle' },
+    { name: 'Pozole', href: '/soup-types/pozole' },
     { name: 'Miso', href: '/soup-types/miso' },
+    { name: 'Tom Yum', href: '/soup-types/tom-yum' },
   ];
 
   // Handle search
@@ -74,7 +87,7 @@ export default function Home() {
                   <span className="text-orange-600">bowl of soup</span>
                 </h1>
                 <p className="text-base lg:text-lg text-neutral-600 mb-6 leading-relaxed">
-                  Discover the best soup restaurants in your city. From ramen to chowder, find exactly what you're craving.
+                  Discover the best soup restaurants by cuisine. Browse Japanese, Vietnamese, Mexican, and more, then filter by specialty soups.
                 </p>
                 
                 {/* Search Bar */}
@@ -98,17 +111,17 @@ export default function Home() {
                   </form>
                 </div>
 
-                {/* Top Categories */}
+                {/* Popular Specialties - Quick Access */}
                 <div className="border-t border-neutral-200 pt-6">
-                  <p className="text-sm font-semibold text-neutral-700 mb-3 uppercase tracking-wide">Popular categories</p>
+                  <p className="text-sm font-semibold text-neutral-700 mb-3 uppercase tracking-wide">Popular specialties</p>
                   <div className="flex flex-wrap gap-2.5">
-                    {topCategories.map((category) => (
+                    {popularSpecialties.map((specialty) => (
                       <Link
-                        key={category.name}
-                        href={category.href}
+                        key={specialty.name}
+                        href={specialty.href}
                         className="relative px-4 py-2.5 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 shadow-sm hover:bg-orange-50 hover:border-orange-400 hover:text-orange-700 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                       >
-                        {category.name}
+                        {specialty.name}
                       </Link>
                     ))}
                   </div>
@@ -137,8 +150,47 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Popular Cities Section */}
+      {/* Browse by Cuisine Section */}
       <section className="py-12 lg:py-16">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mb-8">
+            <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-2 tracking-tight">
+              Browse by Cuisine
+            </h2>
+            <p className="text-neutral-600 text-lg">
+              Explore restaurants by cuisine type, then filter by specialty soups
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {popularCuisines.map((cuisine) => (
+              <Link
+                key={cuisine.slug}
+                href={`/cuisines/${cuisine.slug}`}
+                className="group p-5 bg-white border border-neutral-300 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 hover:-translate-y-1 transition-all duration-200"
+              >
+                <h3 className="text-lg font-semibold text-neutral-900 mb-2 group-hover:text-orange-600 transition-colors">
+                  {cuisine.name}
+                </h3>
+                <p className="text-sm text-neutral-500">{cuisine.description}</p>
+              </Link>
+            ))}
+          </div>
+
+          <div className="mt-8">
+            <Link 
+              href="/cuisines" 
+              className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium text-sm"
+            >
+              View all cuisines
+              <span className="ml-2">→</span>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Popular Cities Section */}
+      <section className="py-12 lg:py-16 bg-neutral-50/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-2 tracking-tight">
@@ -188,7 +240,7 @@ export default function Home() {
       </section>
 
       {/* Featured Restaurants Section */}
-      <section className="py-12 lg:py-16 bg-neutral-50/30">
+      <section className="py-12 lg:py-16 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-2 tracking-tight">
@@ -236,10 +288,10 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-12 lg:py-16 bg-white">
+      <section className="py-12 lg:py-16 bg-gradient-to-b from-white to-neutral-50/30">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
-            <div className="mb-8">
+            <div className="mb-10 text-center">
               <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-2 tracking-tight">
                 How it works
               </h2>
@@ -248,40 +300,52 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="relative">
-                <div className="mb-4">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-100 text-orange-600 rounded-lg text-lg font-bold">
-                    01
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              <div className="group relative bg-white rounded-xl border border-neutral-200 p-6 lg:p-8 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all duration-300">
+                <div className="mb-6">
+                  <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl text-xl font-bold shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
+                    <span className="relative z-10">01</span>
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                <div className="mb-4">
+                  <MapPinIcon className="h-8 w-8 text-orange-600 mb-3" />
+                </div>
+                <h3 className="text-xl font-semibold text-neutral-900 mb-3">
                   Search by location
                 </h3>
                 <p className="text-neutral-600 leading-relaxed">
                   Enter your city, ZIP code, or use your current location to find nearby restaurants.
                 </p>
               </div>
-              <div className="relative">
-                <div className="mb-4">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-100 text-orange-600 rounded-lg text-lg font-bold">
-                    02
+              <div className="group relative bg-white rounded-xl border border-neutral-200 p-6 lg:p-8 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all duration-300">
+                <div className="mb-6">
+                  <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl text-xl font-bold shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
+                    <span className="relative z-10">02</span>
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-2">
-                  Browse options
+                <div className="mb-4">
+                  <Squares2X2Icon className="h-8 w-8 text-orange-600 mb-3" />
+                </div>
+                <h3 className="text-xl font-semibold text-neutral-900 mb-3">
+                  Browse by cuisine
                 </h3>
                 <p className="text-neutral-600 leading-relaxed">
-                  Filter by soup type, ratings, price range, and dietary preferences.
+                  Start with cuisine types like Japanese or Vietnamese, then filter by specialty soups, ratings, and price range.
                 </p>
               </div>
-              <div className="relative">
-                <div className="mb-4">
-                  <div className="inline-flex items-center justify-center w-12 h-12 bg-orange-100 text-orange-600 rounded-lg text-lg font-bold">
-                    03
+              <div className="group relative bg-white rounded-xl border border-neutral-200 p-6 lg:p-8 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all duration-300">
+                <div className="mb-6">
+                  <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl text-xl font-bold shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
+                    <span className="relative z-10">03</span>
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                 </div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-2">
+                <div className="mb-4">
+                  <StarIcon className="h-8 w-8 text-orange-600 mb-3" />
+                </div>
+                <h3 className="text-xl font-semibold text-neutral-900 mb-3">
                   Read reviews
                 </h3>
                 <p className="text-neutral-600 leading-relaxed">
@@ -301,14 +365,14 @@ export default function Home() {
               Ready to find your perfect soup?
             </h2>
             <p className="text-lg text-neutral-300 mb-8">
-              Start exploring restaurants in your area today
+                Browse by cuisine or search by location to find your perfect soup
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/restaurants"
+                href="/cuisines"
                 className="inline-flex items-center justify-center px-8 py-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all"
               >
-                Start exploring
+                Browse cuisines
               </Link>
               <Link
                 href="/cities"
