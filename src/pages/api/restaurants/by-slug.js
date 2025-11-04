@@ -98,7 +98,11 @@ export default async function handler(req, res) {
       })),
       image_url: restaurant.exterior_image_url,
       photo_urls: restaurant.photo_urls || [],
-      google_photos: restaurant.photo_urls || null
+      google_photos: restaurant.photo_urls || null,
+      // Include cuisine fields
+      cuisine: restaurant.cuisine,
+      cuisines: restaurant.cuisines,
+      cuisine_type: restaurant.cuisine_type
     };
     
     return res.status(200).json(processedRestaurant);

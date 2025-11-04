@@ -7,12 +7,31 @@ const SearchBar = dynamic(() => import('../components/search/SearchBar'), { ssr:
 import { useRouter } from 'next/router';
 import useRestaurants from '../hooks/useRestaurants';
 import RestaurantCard from '../components/restaurant/RestaurantCard';
-import { MapPinIcon, Squares2X2Icon, StarIcon } from '@heroicons/react/24/outline';
+import RestaurantSubmissionForm from '../components/forms/RestaurantSubmissionForm';
+import { MapPinIcon, Squares2X2Icon, StarIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+
+const FALLBACK_POPULAR_CITIES = [
+  { name: 'New York', state: 'NY', count: 245 },
+  { name: 'Los Angeles', state: 'CA', count: 198 },
+  { name: 'Chicago', state: 'IL', count: 167 },
+  { name: 'San Francisco', state: 'CA', count: 189 },
+  { name: 'Seattle', state: 'WA', count: 156 },
+  { name: 'Miami', state: 'FL', count: 178 },
+];
+
+const FALLBACK_CITY_STATS = {
+  restaurants: FALLBACK_POPULAR_CITIES.reduce((sum, city) => sum + (Number(city.count) || 0), 0),
+  cities: FALLBACK_POPULAR_CITIES.length,
+};
 
 export default function Home() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isClient, setIsClient] = useState(false);
+  const [location, setLocation] = useState('');
+  const [soupType, setSoupType] = useState('');
+  const [popularCities, setPopularCities] = useState([]);
+  const [popularCitiesLoading, setPopularCitiesLoading] = useState(true);
+  const [popularCitiesError, setPopularCitiesError] = useState(false);
+  const [popularCityTotals, setPopularCityTotals] = useState({ restaurants: 0, cities: 0 });
 
   // Fetch featured restaurants
   const { 
@@ -25,47 +44,152 @@ export default function Home() {
   });
 
   useEffect(() => {
-    setIsClient(true);
+    const controller = new AbortController();
+
+    const loadPopularCities = async () => {
+      try {
+        const response = await fetch('/api/cities/popular?limit=6', { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const normalizedCities = Array.isArray(payload?.cities)
+          ? payload.cities
+              .map((city) => ({
+                name: typeof city?.name === 'string' ? city.name.trim() : '',
+                state: typeof city?.state === 'string' ? city.state.trim().toUpperCase() : '',
+                count: Number(city?.count) || 0,
+              }))
+              .filter((city) => city.name && city.state)
+          : [];
+
+        if (controller.signal.aborted) return;
+
+        if (normalizedCities.length === 0) {
+          throw new Error('No city data returned');
+        }
+
+        setPopularCities(normalizedCities);
+
+        const restaurantTotal = Number(payload?.totals?.restaurants);
+        const cityTotal = Number(payload?.totals?.cities);
+
+        setPopularCityTotals({
+          restaurants: Number.isFinite(restaurantTotal)
+            ? restaurantTotal
+            : normalizedCities.reduce((sum, city) => sum + city.count, 0),
+          cities: Number.isFinite(cityTotal) ? cityTotal : normalizedCities.length,
+        });
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load popular cities:', error);
+        setPopularCities(FALLBACK_POPULAR_CITIES);
+        setPopularCityTotals(FALLBACK_CITY_STATS);
+        setPopularCitiesError(true);
+      } finally {
+        if (!controller.signal.aborted) {
+          setPopularCitiesLoading(false);
+        }
+      }
+    };
+
+    loadPopularCities();
+
+    return () => controller.abort();
   }, []);
-
-  // Popular cities
-  const popularCities = [
-    { name: 'New York', state: 'NY', count: 245 },
-    { name: 'Los Angeles', state: 'CA', count: 198 },
-    { name: 'Chicago', state: 'IL', count: 167 },
-    { name: 'San Francisco', state: 'CA', count: 189 },
-    { name: 'Seattle', state: 'WA', count: 156 },
-    { name: 'Miami', state: 'FL', count: 178 },
-  ];
-
-  // Popular cuisines (primary browsing method)
-  const popularCuisines = [
-    { name: 'Japanese', slug: 'japanese', description: 'Ramen, miso, udon' },
-    { name: 'Vietnamese', slug: 'vietnamese', description: 'Pho, bun bo hue' },
-    { name: 'Chinese', slug: 'chinese', description: 'Wonton, hot & sour' },
-    { name: 'Thai', slug: 'thai', description: 'Tom yum, tom kha' },
-    { name: 'Korean', slug: 'korean', description: 'Kimchi jjigae' },
-    { name: 'Mexican', slug: 'mexican', description: 'Pozole, menudo' },
-    { name: 'Italian', slug: 'italian', description: 'Minestrone, pasta e fagioli' },
-    { name: 'American', slug: 'american', description: 'Chicken noodle, clam chowder' },
-  ];
 
   // Popular specialty tags (secondary filters)
   const popularSpecialties = [
-    { name: 'Ramen', href: '/soup-types/ramen' },
-    { name: 'Pho', href: '/soup-types/pho' },
-    { name: 'Chowder', href: '/soup-types/chowder' },
-    { name: 'Pozole', href: '/soup-types/pozole' },
-    { name: 'Miso', href: '/soup-types/miso' },
-    { name: 'Tom Yum', href: '/soup-types/tom-yum' },
+    { name: 'Ramen', value: 'Ramen' },
+    { name: 'Pho', value: 'Pho' },
+    { name: 'Chowder', value: 'Chowder' },
+    { name: 'Pozole', value: 'Pozole' },
+    { name: 'Miso', value: 'Miso' },
+    { name: 'Tom Yum', value: 'Tom Yum' },
   ];
+
+  // Popular soup types for dropdown
+  const soupTypes = [
+    { value: '', label: 'Any Soup Type' },
+    { value: 'Ramen', label: 'Ramen' },
+    { value: 'Pho', label: 'Pho' },
+    { value: 'Chowder', label: 'Chowder' },
+    { value: 'Pozole', label: 'Pozole' },
+    { value: 'Miso', label: 'Miso' },
+    { value: 'Tom Yum', label: 'Tom Yum' },
+    { value: 'Chicken Noodle', label: 'Chicken Noodle' },
+    { value: 'French Onion', label: 'French Onion' },
+    { value: 'Tomato', label: 'Tomato' },
+    { value: 'Minestrone', label: 'Minestrone' },
+    { value: 'Wonton', label: 'Wonton' },
+    { value: 'Udon', label: 'Udon' },
+    { value: 'Tortilla', label: 'Tortilla' },
+  ];
+
+  // Handle specialty click - set soup type in form
+  const handleSpecialtyClick = (e, specialtyValue) => {
+    e.preventDefault();
+    setSoupType(specialtyValue);
+    // Focus on location input
+    document.getElementById('location-input')?.focus();
+  };
 
   // Handle search
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!searchQuery.trim()) return;
-    router.push(`/restaurants?location=${encodeURIComponent(searchQuery)}`);
+    if (!location.trim()) return;
+
+    let searchUrl = '/restaurants';
+    const params = new URLSearchParams();
+
+    // Handle location
+    const isZipCode = /^\d{5}$/.test(location.trim());
+    const cityMapping = {
+      'new york': '/ny/new-york/restaurants',
+      'los angeles': '/ca/los-angeles/restaurants',
+      'chicago': '/il/chicago/restaurants',
+      'houston': '/tx/houston/restaurants',
+      'miami': '/fl/miami/restaurants',
+      'seattle': '/wa/seattle/restaurants',
+      'phoenix': '/az/phoenix/restaurants',
+      'austin': '/tx/austin/restaurants',
+      'dallas': '/tx/dallas/restaurants',
+      'san francisco': '/ca/san-francisco/restaurants',
+      'san diego': '/ca/san-diego/restaurants',
+      'philadelphia': '/pa/philadelphia/restaurants'
+    };
+
+    const normalizedLocation = location.toLowerCase().trim();
+
+    if (cityMapping[normalizedLocation]) {
+      searchUrl = cityMapping[normalizedLocation];
+    } else if (isZipCode) {
+      if (location.startsWith('85')) {
+        searchUrl = '/az/phoenix/restaurants';
+      } else {
+        params.append('location', location);
+        params.append('type', 'zip');
+      }
+    } else {
+      params.append('location', location);
+    }
+
+    // Add soup type if selected
+    if (soupType && soupType !== '') {
+      params.append('soupType', soupType);
+    }
+
+    const queryString = params.toString();
+    if (queryString) {
+      searchUrl += `?${queryString}`;
+    }
+
+    router.push(searchUrl);
   };
+
+  // Check if search button should be enabled
+  const isSearchEnabled = location.trim().length > 0;
 
   return (
     <div className="min-h-screen bg-white">
@@ -73,6 +197,25 @@ export default function Home() {
         <title>FindSoupNearMe - Discover the Best Soup Restaurants Near You</title>
         <meta name="description" content="Find the best soup restaurants in your city. Discover delicious ramen, pho, chowder, and more at top-rated restaurants." />
       </Head>
+
+      {/* Banner: Link to Submission Form */}
+      <section className="bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center gap-3">
+            <UserGroupIcon className="h-5 w-5" />
+            <p className="text-sm sm:text-base font-medium text-center">
+              Know a great soup restaurant?{' '}
+              <a 
+                href="#help-us-grow" 
+                className="underline hover:text-orange-100 font-semibold transition-colors"
+              >
+                Submit it here
+              </a>
+              {' '}to help us grow!
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Hero Section */}
       <section className="relative pt-12 pb-10 lg:pt-16 lg:pb-12 bg-gradient-to-b from-neutral-50/50 to-white">
@@ -87,26 +230,58 @@ export default function Home() {
                   <span className="text-orange-600">bowl of soup</span>
                 </h1>
                 <p className="text-base lg:text-lg text-neutral-600 mb-6 leading-relaxed">
-                  Discover the best soup restaurants by cuisine. Browse Japanese, Vietnamese, Mexican, and more, then filter by specialty soups.
+                  Enter your city or ZIP code to find the best soup restaurants near you. Filter by soup type to find exactly what you&apos;re craving.
                 </p>
                 
-                {/* Search Bar */}
+                {/* Search Form */}
                 <div className="mb-6">
-                  <form onSubmit={handleSearch} className="flex gap-2">
-                    <div className="flex-1 relative">
+                  <form onSubmit={handleSearch} className="space-y-3">
+                    {/* Location Input - Required */}
+                    <div>
+                      <label htmlFor="location-input" className="block text-sm font-medium text-neutral-700 mb-2">
+                        Location <span className="text-orange-600">*</span>
+                      </label>
                       <input
+                        id="location-input"
                         type="text"
-                        placeholder="Search by city or ZIP code"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Enter city or ZIP code"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
                         className="w-full px-4 py-3 text-base bg-white border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:shadow-md transition-all placeholder:text-neutral-400"
+                        required
                       />
                     </div>
+                    
+                    {/* Soup Type Selector - Optional */}
+                    <div>
+                      <label htmlFor="soup-type-select" className="block text-sm font-medium text-neutral-700 mb-2">
+                        Soup Type <span className="text-neutral-400 text-xs">(optional)</span>
+                      </label>
+                      <select
+                        id="soup-type-select"
+                        value={soupType}
+                        onChange={(e) => setSoupType(e.target.value)}
+                        className="w-full px-4 py-3 text-base bg-white border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:shadow-md transition-all"
+                      >
+                        {soupTypes.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    {/* Search Button */}
                     <button
                       type="submit"
-                      className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg shadow-sm hover:shadow-md transition-all whitespace-nowrap"
+                      disabled={!isSearchEnabled}
+                      className={`w-full px-6 py-3 font-medium rounded-lg shadow-sm transition-all ${
+                        isSearchEnabled
+                          ? 'bg-orange-600 hover:bg-orange-700 text-white hover:shadow-md'
+                          : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+                      }`}
                     >
-                      Search
+                      Search Restaurants
                     </button>
                   </form>
                 </div>
@@ -114,15 +289,21 @@ export default function Home() {
                 {/* Popular Specialties - Quick Access */}
                 <div className="border-t border-neutral-200 pt-6">
                   <p className="text-sm font-semibold text-neutral-700 mb-3 uppercase tracking-wide">Popular specialties</p>
+                  <p className="text-xs text-neutral-500 mb-3">Click to select a soup type, then enter your location</p>
                   <div className="flex flex-wrap gap-2.5">
                     {popularSpecialties.map((specialty) => (
-                      <Link
+                      <button
                         key={specialty.name}
-                        href={specialty.href}
-                        className="relative px-4 py-2.5 bg-white border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 shadow-sm hover:bg-orange-50 hover:border-orange-400 hover:text-orange-700 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                        type="button"
+                        onClick={(e) => handleSpecialtyClick(e, specialty.value)}
+                        className={`relative px-4 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${
+                          soupType === specialty.value
+                            ? 'border-orange-400 bg-orange-50 text-orange-700'
+                            : 'border-neutral-300 text-neutral-700 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-700'
+                        }`}
                       >
                         {specialty.name}
-                      </Link>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -150,44 +331,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Browse by Cuisine Section */}
-      <section className="py-12 lg:py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-8">
-            <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-2 tracking-tight">
-              Browse by Cuisine
-            </h2>
-            <p className="text-neutral-600 text-lg">
-              Explore restaurants by cuisine type, then filter by specialty soups
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {popularCuisines.map((cuisine) => (
-              <Link
-                key={cuisine.slug}
-                href={`/cuisines/${cuisine.slug}`}
-                className="group p-5 bg-white border border-neutral-300 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 hover:-translate-y-1 transition-all duration-200"
-              >
-                <h3 className="text-lg font-semibold text-neutral-900 mb-2 group-hover:text-orange-600 transition-colors">
-                  {cuisine.name}
-                </h3>
-                <p className="text-sm text-neutral-500">{cuisine.description}</p>
-              </Link>
-            ))}
-          </div>
-
-          <div className="mt-8">
-            <Link 
-              href="/cuisines" 
-              className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium text-sm"
-            >
-              View all cuisines
-              <span className="ml-2">→</span>
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* Browse by Cuisine Section - Removed - Users should search by location first */}
 
       {/* Popular Cities Section */}
       <section className="py-12 lg:py-16 bg-neutral-50/30">
@@ -202,26 +346,58 @@ export default function Home() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {popularCities.map((city) => (
-              <Link
-                key={city.name}
-                href={`/${city.state.toLowerCase()}/${city.name.toLowerCase().replace(/\s+/g, '-')}/restaurants`}
-                className="group p-5 bg-white border border-neutral-300 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 hover:-translate-y-1 transition-all duration-200"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-neutral-900 mb-1 group-hover:text-orange-600 transition-colors">
-                      {city.name}
-                    </h3>
-                    <p className="text-sm text-neutral-500">{city.state}</p>
+            {popularCitiesLoading
+              ? Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={`popular-city-skeleton-${index}`}
+                    className="p-5 bg-white border border-neutral-200 rounded-xl shadow-sm animate-pulse"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="h-4 w-32 bg-neutral-200 rounded"></div>
+                        <div className="h-3 w-20 bg-neutral-200 rounded"></div>
+                      </div>
+                      <div className="text-right ml-4 space-y-2">
+                        <div className="h-6 w-12 bg-neutral-200 rounded"></div>
+                        <div className="h-3 w-16 bg-neutral-200 rounded"></div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-right ml-4">
-                    <div className="text-2xl font-bold text-neutral-900">{city.count}</div>
-                    <div className="text-xs text-neutral-500 font-medium uppercase tracking-wide">restaurants</div>
-                  </div>
+                ))
+              : popularCities.length > 0
+              ? popularCities.map((city) => {
+                  const stateSegment = city.state.toLowerCase();
+                  const citySlug = city.name
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/\s+/g, '-');
+
+                  return (
+                    <Link
+                      key={`${city.name}-${city.state}`}
+                      href={`/${stateSegment}/${citySlug}/restaurants`}
+                      className="group p-5 bg-white border border-neutral-300 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 hover:-translate-y-1 transition-all duration-200"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h3 className="text-lg font-semibold text-neutral-900 mb-1 group-hover:text-orange-600 transition-colors">
+                            {city.name}
+                          </h3>
+                          <p className="text-sm text-neutral-500">{city.state}</p>
+                        </div>
+                        <div className="text-right ml-4">
+                          <div className="text-2xl font-bold text-neutral-900">{city.count.toLocaleString()}</div>
+                          <div className="text-xs text-neutral-500 font-medium uppercase tracking-wide">restaurants</div>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })
+              : (
+                <div className="p-6 bg-white border border-neutral-200 rounded-xl shadow-sm col-span-full text-sm text-neutral-500">
+                  {popularCitiesError ? 'Popular city data is temporarily unavailable.' : 'No cities found yet.'}
                 </div>
-              </Link>
-            ))}
+              )}
           </div>
 
           <div className="mt-8 flex items-center justify-between">
@@ -233,7 +409,11 @@ export default function Home() {
               <span className="ml-2">→</span>
             </Link>
             <div className="text-xs text-neutral-500 font-medium">
-              640+ restaurants across 11 cities
+              {popularCityTotals.restaurants > 0 && popularCityTotals.cities > 0
+                ? `${popularCityTotals.restaurants.toLocaleString()} restaurants across ${popularCityTotals.cities} ${popularCityTotals.cities === 1 ? 'city' : 'cities'}`
+                : popularCitiesError
+                  ? 'City data is temporarily unavailable'
+                  : 'Discover restaurants across top cities'}
             </div>
           </div>
         </div>
@@ -312,10 +492,10 @@ export default function Home() {
                   <MapPinIcon className="h-8 w-8 text-orange-600 mb-3" />
                 </div>
                 <h3 className="text-xl font-semibold text-neutral-900 mb-3">
-                  Search by location
+                  Enter your location
                 </h3>
                 <p className="text-neutral-600 leading-relaxed">
-                  Enter your city, ZIP code, or use your current location to find nearby restaurants.
+                  Start by entering your city or ZIP code. This is required to find restaurants near you.
                 </p>
               </div>
               <div className="group relative bg-white rounded-xl border border-neutral-200 p-6 lg:p-8 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all duration-300">
@@ -329,10 +509,10 @@ export default function Home() {
                   <Squares2X2Icon className="h-8 w-8 text-orange-600 mb-3" />
                 </div>
                 <h3 className="text-xl font-semibold text-neutral-900 mb-3">
-                  Browse by cuisine
+                  Filter by soup type
                 </h3>
                 <p className="text-neutral-600 leading-relaxed">
-                  Start with cuisine types like Japanese or Vietnamese, then filter by specialty soups, ratings, and price range.
+                  Optionally select a soup type like Ramen or Pho, or browse all soups in your area. You can also filter by cuisine, ratings, and price range on the results page.
                 </p>
               </div>
               <div className="group relative bg-white rounded-xl border border-neutral-200 p-6 lg:p-8 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all duration-300">
@@ -357,6 +537,31 @@ export default function Home() {
         </div>
       </section>
 
+          {/* Collaboration Section */}
+          <section id="help-us-grow" className="py-12 lg:py-16 bg-white scroll-mt-20">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="max-w-4xl mx-auto">
+                <div className="text-center mb-10">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
+                    <UserGroupIcon className="h-8 w-8 text-orange-600" />
+                  </div>
+                  <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-3 tracking-tight">
+                    Help Us Grow
+                  </h2>
+                  <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
+                    We're a new website building the best soup restaurant directory. Know a great soup spot that should be listed?
+                    <span className="font-semibold text-neutral-900"> Customers and restaurant owners can submit restaurants below.</span>
+                    <span className="block mt-2 text-base"> If you're a restaurant owner, we'll mark your restaurant as verified when added to our platform.</span>
+                  </p>
+                </div>
+
+            <div className="bg-white border border-neutral-200 rounded-xl p-6 lg:p-8 shadow-sm">
+              <RestaurantSubmissionForm />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-12 lg:py-16 bg-neutral-900">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -365,20 +570,14 @@ export default function Home() {
               Ready to find your perfect soup?
             </h2>
             <p className="text-lg text-neutral-300 mb-8">
-                Browse by cuisine or search by location to find your perfect soup
+                Enter your location above to start finding your perfect soup
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/cuisines"
-                className="inline-flex items-center justify-center px-8 py-4 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all"
-              >
-                Browse cuisines
-              </Link>
-              <Link
-                href="/cities"
+                href="/restaurants"
                 className="inline-flex items-center justify-center px-8 py-4 bg-white hover:bg-neutral-100 text-neutral-900 font-medium rounded-xl shadow-sm hover:shadow-md transition-all"
               >
-                Browse cities
+                Browse restaurants
               </Link>
             </div>
           </div>

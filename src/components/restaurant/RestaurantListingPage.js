@@ -18,6 +18,114 @@ import {
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
 
+const BROWSE_CITIES = [
+  { name: 'New York', state: 'NY' },
+  { name: 'Los Angeles', state: 'CA' },
+  { name: 'Chicago', state: 'IL' },
+  { name: 'San Francisco', state: 'CA' },
+  { name: 'Seattle', state: 'WA' },
+  { name: 'Dallas', state: 'TX' },
+  { name: 'Miami', state: 'FL' },
+  { name: 'Philadelphia', state: 'PA' },
+  { name: 'San Diego', state: 'CA' },
+  { name: 'Austin', state: 'TX' },
+  { name: 'Phoenix', state: 'AZ' },
+];
+
+// Cities Section Component
+function CitiesSection({ currentCity, currentState, onCitySelect }) {
+  const [cityStats, setCityStats] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCityStats() {
+      try {
+        const payload = encodeURIComponent(JSON.stringify(BROWSE_CITIES));
+        const response = await fetch(`/api/cities/popular?cities=${payload}`);
+        const data = await response.json();
+        if (data.cities) {
+          const statsMap = {};
+          data.cities.forEach((city) => {
+            const key = `${city.name.toLowerCase()}|${city.state || ''}`;
+            statsMap[key] = city.count;
+          });
+          setCityStats(statsMap);
+        }
+      } catch (error) {
+        console.error('Error fetching city stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCityStats();
+  }, []);
+
+  const getCityCount = (cityName, state) => {
+    const key = `${cityName.toLowerCase()}|${state || ''}`;
+    return cityStats[key] || 0;
+  };
+
+  // Sort by restaurant count
+  const sortedCities = [...BROWSE_CITIES].sort((a, b) => {
+    const countA = getCityCount(a.name, a.state);
+    const countB = getCityCount(b.name, b.state);
+    return countB - countA;
+  });
+
+  const isCitySelected = (cityName, state) => {
+    return currentCity?.toLowerCase() === cityName.toLowerCase() && 
+           currentState?.toUpperCase() === state.toUpperCase();
+  };
+
+  return (
+    <div className="mb-8">
+      <div className="flex items-center gap-2 mb-4">
+        <MapPinIcon className="h-5 w-5 text-orange-500" />
+        <h3 className="font-semibold text-gray-800">Browse by City</h3>
+      </div>
+      
+      {loading ? (
+        <div className="text-sm text-gray-500">Loading cities...</div>
+      ) : (
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {sortedCities.map((city) => {
+            const restaurantCount = getCityCount(city.name, city.state);
+            const selected = isCitySelected(city.name, city.state);
+            
+            return (
+              <button
+                key={`${city.state}-${city.name}`}
+                onClick={() => onCitySelect(city.name, city.state)}
+                className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all duration-200 ${
+                  selected
+                    ? 'bg-orange-50 border-orange-300 text-orange-700 font-medium'
+                    : 'bg-white border-gray-200 text-gray-700 hover:border-orange-200 hover:bg-orange-50'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">{city.name}</div>
+                    <div className="text-xs text-gray-500">{city.state}</div>
+                  </div>
+                  {restaurantCount > 0 && (
+                    <div className="ml-2 flex-shrink-0">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
+                        selected ? 'bg-orange-200 text-orange-800' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {restaurantCount}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function RestaurantListingPage({
   title = 'Soup Restaurants',
   description = 'Discover the best soup restaurants near you.',
@@ -574,6 +682,15 @@ export default function RestaurantListingPage({
                       <AdjustmentsHorizontalIcon className="h-6 w-6 text-orange-500" />
                       Filters
                     </h2>
+                    
+                    {/* Cities Section */}
+                    <CitiesSection 
+                      currentCity={city}
+                      currentState={state}
+                      onCitySelect={(selectedCity, selectedState) => {
+                        router.push(`/restaurants?location=${encodeURIComponent(selectedCity + (selectedState ? `, ${selectedState}` : ''))}`);
+                      }}
+                    />
                     
                     {/* Soup Type Filter */}
                     <div className="mb-8">
