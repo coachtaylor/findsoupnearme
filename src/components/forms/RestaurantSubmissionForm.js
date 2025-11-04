@@ -457,7 +457,7 @@ export default function RestaurantSubmissionForm() {
       {submitStatus === 'success' && (
         <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
           <p className="text-sm text-emerald-800 font-medium">
-            ✓ Thank you! Your submission has been received. We'll review it and add the restaurant to our platform soon.
+            ✓ Thank you! Your submission has been received. We&apos;ll review it and add the restaurant to our platform soon.
           </p>
         </div>
       )}
@@ -472,4 +472,3 @@ export default function RestaurantSubmissionForm() {
     </form>
   );
 }
-

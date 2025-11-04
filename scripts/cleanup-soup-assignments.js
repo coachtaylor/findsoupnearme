@@ -334,7 +334,7 @@ function detectSoupTypesEnhanced(restaurant) {
     }
   }
   
-  // Strategy 4: Final fallback - if still nothing but it's clearly a soup restaurant
+  // Strategy 4: Final fallback - if still nothing but it&apos;s clearly a soup restaurant
   if (detectedSoups.size === 0) {
     const nameLower = restaurant.name.toLowerCase();
     

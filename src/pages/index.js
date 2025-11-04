@@ -9,14 +9,13 @@ import useRestaurants from '../hooks/useRestaurants';
 import RestaurantCard from '../components/restaurant/RestaurantCard';
 import RestaurantSubmissionForm from '../components/forms/RestaurantSubmissionForm';
 import { MapPinIcon, Squares2X2Icon, StarIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import { LAUNCH_CITIES, getCityMapping } from '../lib/launch-cities';
 
 const FALLBACK_POPULAR_CITIES = [
-  { name: 'New York', state: 'NY', count: 245 },
   { name: 'Los Angeles', state: 'CA', count: 198 },
-  { name: 'Chicago', state: 'IL', count: 167 },
-  { name: 'San Francisco', state: 'CA', count: 189 },
-  { name: 'Seattle', state: 'WA', count: 156 },
-  { name: 'Miami', state: 'FL', count: 178 },
+  { name: 'San Diego', state: 'CA', count: 156 },
+  { name: 'Seattle', state: 'WA', count: 145 },
+  { name: 'Phoenix', state: 'AZ', count: 132 },
 ];
 
 const FALLBACK_CITY_STATS = {
@@ -145,29 +144,19 @@ export default function Home() {
 
     // Handle location
     const isZipCode = /^\d{5}$/.test(location.trim());
-    const cityMapping = {
-      'new york': '/ny/new-york/restaurants',
-      'los angeles': '/ca/los-angeles/restaurants',
-      'chicago': '/il/chicago/restaurants',
-      'houston': '/tx/houston/restaurants',
-      'miami': '/fl/miami/restaurants',
-      'seattle': '/wa/seattle/restaurants',
-      'phoenix': '/az/phoenix/restaurants',
-      'austin': '/tx/austin/restaurants',
-      'dallas': '/tx/dallas/restaurants',
-      'san francisco': '/ca/san-francisco/restaurants',
-      'san diego': '/ca/san-diego/restaurants',
-      'philadelphia': '/pa/philadelphia/restaurants'
-    };
+    const cityMapping = getCityMapping();
 
     const normalizedLocation = location.toLowerCase().trim();
 
     if (cityMapping[normalizedLocation]) {
       searchUrl = cityMapping[normalizedLocation];
     } else if (isZipCode) {
+      // Only allow zip codes for Phoenix (AZ starts with 85)
       if (location.startsWith('85')) {
         searchUrl = '/az/phoenix/restaurants';
       } else {
+        // For other zip codes, try to match to launch cities
+        // This is a fallback - ideally users should enter city names
         params.append('location', location);
         params.append('type', 'zip');
       }
@@ -345,9 +334,9 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {popularCitiesLoading
-              ? Array.from({ length: 6 }).map((_, index) => (
+              ? Array.from({ length: 4 }).map((_, index) => (
                   <div
                     key={`popular-city-skeleton-${index}`}
                     className="p-5 bg-white border border-neutral-200 rounded-xl shadow-sm animate-pulse"
@@ -376,18 +365,18 @@ export default function Home() {
                     <Link
                       key={`${city.name}-${city.state}`}
                       href={`/${stateSegment}/${citySlug}/restaurants`}
-                      className="group p-5 bg-white border border-neutral-300 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 hover:-translate-y-1 transition-all duration-200"
+                      className="group p-6 bg-white border border-neutral-300 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 hover:-translate-y-1 transition-all duration-200"
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-neutral-900 mb-1 group-hover:text-orange-600 transition-colors">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-neutral-900 mb-1.5 group-hover:text-orange-600 transition-colors">
                             {city.name}
                           </h3>
                           <p className="text-sm text-neutral-500">{city.state}</p>
                         </div>
-                        <div className="text-right ml-4">
-                          <div className="text-2xl font-bold text-neutral-900">{city.count.toLocaleString()}</div>
-                          <div className="text-xs text-neutral-500 font-medium uppercase tracking-wide">restaurants</div>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-2xl font-bold text-neutral-900 mb-1">{city.count.toLocaleString()}</div>
+                          <div className="text-xs text-neutral-500 font-medium uppercase tracking-wide leading-tight">restaurants</div>
                         </div>
                       </div>
                     </Link>
@@ -549,9 +538,9 @@ export default function Home() {
                     Help Us Grow
                   </h2>
                   <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-                    We're a new website building the best soup restaurant directory. Know a great soup spot that should be listed?
+                    We&apos;re a new website building the best soup restaurant directory. Know a great soup spot that should be listed?
                     <span className="font-semibold text-neutral-900"> Customers and restaurant owners can submit restaurants below.</span>
-                    <span className="block mt-2 text-base"> If you're a restaurant owner, we'll mark your restaurant as verified when added to our platform.</span>
+                    <span className="block mt-2 text-base"> If you&apos;re a restaurant owner, we&apos;ll mark your restaurant as verified when added to our platform.</span>
                   </p>
                 </div>
 

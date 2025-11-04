@@ -1,5 +1,6 @@
 // src/lib/supabase.js
 import { createClient } from '@supabase/supabase-js';
+import { LAUNCH_CITIES, isLaunchCity } from './launch-cities';
 
 // Create a single Supabase client for interacting with the database
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -153,18 +154,43 @@ export async function getRestaurants({
         query = query.in('id', restrictToIds);
       }
 
+      // Launch city filtering: Only show restaurants from launch cities
+      // Build OR condition for launch cities
+      const launchCityConditions = LAUNCH_CITIES.map(
+        (lc) => `(city.eq.${lc.name},state.eq.${lc.state})`
+      ).join(',');
+      
+      // Apply launch city filter first
+      query = query.or(launchCityConditions);
+
+      // Then apply additional filters
       if (city) {
-        query = query.eq('city', city);
+        // Validate that the requested city is a launch city
+        const cityState = state || LAUNCH_CITIES.find(lc => 
+          lc.name.toLowerCase() === city.toLowerCase()
+        )?.state;
+        if (cityState && isLaunchCity(city, cityState)) {
+          query = query.eq('city', city);
+        }
+        // If city is not a launch city, the launch city filter will already exclude it
       }
 
       if (state) {
-        query = query.eq('state', state);
+        // Validate that the requested state has launch cities
+        const hasLaunchCities = LAUNCH_CITIES.some(lc => lc.state === state.toUpperCase());
+        if (hasLaunchCities) {
+          query = query.eq('state', state);
+        }
+        // If state has no launch cities, the launch city filter will already exclude it
       }
 
-      if (location) {
+      if (location && !city && !state) {
+        // Only apply location filter if not already filtering by city/state
         const locationLower = location.toLowerCase();
+        // The launch city filter already applied will ensure only launch cities are returned
+        // We just need to match the location text
         query = query.or(
-          `city.ilike.%${locationLower}%,state.ilike.%${locationLower}%,name.ilike.%${locationLower}%`
+          `city.ilike.%${locationLower}%,name.ilike.%${locationLower}%`
         );
       }
 

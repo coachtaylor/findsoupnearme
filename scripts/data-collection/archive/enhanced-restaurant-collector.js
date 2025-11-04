@@ -108,7 +108,7 @@ async function getRestaurantDetails(placeId) {
   }
 }
 
-// Create storage bucket if it doesn't exist
+// Create storage bucket if it doesn&apos;t exist
 async function createBucketIfNotExists(bucketName) {
   try {
     const { data, error } = await supabase.storage.getBucket(bucketName);
@@ -299,7 +299,7 @@ function analyzeColorDistribution(imageData) {
     // This is a dummy implementation - a real version would analyze RGB distributions
     // Food photos often have more red/yellow tones and higher saturation
     
-    // We're generating a random score between 0.3 and 0.9 as a placeholder
+    // We&apos;re generating a random score between 0.3 and 0.9 as a placeholder
     // In a real implementation, you would analyze the actual pixel data
     return 0.3 + (Math.random() * 0.6);
   } catch (error) {
@@ -730,7 +730,7 @@ async function collectRestaurantDataForCity(locationName, cityInfo) {
 // Main function to collect restaurant data for all cities
 async function collectRestaurantData() {
   try {
-    // Create the storage bucket if it doesn't exist
+    // Create the storage bucket if it doesn&apos;t exist
     await createBucketIfNotExists('restaurant-images');
     
     console.log('Starting restaurant data collection for all cities...');

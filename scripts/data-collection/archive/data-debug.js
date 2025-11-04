@@ -74,7 +74,7 @@ async function debugRestaurantData() {
         console.error('Error getting all restaurants:', unassignedError);
       } else {
         const untrackedRestaurants = unassignedRestaurants.filter(restaurant => {
-          // Check if this restaurant's city/state combo is in our target list
+          // Check if this restaurant&apos;s city/state combo is in our target list
           return !Object.values(CITY_TARGETS).some(cityInfo => 
             cityInfo.city === restaurant.city && cityInfo.state === restaurant.state
           );

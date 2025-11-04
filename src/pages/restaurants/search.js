@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
+import { getCityMapping } from '../../lib/launch-cities';
 
 export default function SearchPage() {
   const router = useRouter();
@@ -36,20 +37,7 @@ export default function SearchPage() {
 
     if (location) {
       const isZipCode = /^\d{5}$/.test(location.trim());
-      const cityMapping = {
-        'new york': '/ny/new-york/restaurants',
-        'los angeles': '/ca/los-angeles/restaurants',
-        'chicago': '/il/chicago/restaurants',
-        'houston': '/tx/houston/restaurants',
-        'miami': '/fl/miami/restaurants',
-        'seattle': '/wa/seattle/restaurants',
-        'phoenix': '/az/phoenix/restaurants',
-        'austin': '/tx/austin/restaurants',
-        'dallas': '/tx/dallas/restaurants',
-        'san francisco': '/ca/san-francisco/restaurants',
-        'san diego': '/ca/san-diego/restaurants',
-        'philadelphia': '/pa/philadelphia/restaurants'
-      };
+      const cityMapping = getCityMapping();
 
       const normalizedLocation = location.toLowerCase().trim();
 

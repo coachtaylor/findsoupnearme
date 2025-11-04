@@ -219,7 +219,7 @@ async function main() {
   try {
     console.log(`Starting scraping process for ${city}, ${state}...`);
     
-    // Create output directory if it doesn't exist
+    // Create output directory if it doesn&apos;t exist
     const outputDir = path.dirname(output);
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });

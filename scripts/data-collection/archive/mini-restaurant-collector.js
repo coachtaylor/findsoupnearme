@@ -24,7 +24,7 @@ const SOUP_TYPES = [
   'Gumbo', 'Matzo Ball', 'Gazpacho', 'Lentil', 'Black Bean'
 ];
 
-// Create storage bucket if it doesn't exist
+// Create storage bucket if it doesn&apos;t exist
 async function createBucketIfNotExists(bucketName) {
   try {
     console.log(`Checking if bucket ${bucketName} exists...`);
@@ -401,7 +401,7 @@ async function collectMiniRestaurantData() {
   try {
     console.log('Starting mini restaurant data collection...');
     
-    // Create the storage bucket if it doesn't exist
+    // Create the storage bucket if it doesn&apos;t exist
     await createBucketIfNotExists('restaurant-images');
     
     // Set the city information

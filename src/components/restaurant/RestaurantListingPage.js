@@ -17,20 +17,9 @@ import {
   ClockIcon,
   CurrencyDollarIcon
 } from '@heroicons/react/24/outline';
+import { LAUNCH_CITIES } from '../../lib/launch-cities';
 
-const BROWSE_CITIES = [
-  { name: 'New York', state: 'NY' },
-  { name: 'Los Angeles', state: 'CA' },
-  { name: 'Chicago', state: 'IL' },
-  { name: 'San Francisco', state: 'CA' },
-  { name: 'Seattle', state: 'WA' },
-  { name: 'Dallas', state: 'TX' },
-  { name: 'Miami', state: 'FL' },
-  { name: 'Philadelphia', state: 'PA' },
-  { name: 'San Diego', state: 'CA' },
-  { name: 'Austin', state: 'TX' },
-  { name: 'Phoenix', state: 'AZ' },
-];
+const BROWSE_CITIES = LAUNCH_CITIES;
 
 // Cities Section Component
 function CitiesSection({ currentCity, currentState, onCitySelect }) {

@@ -1,5 +1,5 @@
 // src/pages/soup-types/index.js
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
@@ -18,7 +18,7 @@ export default function SoupTypes() {
   const [soupCounts, setSoupCounts] = useState({});
 
   // Comprehensive soup types organized by category
-  const soupCategories = {
+  const soupCategories = useMemo(() => ({
     asian: {
       name: 'Asian Soups',
       description: 'Rich broths and noodles from East and Southeast Asia',
@@ -263,7 +263,7 @@ export default function SoupTypes() {
         },
       ]
     },
-  };
+  }), []);
 
   const soupDefinitions = useMemo(() => {
     const definitions = [];
@@ -302,7 +302,7 @@ export default function SoupTypes() {
     });
 
     return definitions;
-  }, []);
+  }, [soupCategories]);
 
   const slugToDisplayNames = useMemo(() => {
     const map = new Map();
@@ -327,7 +327,7 @@ export default function SoupTypes() {
     return map;
   }, [soupDefinitions]);
 
-  const enhanceSoup = (soup) => {
+  const enhanceSoup = useCallback((soup) => {
     const variants = [
       soup.name,
       ...(soup.aliases || []),
@@ -365,7 +365,7 @@ export default function SoupTypes() {
       count: resolvedCount,
       slugs,
     };
-  };
+  }, [soupCounts]);
 
   const enhancedCategories = useMemo(() => {
     return Object.fromEntries(
@@ -377,7 +377,7 @@ export default function SoupTypes() {
         },
       ])
     );
-  }, [soupCounts]);
+  }, [soupCategories, enhanceSoup]);
 
   useEffect(() => {
     const loadCounts = async () => {

@@ -159,7 +159,7 @@ async function clearDatabase() {
       if (restaurantImagesBucket) {
         console.log('Found restaurant-images bucket. Emptying...');
         
-        // This would delete the entire bucket, but it's safer to keep the bucket and just empty it
+        // This would delete the entire bucket, but it&apos;s safer to keep the bucket and just empty it
         // Instead, we'd need to recursively list and delete objects, which is complex
         // For now, we'll just note that storage cleanup may be needed
         console.log('NOTE: Storage bucket exists but will not be automatically emptied.');

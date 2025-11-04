@@ -55,13 +55,13 @@ export default function SearchBar({ className = '', placeholder = 'Search for so
     
     const normalizedQuery = searchQuery.toLowerCase().trim();
     
-    // First check if it's a direct city match
+    // First check if it&apos;s a direct city match
     if (cityMapping[normalizedQuery]) {
       router.push(cityMapping[normalizedQuery]);
       return;
     }
     
-    // Then check if it's a Phoenix ZIP code
+    // Then check if it&apos;s a Phoenix ZIP code
     if (isZipCode && searchQuery.startsWith('85')) {
       router.push('/az/phoenix/restaurants');
       return;

@@ -144,7 +144,7 @@ export default async function handler(req, res) {
         review_count: reviewCount,
         soup_types,
         soups: filteredSoups, // Include the full soups data for the filter
-        // Use restaurant's image if available, otherwise use a fallback
+        // Use restaurant&apos;s image if available, otherwise use a fallback
         image_url: restaurant.image_url || fallbackImage,
         // Include photos from database (using photo_urls field)
         google_photos: restaurant.photo_urls || null,

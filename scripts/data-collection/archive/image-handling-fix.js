@@ -18,7 +18,7 @@ const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 // Test image URL (Street View of Chicago)
 const TEST_IMAGE_URL = `https://maps.googleapis.com/maps/api/streetview?size=600x400&location=41.8781,-87.6298&key=${GOOGLE_MAPS_API_KEY}`;
 
-// Create storage bucket if it doesn't exist
+// Create storage bucket if it doesn&apos;t exist
 async function createBucketIfNotExists(bucketName = 'restaurant-images') {
   try {
     const { data, error } = await supabase.storage.getBucket(bucketName);

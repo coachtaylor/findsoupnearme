@@ -64,7 +64,7 @@ async function fixSpecificIssues() {
     }
   }
   
-  // Issue #3: Harumama - No action needed, it's correct
+  // Issue #3: Harumama - No action needed, it&apos;s correct
   console.log('\n3. Harumama Noodles + Buns - No changes needed (Asian noodle restaurant is correct)');
   
   // Issue #4: Remove Chicken Noodle and Tomato from Frank's Noodle House

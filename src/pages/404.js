@@ -134,7 +134,7 @@ export default function NotFoundPage() {
             </h2>
             
             <p className="text-neutral-700 mb-10 max-w-md mx-auto text-lg">
-              Sorry, we couldn't find the page you're looking for. The soup you're searching for might have been moved or doesn't exist.
+              Sorry, we couldn&apos;t find the page you&apos;re looking for. The soup you&apos;re searching for might have been moved or doesn&apos;t exist.
             </p>
             
             <div className="flex flex-col space-y-4 items-center">

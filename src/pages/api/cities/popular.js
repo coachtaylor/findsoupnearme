@@ -1,5 +1,6 @@
 // src/pages/api/cities/popular.js
 import { supabase, getRestaurants } from '../../../lib/supabase';
+import { LAUNCH_CITIES } from '../../../lib/launch-cities';
 
 const DEFAULT_LIMIT = 6;
 const MAX_LIMIT = 50;
@@ -86,9 +87,15 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Filter to only launch cities
+    const launchCityConditions = LAUNCH_CITIES.map(
+      (lc) => `(city.eq.${lc.name},state.eq.${lc.state})`
+    ).join(',');
+    
     const { data, error } = await supabase
       .from('restaurants')
-      .select('city, state');
+      .select('city, state')
+      .or(launchCityConditions);
 
     if (error) {
       console.error('[api/cities/popular] Failed to fetch restaurants:', error);
@@ -97,6 +104,12 @@ export default async function handler(req, res) {
 
     const countsMap = new Map();
     let totalRestaurants = 0;
+
+    // Initialize launch cities with 0 counts
+    LAUNCH_CITIES.forEach((lc) => {
+      const key = `${lc.name.toLowerCase()}|${lc.state}`;
+      countsMap.set(key, { name: lc.name, state: lc.state, count: 0 });
+    });
 
     for (const row of data || []) {
       const cityName = normalizeCityName(row?.city);
@@ -107,13 +120,17 @@ export default async function handler(req, res) {
       }
 
       const key = `${cityName.toLowerCase()}|${stateCode}`;
-      const currentCount = countsMap.get(key) ?? { name: cityName, state: stateCode, count: 0 };
-      currentCount.count += 1;
-      countsMap.set(key, currentCount);
-      totalRestaurants += 1;
+      const currentCount = countsMap.get(key);
+      if (currentCount) {
+        currentCount.count += 1;
+        countsMap.set(key, currentCount);
+        totalRestaurants += 1;
+      }
     }
 
-    const sortedCities = Array.from(countsMap.values()).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+    const sortedCities = Array.from(countsMap.values())
+      .filter(city => city.count > 0) // Only return cities with restaurants
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
     const topCities = sortedCities.slice(0, limit);
 
     return res.status(200).json({

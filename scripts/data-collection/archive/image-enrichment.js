@@ -25,7 +25,7 @@ const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 // Directory of stock soup images organized by soup type
 const STOCK_IMAGES_DIR = './data/stock-images';
 
-// Create Supabase Storage bucket if it doesn't exist
+// Create Supabase Storage bucket if it doesn&apos;t exist
 async function createBucketIfNotExists() {
   const { data, error } = await supabase.storage.getBucket('restaurant-images');
   
@@ -66,7 +66,7 @@ async function getStreetViewImage(restaurant) {
     const fileName = `${restaurant.id}-exterior.jpg`;
     const filePath = path.join('./temp', fileName);
     
-    // Create temp directory if it doesn't exist
+    // Create temp directory if it doesn&apos;t exist
     if (!fs.existsSync('./temp')) {
       fs.mkdirSync('./temp');
     }

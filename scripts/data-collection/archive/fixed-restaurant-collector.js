@@ -60,7 +60,7 @@ const SOUP_SEARCH_QUERIES = [
   'gourmet soup'
 ];
 
-// Create storage bucket if it doesn't exist
+// Create storage bucket if it doesn&apos;t exist
 async function createBucketIfNotExists(bucketName) {
   try {
     const { data, error } = await supabase.storage.getBucket(bucketName);

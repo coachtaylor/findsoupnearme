@@ -158,7 +158,7 @@ export default function AboutPage() {
           <div className="glassmorphism-depth rounded-2xl p-8 md:p-12 shadow-xl morphing-element">
             <h2 className="text-3xl font-bold text-neutral-900 mb-6">Our Mission</h2>
             <p className="text-neutral-700 mb-6 text-lg leading-relaxed">
-              We're passionate about connecting soup lovers with the best local spots. Our platform curates authentic soup experiences across major US cities.
+              We&apos;re passionate about connecting soup lovers with the best local spots. Our platform curates authentic soup experiences across major US cities.
             </p>
             <p className="text-neutral-700 text-lg leading-relaxed">
               From cozy neighborhood joints to upscale restaurants, we help you discover where to find your perfect bowl of soup.
@@ -178,7 +178,7 @@ export default function AboutPage() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-neutral-900 mb-4">Why Soup?</h2>
             <p className="text-neutral-600 max-w-2xl mx-auto text-lg">
-              Soup is more than just food—it's comfort, culture, and community in a bowl. Here's why we're soup-obsessed:
+              Soup is more than just food—it&apos;s comfort, culture, and community in a bowl. Here&apos;s why we&apos;re soup-obsessed:
             </p>
           </div>
           
@@ -255,7 +255,7 @@ export default function AboutPage() {
           <div className="glassmorphism-depth rounded-2xl p-8 md:p-12 shadow-xl morphing-element">
             <h2 className="text-3xl font-bold text-neutral-900 mb-6">For Restaurant Owners</h2>
             <p className="text-neutral-700 mb-8 text-lg leading-relaxed">
-              Are you a restaurant owner with amazing soup on your menu? We'd love to feature you! Our platform helps local businesses connect with soup enthusiasts in their area.
+              Are you a restaurant owner with amazing soup on your menu? We&apos;d love to feature you! Our platform helps local businesses connect with soup enthusiasts in their area.
             </p>
             
             <div className="text-center mb-8">
@@ -272,7 +272,7 @@ export default function AboutPage() {
             
             <h3 className="text-2xl font-bold text-neutral-900 mb-4">Contact Us</h3>
             <p className="text-neutral-700 mb-4 text-lg">
-              Have questions, suggestions, or just want to share your favorite soup spot? We'd love to hear from you!
+              Have questions, suggestions, or just want to share your favorite soup spot? We&apos;d love to hear from you!
             </p>
             
             <p className="text-neutral-700 text-lg">

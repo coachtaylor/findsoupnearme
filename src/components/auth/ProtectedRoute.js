@@ -39,7 +39,7 @@ const ProtectedRoute = ({
         const hasRequiredRole = await hasRole(requiredRole);
         
         if (!hasRequiredRole) {
-          // User doesn't have required role, redirect to unauthorized page
+          // User doesn&apos;t have required role, redirect to unauthorized page
           router.push('/auth/unauthorized');
           return;
         }

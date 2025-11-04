@@ -60,7 +60,7 @@ const SOUP_SEARCH_QUERIES = [
   'gourmet soup'
 ];
 
-// Create storage bucket if it doesn't exist
+// Create storage bucket if it doesn&apos;t exist
 async function createBucketIfNotExists(bucketName) {
   try {
     console.log(`Checking if bucket ${bucketName} exists...`);
@@ -336,7 +336,7 @@ function identifyFoodPhotos(photos) {
         nonRestaurantTypes.includes(type)
       );
       
-      // If it has a non-restaurant type but no restaurant type, it's probably not a restaurant
+      // If it has a non-restaurant type but no restaurant type, it&apos;s probably not a restaurant
       if (hasNonRestaurantType && !hasRestaurantType) {
         console.log(`Rejected "${details.name}" - place type suggests this is not a restaurant: ${placeResult.types.join(', ')}`);
         return false;
@@ -358,7 +358,7 @@ function identifyFoodPhotos(photos) {
       console.log(`Warning: "${details.name}" has no ratings - might not be a real restaurant`);
     }
     
-    // If we've passed all checks, it's probably a valid restaurant
+    // If we've passed all checks, it&apos;s probably a valid restaurant
     return true;
   }
   
@@ -686,7 +686,7 @@ async function countRestaurantsInCity(state, city) {
   // Main function to collect restaurant data for all cities
   async function collectRestaurantData() {
     try {
-      // Create the storage bucket if it doesn't exist
+      // Create the storage bucket if it doesn&apos;t exist
       await createBucketIfNotExists('restaurant-images');
       
       console.log('Starting restaurant data collection for all cities...');
@@ -738,7 +738,7 @@ async function collectSampleData(city, state, count = 3) {
     try {
       console.log(`\n==== Collecting sample of ${count} restaurants from ${city}, ${state} ====`);
       
-      // Create the storage bucket if it doesn't exist
+      // Create the storage bucket if it doesn&apos;t exist
       await createBucketIfNotExists('restaurant-images');
       
       // Build city info object
@@ -908,7 +908,7 @@ async function collectSampleData(city, state, count = 3) {
             return;
           }
           
-          // Create the storage bucket if it doesn't exist
+          // Create the storage bucket if it doesn&apos;t exist
           console.log('Creating/checking storage bucket...');
           await createBucketIfNotExists('restaurant-images');
           
