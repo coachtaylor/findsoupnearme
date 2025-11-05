@@ -1,5 +1,5 @@
 // src/hooks/useRestaurants.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function useRestaurants({
   city = null,
@@ -17,8 +17,12 @@ export default function useRestaurants({
   const [error, setError] = useState(null);
   const [totalCount, setTotalCount] = useState(0);
   const [refreshIndex, setRefreshIndex] = useState(0);
+  const requestCounterRef = useRef(0);
   
   useEffect(() => {
+    const controller = new AbortController();
+    const requestId = ++requestCounterRef.current;
+
     const fetchRestaurants = async () => {
       // Fetch restaurants with current params
       
@@ -62,7 +66,9 @@ export default function useRestaurants({
         if (page) queryParams.append('page', page.toString());
         
         // Make API request
-        const response = await fetch(`/api/restaurants?${queryParams.toString()}`);
+        const response = await fetch(`/api/restaurants?${queryParams.toString()}`, {
+          signal: controller.signal
+        });
         
         if (!response.ok) {
           throw new Error(`API Error: ${response.status}`);
@@ -75,25 +81,38 @@ export default function useRestaurants({
             ...r,
             price_range: r.price_range || '$$',
           }));
-          setRestaurants(normalized);
-          setTotalCount(data.totalCount || data.restaurants.length);
-          setError(null);
+          if (requestCounterRef.current === requestId) {
+            setRestaurants(normalized);
+            setTotalCount(data.totalCount || data.restaurants.length);
+            setError(null);
+          }
         } else {
           console.error('Invalid API response format:', data);
           throw new Error('Invalid API response format');
         }
       } catch (err) {
+        if (err.name === 'AbortError') {
+          return;
+        }
         console.error('Error fetching restaurants:', err);
-        setError(err.message);
+        if (requestCounterRef.current === requestId) {
+          setError(err.message);
+        }
         
         // We don't need fallback data here anymore since the API 
         // will return fallback data if the real data fetch fails
       } finally {
-        setLoading(false);
+        if (requestCounterRef.current === requestId) {
+          setLoading(false);
+        }
       }
     };
     
     fetchRestaurants();
+
+    return () => {
+      controller.abort();
+    };
   }, [city, state, location, limit, featured, soupType, rating, priceRange, page, refreshIndex]);
   
   const refetch = () => setRefreshIndex((i) => i + 1);

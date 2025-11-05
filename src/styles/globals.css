@@ -2,8 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Custom Properties for Dynamic Theme Colors */
+/* CSS Design Tokens - Cursor Rules Implementation */
 :root {
+  /* Design System Tokens (from cursor_rules.md) */
+  --bg: 231 237 222;   /* #E7EDDE */
+  --surface: 255 255 255; /* cards, panels */
+  --ink: 17 24 39;     /* neutral ink for max contrast (gray-900) */
+  --muted: 115 129 94; /* #73815e */
+  --primary: 78 100 36;/* #4e6424 */
+  --accent: 244 176 77;/* #F4B04D */
+  --accent-light: 246 212 162;/* #F6D4A2 */
+  --accent-light-light: 255 251 245;/* #fffbf5 */
+  
+  /* Legacy support - keep existing variables for backward compatibility */
   /* Primary Soup Theme Colors (refined) */
   --primary-hue: 24;
   --primary-saturation: 94%;
@@ -86,10 +97,10 @@
   --shadow-strong: 0 12px 32px rgba(0, 0, 0, 0.14);
   --shadow-glow: 0 0 24px rgba(249, 115, 22, 0.25);
 
-  /* Typography: font stacks */
+  /* Typography: font stacks (Cursor Rules: Poppins for headings, Inter for body) */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-display: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Poppins', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Typography: line-heights and letter-spacing */
   --leading-tight: 1.15;
@@ -576,7 +587,7 @@ body {
   box-shadow: 0 0 10px rgba(249, 115, 22, 0.3);
 }
 
-/* Responsive Utilities */
+/* Accessibility: Reduced Motion Support - Cursor Rules */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -584,6 +595,66 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Accessibility: Focus States - Cursor Rules */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgb(var(--primary) / 0.4);
+  outline-offset: 0;
+}
+
+/* Typography: Heading Styles - Cursor Rules */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+h1 {
+  font-size: clamp(2.25rem, 4vw + 1rem, 3rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+h2 {
+  font-size: clamp(1.875rem, 3vw + 0.5rem, 2.25rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+h3 {
+  font-size: clamp(1.5rem, 2vw + 0.5rem, 1.875rem);
+  line-height: 1.3;
+}
+
+/* Body Text - Cursor Rules */
+body, p {
+  font-family: var(--font-sans);
+  font-size: clamp(1rem, 0.25vw + 0.875rem, 1.0625rem);
+  line-height: 1.6;
+}
+
+/* Container - Cursor Rules */
+.container-standard {
+  max-width: 80rem; /* max-w-7xl */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .container-standard {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 

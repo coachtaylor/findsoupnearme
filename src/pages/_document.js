@@ -17,9 +17,9 @@ export default function Document() {
         <link rel="dns-prefetch" href="//lh3.googleusercontent.com" />
         <link rel="dns-prefetch" href="//lh5.googleusercontent.com" />
         
-        {/* Preload critical fonts */}
+        {/* Preload critical fonts - Cursor Rules: Poppins for headings, Inter for body */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Playfair+Display:wght@400;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@400;500;600;700&family=Merriweather:wght@300;400;700&family=Playfair+Display:wght@400;600;700&display=swap"
           rel="stylesheet"
         />
         

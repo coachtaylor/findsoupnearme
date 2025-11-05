@@ -87,15 +87,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Filter to only launch cities
-    const launchCityConditions = LAUNCH_CITIES.map(
-      (lc) => `(city.eq.${lc.name},state.eq.${lc.state})`
-    ).join(',');
+    // Filter to only launch cities - use state filter then filter cities in JavaScript
+    const launchStates = [...new Set(LAUNCH_CITIES.map(lc => lc.state.toUpperCase()))];
+    const launchCitySet = new Set(LAUNCH_CITIES.map(lc => 
+      `${lc.name.toLowerCase()}|${lc.state.toUpperCase()}`
+    ));
     
-    const { data, error } = await supabase
+    let query = supabase
       .from('restaurants')
-      .select('city, state')
-      .or(launchCityConditions);
+      .select('city, state');
+    
+    if (launchStates.length > 0) {
+      query = query.in('state', launchStates);
+    }
+    
+    const { data, error } = await query;
 
     if (error) {
       console.error('[api/cities/popular] Failed to fetch restaurants:', error);
@@ -107,11 +113,20 @@ export default async function handler(req, res) {
 
     // Initialize launch cities with 0 counts
     LAUNCH_CITIES.forEach((lc) => {
-      const key = `${lc.name.toLowerCase()}|${lc.state}`;
+      const key = `${lc.name.toLowerCase()}|${lc.state.toUpperCase()}`;
       countsMap.set(key, { name: lc.name, state: lc.state, count: 0 });
     });
 
-    for (const row of data || []) {
+    // Filter to only launch cities (handle spaces in city names)
+    const filteredData = (data || []).filter(row => {
+      const cityName = normalizeCityName(row?.city);
+      const stateCode = normalizeStateCode(row?.state);
+      if (!cityName || !stateCode) return false;
+      const key = `${cityName.toLowerCase()}|${stateCode}`;
+      return launchCitySet.has(key);
+    });
+
+    for (const row of filteredData) {
       const cityName = normalizeCityName(row?.city);
       const stateCode = normalizeStateCode(row?.state);
 

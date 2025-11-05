@@ -99,23 +99,23 @@ export default function RestaurantCard({
   
   return (
     <div
-      className="group bg-white rounded-xl border border-neutral-200 overflow-hidden hover:shadow-lg hover:border-orange-300 transition-all duration-200 h-full flex flex-col"
+      className="group bg-[rgb(var(--surface))] rounded-2xl border border-black/5 overflow-hidden hover:shadow-md hover:border-[rgb(var(--primary))]/30 transition-all duration-200 h-full flex flex-col"
       style={{ animationDelay: `${animationIndex * 100}ms` }}
     >
       <Link href={restaurantUrl} className="block h-full flex flex-col">
-        {/* Hero Image Section - Reduced height */}
-        <div className="relative h-40 w-full overflow-hidden bg-neutral-100 flex-shrink-0">
-          {imageError || !primaryImage ? (
-            <div className="flex items-center justify-center h-full bg-gradient-to-br from-neutral-100 to-neutral-200">
-              <svg className="w-10 h-10 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </div>
-          ) : (
-            <>
-              {!imageLoaded && (
-                <div className="absolute inset-0 bg-neutral-200 animate-pulse"></div>
-              )}
+        {/* Hero Image Section - Taller for better aspect ratio */}
+        <div className="relative h-56 w-full overflow-hidden bg-[rgb(var(--accent-light))] flex-shrink-0">
+                 {imageError || !primaryImage ? (
+                   <div className="flex items-center justify-center h-full bg-[rgb(var(--accent-light))]">
+                     <svg className="w-10 h-10 text-[rgb(var(--muted))]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                     </svg>
+                   </div>
+                 ) : (
+                   <>
+                     {!imageLoaded && (
+                       <div className="absolute inset-0 bg-[rgb(var(--accent-light))] animate-pulse"></div>
+                     )}
               <img
                 src={primaryImage}
                 alt={name}
@@ -130,7 +130,7 @@ export default function RestaurantCard({
           
           {/* Price Range Badge - Top Right - Smaller */}
           {displayPriceRange && displayPriceRange !== '0' && (
-            <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm rounded-md px-2 py-1 text-xs font-semibold text-neutral-900 shadow-sm border border-neutral-200/50">
+            <div className="absolute top-2 right-2 bg-[rgb(var(--surface))]/95 backdrop-blur-sm rounded-md px-2 py-1 text-xs font-semibold text-[rgb(var(--ink))] shadow-sm border border-black/5">
               {displayPriceRange}
             </div>
           )}
@@ -151,59 +151,62 @@ export default function RestaurantCard({
         
         {/* Content Section - Compact padding */}
         <div className="p-4 flex-1 flex flex-col">
-          {/* Restaurant Name - Tighter */}
-          <h3 className="text-base font-semibold text-neutral-900 group-hover:text-orange-600 transition-colors mb-1.5 line-clamp-2">
-            {name}
-          </h3>
-          
-          {/* Rating and Location on same line */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1.5">
-              <div className="flex items-center">
-                {[...Array(5)].map((_, i) => (
-                  <svg
-                    key={i}
-                    className={`h-3 w-3 ${
-                      i < Math.floor(rating || 0)
-                        ? 'text-yellow-400 fill-current'
-                        : 'text-neutral-300'
-                    }`}
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                ))}
+          {/* Restaurant Name with Cuisine - Tighter */}
+          <div className="flex items-start justify-between gap-2 mb-1.5">
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-[rgb(var(--ink))] group-hover:text-[rgb(var(--primary))] transition-colors line-clamp-2 mb-1">
+                {name}
+              </h3>
+              {/* Location under title */}
+              <div className="flex items-center gap-1 text-xs text-[rgb(var(--muted))]">
+                <MapPinIcon className="h-3 w-3" />
+                <span>{city}, {state}</span>
               </div>
-              <span className="text-xs font-medium text-neutral-700">
-                {rating ? rating.toFixed(1) : 'N/A'}
-              </span>
-              {review_count > 0 && (
-                <span className="text-xs text-neutral-500">
-                  ({review_count})
-                </span>
-              )}
             </div>
-            <div className="flex items-center gap-1 text-xs text-neutral-500">
-              <MapPinIcon className="h-3 w-3" />
-              <span>{city}, {state}</span>
-            </div>
-          </div>
-          
-          {/* Tags Row - Cuisine and Specialty inline */}
-          <div className="flex items-center gap-2 mb-3 flex-wrap">
             {cuisineType && (
-              <span className="inline-flex items-center px-2.5 py-1 bg-neutral-100 border border-neutral-200 rounded-md text-xs font-medium text-neutral-700 uppercase tracking-wide">
+              <span className="inline-flex items-center px-2.5 py-1 bg-[rgb(var(--accent-light))] border border-black/10 rounded-md text-xs font-medium text-[rgb(var(--ink))] uppercase tracking-wide flex-shrink-0">
                 {formatCuisineName(cuisineType)}
               </span>
             )}
+          </div>
+          
+          {/* Rating */}
+          <div className="flex items-center gap-1.5 mb-2">
+            <div className="flex items-center">
+              {[...Array(5)].map((_, i) => (
+                <svg
+                  key={i}
+                  className={`h-3 w-3 ${
+                    i < Math.floor(rating || 0)
+                      ? 'text-yellow-400 fill-current'
+                      : 'text-neutral-300'
+                  }`}
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+            <span className="text-xs font-medium text-[rgb(var(--ink))]">
+              {rating ? rating.toFixed(1) : 'N/A'}
+            </span>
+            {review_count > 0 && (
+              <span className="text-xs text-[rgb(var(--muted))]">
+                ({review_count})
+              </span>
+            )}
+          </div>
+                 
+                 {/* Tags Row - Soup Types only */}
+                 <div className="flex items-center gap-2 mb-3 flex-wrap">
             {/* Show up to 3 soup types */}
             {soup_types && soup_types.length > 0 && (
               <>
                 {soup_types.slice(0, 3).map((soupType, index) => (
                   <span 
                     key={index}
-                    className="inline-flex items-center px-2.5 py-1 bg-orange-50 border border-orange-200 rounded-md text-xs font-semibold text-orange-700"
+                    className="inline-flex items-center px-2.5 py-1 bg-[rgb(var(--bg))] border border-[rgb(var(--primary))]/30 rounded-md text-xs font-semibold text-[rgb(var(--primary))]"
                   >
                     {soupType}
                   </span>
@@ -220,7 +223,7 @@ export default function RestaurantCard({
           
           {/* View Button - Compact, no border */}
           <div className="mt-auto pt-2">
-            <div className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium text-sm group-hover:gap-2 gap-1.5 transition-all">
+            <div className="inline-flex items-center text-[rgb(var(--primary))] hover:opacity-80 font-medium text-sm group-hover:gap-2 gap-1.5 transition-all">
               <span>View Details</span>
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

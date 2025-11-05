@@ -119,7 +119,7 @@ export default function AllRestaurantsPage() {
           visibleSections.content ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
       >
-        {isClient && (
+        {isClient && router.isReady && (
           <RestaurantListingPage 
             title={title}
             description={description}

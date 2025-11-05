@@ -5,11 +5,31 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const SearchBar = dynamic(() => import('../components/search/SearchBar'), { ssr: false });
 import { useRouter } from 'next/router';
-import useRestaurants from '../hooks/useRestaurants';
 import RestaurantCard from '../components/restaurant/RestaurantCard';
 import RestaurantSubmissionForm from '../components/forms/RestaurantSubmissionForm';
 import { MapPinIcon, Squares2X2Icon, StarIcon, UserGroupIcon } from '@heroicons/react/24/outline';
 import { LAUNCH_CITIES, getCityMapping } from '../lib/launch-cities';
+
+// State abbreviation to full name mapping
+const STATE_NAMES = {
+  'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+  'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+  'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+  'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+  'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+  'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+  'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+  'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+  'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+  'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+  'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+  'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+  'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
+};
+
+const getStateName = (abbreviation) => {
+  return STATE_NAMES[abbreviation?.toUpperCase()] || abbreviation || '';
+};
 
 const FALLBACK_POPULAR_CITIES = [
   { name: 'Los Angeles', state: 'CA', count: 198 },
@@ -32,15 +52,10 @@ export default function Home() {
   const [popularCitiesError, setPopularCitiesError] = useState(false);
   const [popularCityTotals, setPopularCityTotals] = useState({ restaurants: 0, cities: 0 });
 
-  // Fetch featured restaurants
-  const { 
-    restaurants: featuredRestaurants, 
-    loading: featuredLoading, 
-    error: featuredError 
-  } = useRestaurants({ 
-    featured: true, 
-    limit: 6 
-  });
+  // Fetch one restaurant from each state
+  const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
+  const [featuredLoading, setFeaturedLoading] = useState(true);
+  const [featuredError, setFeaturedError] = useState(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -94,6 +109,74 @@ export default function Home() {
     };
 
     loadPopularCities();
+
+    return () => controller.abort();
+  }, []);
+
+  // Fetch one restaurant from each state
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const loadFeaturedRestaurants = async () => {
+      try {
+        setFeaturedLoading(true);
+        setFeaturedError(null);
+
+        // Get unique states from launch cities
+        const uniqueStates = [...new Set(LAUNCH_CITIES.map(city => city.state))];
+        console.log('Loading featured restaurants from states:', uniqueStates);
+        
+        // Fetch one restaurant from each state
+        const restaurantPromises = uniqueStates.map(async (state) => {
+          try {
+            const response = await fetch(
+              `/api/restaurants?state=${state}&limit=1&sortBy=rating&sortOrder=desc`,
+              { signal: controller.signal }
+            );
+            
+            if (!response.ok) {
+              throw new Error(`Request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log(`Fetched restaurants for state ${state}:`, {
+              count: data.restaurants?.length || 0,
+              restaurants: data.restaurants
+            });
+            
+            if (data.restaurants && data.restaurants.length > 0) {
+              return data.restaurants[0];
+            }
+            return null;
+          } catch (error) {
+            console.error(`Failed to load restaurant for state ${state}:`, error);
+            return null;
+          }
+        });
+
+        const restaurants = await Promise.all(restaurantPromises);
+        const featured = restaurants.filter(r => r !== null);
+        console.log('Final featured restaurants:', featured.length, featured);
+
+        if (controller.signal.aborted) return;
+
+        setFeaturedRestaurants(featured);
+        
+        if (featured.length === 0) {
+          setFeaturedError('No restaurants found in featured cities');
+        }
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        console.error('Failed to load featured restaurants:', error);
+        setFeaturedError(error.message);
+      } finally {
+        if (!controller.signal.aborted) {
+          setFeaturedLoading(false);
+        }
+      }
+    };
+
+    loadFeaturedRestaurants();
 
     return () => controller.abort();
   }, []);
@@ -188,7 +271,7 @@ export default function Home() {
       </Head>
 
       {/* Banner: Link to Submission Form */}
-      <section className="bg-gradient-to-r from-orange-600 to-orange-500 text-white py-3">
+      <section className="bg-[rgb(var(--primary))] text-white py-3">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-center gap-3">
             <UserGroupIcon className="h-5 w-5" />
@@ -196,7 +279,7 @@ export default function Home() {
               Know a great soup restaurant?{' '}
               <a 
                 href="#help-us-grow" 
-                className="underline hover:text-orange-100 font-semibold transition-colors"
+                className="underline hover:opacity-80 font-semibold transition-opacity"
               >
                 Submit it here
               </a>
@@ -207,18 +290,18 @@ export default function Home() {
       </section>
 
       {/* Hero Section */}
-      <section className="relative pt-12 pb-10 lg:pt-16 lg:pb-12 bg-gradient-to-b from-neutral-50/50 to-white">
+      <section className="relative pt-12 pb-10 lg:pt-16 lg:pb-12 bg-[rgb(var(--bg))]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          <div className="max-w-7xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               {/* Left Column: Heading & Content */}
               <div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-neutral-900 mb-3 leading-tight tracking-tight">
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-[rgb(var(--ink))] mb-3 leading-tight tracking-tight">
                   Find your perfect
                   <br />
-                  <span className="text-orange-600">bowl of soup</span>
-                </h1>
-                <p className="text-base lg:text-lg text-neutral-600 mb-6 leading-relaxed">
+                  <span className="text-[rgb(var(--accent))]">bowl of soup</span>
+            </h1>
+                <p className="text-base lg:text-lg text-[rgb(var(--muted))] mb-6 leading-relaxed">
                   Enter your city or ZIP code to find the best soup restaurants near you. Filter by soup type to find exactly what you&apos;re craving.
                 </p>
                 
@@ -227,30 +310,30 @@ export default function Home() {
                   <form onSubmit={handleSearch} className="space-y-3">
                     {/* Location Input - Required */}
                     <div>
-                      <label htmlFor="location-input" className="block text-sm font-medium text-neutral-700 mb-2">
-                        Location <span className="text-orange-600">*</span>
+                      <label htmlFor="location-input" className="block text-sm font-medium text-[rgb(var(--ink))] mb-2">
+                        Location <span className="text-[rgb(var(--primary))]">*</span>
                       </label>
-                      <input
+                    <input
                         id="location-input"
-                        type="text"
+                      type="text"
                         placeholder="Enter city or ZIP code"
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
-                        className="w-full px-4 py-3 text-base bg-white border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:shadow-md transition-all placeholder:text-neutral-400"
+                        className="w-full px-4 py-3 text-base bg-[rgb(var(--surface))] border border-black/10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent focus:shadow-md transition-all placeholder:text-[rgb(var(--muted))]"
                         required
-                      />
-                    </div>
+                    />
+                  </div>
                     
                     {/* Soup Type Selector - Optional */}
                     <div>
-                      <label htmlFor="soup-type-select" className="block text-sm font-medium text-neutral-700 mb-2">
-                        Soup Type <span className="text-neutral-400 text-xs">(optional)</span>
+                      <label htmlFor="soup-type-select" className="block text-sm font-medium text-[rgb(var(--ink))] mb-2">
+                        Soup Type <span className="text-[rgb(var(--muted))] text-xs">(optional)</span>
                       </label>
                       <select
                         id="soup-type-select"
                         value={soupType}
                         onChange={(e) => setSoupType(e.target.value)}
-                        className="w-full px-4 py-3 text-base bg-white border border-neutral-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent focus:shadow-md transition-all"
+                        className="w-full px-4 py-3 text-base bg-[rgb(var(--surface))] border border-black/10 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent focus:shadow-md transition-all"
                       >
                         {soupTypes.map((option) => (
                           <option key={option.value} value={option.value}>
@@ -261,58 +344,51 @@ export default function Home() {
                     </div>
                     
                     {/* Search Button */}
-                    <button
-                      type="submit"
+                  <button
+                    type="submit"
                       disabled={!isSearchEnabled}
-                      className={`w-full px-6 py-3 font-medium rounded-lg shadow-sm transition-all ${
+                      className={`w-full px-6 py-3 font-medium rounded-xl shadow-sm transition-all ${
                         isSearchEnabled
-                          ? 'bg-orange-600 hover:bg-orange-700 text-white hover:shadow-md'
+                          ? 'bg-[rgb(var(--accent))] hover:opacity-90 text-white hover:shadow-md'
                           : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
                       }`}
                     >
                       Search Restaurants
-                    </button>
-                  </form>
-                </div>
+                  </button>
+              </form>
+            </div>
 
                 {/* Popular Specialties - Quick Access */}
-                <div className="border-t border-neutral-200 pt-6">
-                  <p className="text-sm font-semibold text-neutral-700 mb-3 uppercase tracking-wide">Popular specialties</p>
-                  <p className="text-xs text-neutral-500 mb-3">Click to select a soup type, then enter your location</p>
+                <div className="border-t border-black/5 pt-6">
+                  <p className="text-sm font-semibold text-[rgb(var(--ink))] mb-3 uppercase tracking-wide">Popular specialties</p>
+                  <p className="text-xs text-[rgb(var(--muted))] mb-3">Click to select a soup type, then enter your location</p>
                   <div className="flex flex-wrap gap-2.5">
                     {popularSpecialties.map((specialty) => (
-                      <button
+                <button
                         key={specialty.name}
                         type="button"
                         onClick={(e) => handleSpecialtyClick(e, specialty.value)}
-                        className={`relative px-4 py-2.5 bg-white border rounded-lg text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${
+                        className={`relative px-4 py-2.5 bg-[rgb(var(--surface))] border border-black/10 rounded-xl text-sm font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 ${
                           soupType === specialty.value
-                            ? 'border-orange-400 bg-orange-50 text-orange-700'
-                            : 'border-neutral-300 text-neutral-700 hover:bg-orange-50 hover:border-orange-400 hover:text-orange-700'
+                            ? 'border-[rgb(var(--accent))] bg-[rgb(var(--accent-light))]/30 text-[rgb(var(--accent))]'
+                            : 'border-black/10 text-[rgb(var(--ink))] hover:bg-[rgb(var(--accent-light))]/20 hover:border-[rgb(var(--accent-light))]/40'
                         }`}
                       >
                         {specialty.name}
-                      </button>
-                    ))}
-                  </div>
+                </button>
+              ))}
+                </div>
                 </div>
               </div>
 
               {/* Right Column: Visual Element or Additional Content */}
               <div className="hidden lg:block">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-4">
-                    <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-50 rounded-xl border border-orange-200"></div>
-                    <div className="aspect-square bg-gradient-to-br from-neutral-100 to-neutral-50 rounded-xl border border-neutral-200"></div>
-                  </div>
-                  <div className="space-y-4 pt-8">
-                    <div className="aspect-square bg-gradient-to-br from-neutral-100 to-neutral-50 rounded-xl border border-neutral-200"></div>
-                    <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-50 rounded-xl border border-orange-200"></div>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-50 rounded-xl border border-orange-200"></div>
-                    <div className="aspect-square bg-gradient-to-br from-neutral-100 to-neutral-50 rounded-xl border border-neutral-200"></div>
-                  </div>
+                <div className="w-full">
+                  <img 
+                    src="/images/hero.svg" 
+                    alt="Soup illustration" 
+                    className="w-full h-auto max-h-[800px] object-contain rounded-2xl"
+                  />
                 </div>
               </div>
             </div>
@@ -320,16 +396,14 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Browse by Cuisine Section - Removed - Users should search by location first */}
-
       {/* Popular Cities Section */}
-      <section className="py-12 lg:py-16 bg-neutral-50/30">
+      <section className="py-12 lg:py-16 bg-[rgb(var(--accent-light-light))]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-2 tracking-tight">
+            <h2 className="text-3xl lg:text-4xl font-bold text-[rgb(var(--ink))] mb-2 tracking-tight">
               Popular Cities
             </h2>
-            <p className="text-neutral-600 text-lg">
+            <p className="text-[rgb(var(--muted))] text-lg">
               Explore soup restaurants in major cities
             </p>
           </div>
@@ -349,7 +423,7 @@ export default function Home() {
                       <div className="text-right ml-4 space-y-2">
                         <div className="h-6 w-12 bg-neutral-200 rounded"></div>
                         <div className="h-3 w-16 bg-neutral-200 rounded"></div>
-                      </div>
+                    </div>
                     </div>
                   </div>
                 ))
@@ -365,20 +439,30 @@ export default function Home() {
                     <Link
                       key={`${city.name}-${city.state}`}
                       href={`/${stateSegment}/${citySlug}/restaurants`}
-                      className="group p-6 bg-white border border-neutral-300 rounded-xl shadow-sm hover:shadow-md hover:border-orange-300 hover:-translate-y-1 transition-all duration-200"
+                      className="group relative overflow-hidden p-6 bg-[rgb(var(--bg))] hover:bg-[rgb(var(--accent-light))]/40 border border-black/5 hover:border-[rgb(var(--accent-light))]/50 rounded-2xl shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
                     >
-                      <div className="flex items-start justify-between gap-4">
+                      {/* Decorative corner accent */}
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-[rgb(var(--accent))]/20 to-transparent rounded-bl-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                      
+                      <div className="relative z-10 flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-lg font-semibold text-neutral-900 mb-1.5 group-hover:text-orange-600 transition-colors">
-                            {city.name}
-                          </h3>
-                          <p className="text-sm text-neutral-500">{city.state}</p>
+                          <div className="flex items-center gap-2 mb-2">
+                            <MapPinIcon className="h-5 w-5 text-[rgb(var(--accent))] opacity-60 group-hover:opacity-100 transition-opacity" />
+                            <h3 className="text-xl font-bold text-[rgb(var(--ink))] group-hover:text-[rgb(var(--accent))] transition-colors">
+                              {city.name}
+                            </h3>
+                          </div>
+                          <p className="text-sm font-medium text-[rgb(var(--muted))] ml-7">{getStateName(city.state)}</p>
                         </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-2xl font-bold text-neutral-900 mb-1">{city.count.toLocaleString()}</div>
-                          <div className="text-xs text-neutral-500 font-medium uppercase tracking-wide leading-tight">restaurants</div>
-                        </div>
-                      </div>
+                        <div className="text-right flex-shrink-0 flex flex-col items-end">
+                          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-[rgb(var(--accent-light))]/50 group-hover:bg-[rgb(var(--accent))] group-hover:scale-110 transition-all duration-300 mb-2">
+                            <div className="text-2xl font-bold text-[rgb(var(--accent))] group-hover:text-white transition-colors">
+                              {city.count.toLocaleString()}
+                            </div>
+                          </div>
+                          <div className="text-xs font-semibold text-[rgb(var(--muted))] uppercase tracking-wider">restaurants</div>
+                  </div>
+                </div>
                     </Link>
                   );
                 })
@@ -392,12 +476,12 @@ export default function Home() {
           <div className="mt-8 flex items-center justify-between">
             <Link 
               href="/cities" 
-              className="inline-flex items-center text-orange-600 hover:text-orange-700 font-medium text-sm"
+              className="inline-flex items-center text-[rgb(var(--primary))] hover:opacity-80 font-medium text-sm"
             >
               View all cities
               <span className="ml-2">→</span>
             </Link>
-            <div className="text-xs text-neutral-500 font-medium">
+            <div className="text-xs text-[rgb(var(--muted))] font-medium">
               {popularCityTotals.restaurants > 0 && popularCityTotals.cities > 0
                 ? `${popularCityTotals.restaurants.toLocaleString()} restaurants across ${popularCityTotals.cities} ${popularCityTotals.cities === 1 ? 'city' : 'cities'}`
                 : popularCitiesError
@@ -409,20 +493,20 @@ export default function Home() {
       </section>
 
       {/* Featured Restaurants Section */}
-      <section className="py-12 lg:py-16 bg-white">
+      <section className="py-12 lg:py-16 bg-[rgb(var(--bg))]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-2 tracking-tight">
+            <h2 className="text-3xl lg:text-4xl font-bold text-[rgb(var(--ink))] mb-2 tracking-tight">
               Featured Restaurants
             </h2>
-            <p className="text-neutral-600 text-lg">
-              Top-rated soup spots in your area
+            <p className="text-[rgb(var(--muted))] text-lg">
+              Top-rated soup spots from across our featured cities
             </p>
           </div>
 
           {featuredLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+              {[1, 2, 3].map((i) => (
                 <div key={i} className="bg-neutral-50 rounded-lg overflow-hidden border border-neutral-200 animate-pulse">
                   <div className="h-48 bg-neutral-200"></div>
                   <div className="p-6 space-y-3">
@@ -432,9 +516,9 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          ) : featuredError ? (
-            <div className="text-center py-12 text-neutral-500">
-              Unable to load restaurants at this time.
+          ) : featuredError || featuredRestaurants.length === 0 ? (
+            <div className="text-center py-12 text-[rgb(var(--muted))]">
+              {featuredError || 'No restaurants found in featured cities at this time.'}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -447,7 +531,7 @@ export default function Home() {
           <div className="mt-8 text-center">
             <Link 
               href="/restaurants" 
-              className="inline-flex items-center px-8 py-3.5 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all"
+              className="inline-flex items-center px-8 py-3.5 bg-[rgb(var(--primary))] hover:opacity-90 text-white font-medium rounded-xl shadow-sm hover:shadow-md transition-all"
             >
               Browse all restaurants
               <span className="ml-2">→</span>
@@ -457,67 +541,64 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-12 lg:py-16 bg-gradient-to-b from-white to-neutral-50/30">
+      <section className="py-12 lg:py-16 bg-[rgb(var(--accent-light-light))]">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-5xl mx-auto">
             <div className="mb-10 text-center">
-              <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-2 tracking-tight">
+              <h2 className="text-3xl lg:text-4xl font-bold text-[rgb(var(--ink))] mb-2 tracking-tight">
                 How it works
-              </h2>
-              <p className="text-neutral-600 text-lg">
+            </h2>
+              <p className="text-[rgb(var(--muted))] text-lg">
                 Find your perfect soup in three simple steps
-              </p>
-            </div>
+            </p>
+          </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-              <div className="group relative bg-white rounded-xl border border-neutral-200 p-6 lg:p-8 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all duration-300">
+              <div className="group relative bg-[rgb(var(--bg))] hover:bg-[rgb(var(--accent))] rounded-2xl border border-black/5 p-6 lg:p-8 shadow-sm hover:shadow-md hover:border-[rgb(var(--primary))]/30 transition-all duration-300">
                 <div className="mb-6">
-                  <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl text-xl font-bold shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
+                  <div className="relative inline-flex items-center justify-center w-16 h-16 bg-[rgb(var(--primary))] text-white rounded-xl text-xl font-bold shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
                     <span className="relative z-10">01</span>
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                 </div>
                 <div className="mb-4">
-                  <MapPinIcon className="h-8 w-8 text-orange-600 mb-3" />
+                  <MapPinIcon className="h-8 w-8 text-[rgb(var(--primary))] mb-3" />
                 </div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-3">
+                <h3 className="text-xl font-semibold text-[rgb(var(--primary))] mb-3">
                   Enter your location
                 </h3>
-                <p className="text-neutral-600 leading-relaxed">
+                <p className="text-[rgb(var(--primary))] opacity-80 leading-relaxed">
                   Start by entering your city or ZIP code. This is required to find restaurants near you.
                 </p>
               </div>
-              <div className="group relative bg-white rounded-xl border border-neutral-200 p-6 lg:p-8 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all duration-300">
+              <div className="group relative bg-[rgb(var(--bg))] hover:bg-[rgb(var(--accent))] rounded-2xl border border-black/5 p-6 lg:p-8 shadow-sm hover:shadow-md hover:border-[rgb(var(--primary))]/30 transition-all duration-300">
                 <div className="mb-6">
-                  <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl text-xl font-bold shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
+                  <div className="relative inline-flex items-center justify-center w-16 h-16 bg-[rgb(var(--primary))] text-white rounded-xl text-xl font-bold shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
                     <span className="relative z-10">02</span>
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                 </div>
                 <div className="mb-4">
-                  <Squares2X2Icon className="h-8 w-8 text-orange-600 mb-3" />
+                  <Squares2X2Icon className="h-8 w-8 text-[rgb(var(--primary))] mb-3" />
                 </div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-3">
+                <h3 className="text-xl font-semibold text-[rgb(var(--primary))] mb-3">
                   Filter by soup type
-                </h3>
-                <p className="text-neutral-600 leading-relaxed">
+                  </h3>
+                <p className="text-[rgb(var(--primary))] opacity-80 leading-relaxed">
                   Optionally select a soup type like Ramen or Pho, or browse all soups in your area. You can also filter by cuisine, ratings, and price range on the results page.
                 </p>
               </div>
-              <div className="group relative bg-white rounded-xl border border-neutral-200 p-6 lg:p-8 shadow-sm hover:shadow-lg hover:border-orange-300 transition-all duration-300">
+              <div className="group relative bg-[rgb(var(--bg))] hover:bg-[rgb(var(--accent))] rounded-2xl border border-black/5 p-6 lg:p-8 shadow-sm hover:shadow-md hover:border-[rgb(var(--primary))]/30 transition-all duration-300">
                 <div className="mb-6">
-                  <div className="relative inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 text-white rounded-xl text-xl font-bold shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all duration-300">
+                  <div className="relative inline-flex items-center justify-center w-16 h-16 bg-[rgb(var(--primary))] text-white rounded-xl text-xl font-bold shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-300">
                     <span className="relative z-10">03</span>
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-500 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   </div>
                 </div>
                 <div className="mb-4">
-                  <StarIcon className="h-8 w-8 text-orange-600 mb-3" />
+                  <StarIcon className="h-8 w-8 text-[rgb(var(--primary))] mb-3" />
                 </div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-3">
+                <h3 className="text-xl font-semibold text-[rgb(var(--primary))] mb-3">
                   Read reviews
                 </h3>
-                <p className="text-neutral-600 leading-relaxed">
+                <p className="text-[rgb(var(--primary))] opacity-80 leading-relaxed">
                   Check ratings and reviews from other diners before making your choice.
                 </p>
               </div>
@@ -526,52 +607,30 @@ export default function Home() {
         </div>
       </section>
 
-          {/* Collaboration Section */}
-          <section id="help-us-grow" className="py-12 lg:py-16 bg-white scroll-mt-20">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-10">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
-                    <UserGroupIcon className="h-8 w-8 text-orange-600" />
-                  </div>
-                  <h2 className="text-3xl lg:text-4xl font-bold text-neutral-900 mb-3 tracking-tight">
-                    Help Us Grow
-                  </h2>
-                  <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-                    We&apos;re a new website building the best soup restaurant directory. Know a great soup spot that should be listed?
-                    <span className="font-semibold text-neutral-900"> Customers and restaurant owners can submit restaurants below.</span>
-                    <span className="block mt-2 text-base"> If you&apos;re a restaurant owner, we&apos;ll mark your restaurant as verified when added to our platform.</span>
-                  </p>
-                </div>
+      {/* Collaboration Section */}
+      <section id="help-us-grow" className="py-12 lg:py-16 bg-[rgb(var(--bg))] scroll-mt-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-[rgb(var(--surface))] rounded-full mb-4">
+                <UserGroupIcon className="h-8 w-8 text-[rgb(var(--primary))]" />
+        </div>
+              <h2 className="text-3xl lg:text-4xl font-bold text-[rgb(var(--ink))] mb-3 tracking-tight">
+                Help Us Grow
+            </h2>
+              <p className="text-lg text-[rgb(var(--muted))] max-w-2xl mx-auto">
+                We&apos;re a new website building the best soup restaurant directory. Know a great soup spot that should be listed?
+                <span className="font-semibold text-[rgb(var(--ink))]"> Customers and restaurant owners can submit restaurants below.</span>
+              </p>
+            </div>
 
-            <div className="bg-white border border-neutral-200 rounded-xl p-6 lg:p-8 shadow-sm">
+            <div className="bg-[rgb(var(--surface))] border border-black/5 rounded-2xl p-6 lg:p-8 shadow-sm">
               <RestaurantSubmissionForm />
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-12 lg:py-16 bg-neutral-900">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl lg:text-4xl font-bold text-white mb-3 tracking-tight">
-              Ready to find your perfect soup?
-            </h2>
-            <p className="text-lg text-neutral-300 mb-8">
-                Enter your location above to start finding your perfect soup
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/restaurants"
-                className="inline-flex items-center justify-center px-8 py-4 bg-white hover:bg-neutral-100 text-neutral-900 font-medium rounded-xl shadow-sm hover:shadow-md transition-all"
-              >
-                Browse restaurants
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

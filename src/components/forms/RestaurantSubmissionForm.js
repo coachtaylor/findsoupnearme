@@ -173,13 +173,13 @@ export default function RestaurantSubmissionForm() {
       {/* Restaurant Information */}
       <div className="space-y-4">
         <h3 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
-          <BuildingOfficeIcon className="h-5 w-5 text-orange-600" />
+          <BuildingOfficeIcon className="h-5 w-5 text-[rgb(var(--primary))]" />
           Restaurant Information
         </h3>
         
         <div>
           <label htmlFor="restaurantName" className="block text-sm font-medium text-neutral-700 mb-2">
-            Restaurant Name <span className="text-orange-600">*</span>
+            Restaurant Name <span className="text-[rgb(var(--primary))]">*</span>
           </label>
           <input
             type="text"
@@ -188,14 +188,14 @@ export default function RestaurantSubmissionForm() {
             required
             value={formData.restaurantName}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
             placeholder="Enter restaurant name"
           />
         </div>
 
         <div>
           <label htmlFor="address" className="block text-sm font-medium text-neutral-700 mb-2">
-            Address <span className="text-orange-600">*</span>
+            Address <span className="text-[rgb(var(--primary))]">*</span>
           </label>
           <input
             type="text"
@@ -204,7 +204,7 @@ export default function RestaurantSubmissionForm() {
             required
             value={formData.address}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
             placeholder="Street address"
           />
         </div>
@@ -212,7 +212,7 @@ export default function RestaurantSubmissionForm() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label htmlFor="city" className="block text-sm font-medium text-neutral-700 mb-2">
-              City <span className="text-orange-600">*</span>
+              City <span className="text-[rgb(var(--primary))]">*</span>
             </label>
             <input
               type="text"
@@ -221,13 +221,13 @@ export default function RestaurantSubmissionForm() {
               required
               value={formData.city}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
               placeholder="City"
             />
           </div>
           <div>
             <label htmlFor="state" className="block text-sm font-medium text-neutral-700 mb-2">
-              State <span className="text-orange-600">*</span>
+              State <span className="text-[rgb(var(--primary))]">*</span>
             </label>
             <input
               type="text"
@@ -237,7 +237,7 @@ export default function RestaurantSubmissionForm() {
               maxLength="2"
               value={formData.state}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all uppercase"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all uppercase"
               placeholder="State (e.g., NY)"
             />
           </div>
@@ -253,7 +253,7 @@ export default function RestaurantSubmissionForm() {
             name="zipCode"
             value={formData.zipCode}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
             placeholder="ZIP code"
           />
         </div>
@@ -270,7 +270,7 @@ export default function RestaurantSubmissionForm() {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
               placeholder="(555) 123-4567"
             />
           </div>
@@ -285,7 +285,7 @@ export default function RestaurantSubmissionForm() {
               name="website"
               value={formData.website}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
               placeholder="https://..."
             />
           </div>
@@ -295,14 +295,14 @@ export default function RestaurantSubmissionForm() {
       {/* Contact Information */}
       <div className="space-y-4 pt-4 border-t border-neutral-200">
         <h3 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
-          <UserIcon className="h-5 w-5 text-orange-600" />
+          <UserIcon className="h-5 w-5 text-[rgb(var(--primary))]" />
           Your Contact Information
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="contactName" className="block text-sm font-medium text-neutral-700 mb-2">
-              Your Name <span className="text-orange-600">*</span>
+              Your Name <span className="text-[rgb(var(--primary))]">*</span>
             </label>
             <input
               type="text"
@@ -311,14 +311,14 @@ export default function RestaurantSubmissionForm() {
               required
               value={formData.contactName}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
               placeholder="Your name"
             />
           </div>
           <div>
             <label htmlFor="contactEmail" className="block text-sm font-medium text-neutral-700 mb-2 flex items-center gap-1">
               <EnvelopeIcon className="h-4 w-4" />
-              Email <span className="text-orange-600">*</span>
+              Email <span className="text-[rgb(var(--primary))]">*</span>
             </label>
             <input
               type="email"
@@ -327,7 +327,7 @@ export default function RestaurantSubmissionForm() {
               required
               value={formData.contactEmail}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
               placeholder="your@email.com"
             />
           </div>
@@ -343,7 +343,7 @@ export default function RestaurantSubmissionForm() {
             name="contactPhone"
             value={formData.contactPhone}
             onChange={handleChange}
-            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
             placeholder="(555) 123-4567"
           />
         </div>
@@ -355,7 +355,7 @@ export default function RestaurantSubmissionForm() {
             name="isRestaurantOwner"
             checked={formData.isRestaurantOwner}
             onChange={handleChange}
-            className="mt-1 h-4 w-4 text-orange-600 focus:ring-orange-500 border-neutral-300 rounded"
+            className="mt-1 h-4 w-4 text-[rgb(var(--primary))] focus:ring-[rgb(var(--primary))]/40 border-neutral-300 rounded"
           />
           <label htmlFor="isRestaurantOwner" className="ml-3 text-sm text-neutral-700">
             I am the restaurant owner or an authorized representative
@@ -379,12 +379,12 @@ export default function RestaurantSubmissionForm() {
         <div className="mb-4">
           <label
             htmlFor="photos"
-            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 rounded-lg cursor-pointer hover:border-orange-400 transition-colors bg-neutral-50"
+            className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-neutral-300 rounded-lg cursor-pointer hover:border-[rgb(var(--primary))]/30 transition-colors bg-neutral-50"
           >
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
               <PhotoIcon className="h-8 w-8 text-neutral-400 mb-2" />
               <p className="text-sm text-neutral-500">
-                <span className="font-medium text-orange-600">Click to upload</span> or drag and drop
+                <span className="font-medium text-[rgb(var(--primary))]">Click to upload</span> or drag and drop
               </p>
               <p className="text-xs text-neutral-500 mt-1">PNG, JPG, GIF up to 5MB</p>
             </div>
@@ -435,7 +435,7 @@ export default function RestaurantSubmissionForm() {
           rows={4}
           value={formData.submissionNotes}
           onChange={handleChange}
-          className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+          className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
           placeholder="Tell us about the restaurant, soup specialties, or any other relevant information..."
         />
       </div>
@@ -444,10 +444,10 @@ export default function RestaurantSubmissionForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className={`w-full px-6 py-3 bg-orange-600 text-white font-medium rounded-lg transition-all ${
+        className={`w-full px-6 py-3 bg-[rgb(var(--primary))] text-white font-medium rounded-lg transition-all ${
           isSubmitting
             ? 'opacity-50 cursor-not-allowed'
-            : 'hover:bg-orange-700 hover:shadow-md'
+            : 'hover:opacity-90 hover:shadow-md'
         }`}
       >
         {isSubmitting ? 'Submitting...' : 'Submit Restaurant'}

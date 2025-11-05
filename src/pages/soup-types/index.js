@@ -1,718 +1,482 @@
 // src/pages/soup-types/index.js
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
-const slugifySoupName = (value) =>
-  (value || '')
-    .toString()
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+// Map soup types to their correct cuisines
+const getCuisineForSoupType = (soupType) => {
+  if (!soupType) return null;
+  
+  const normalized = soupType.toLowerCase().trim();
+  
+  // Vietnamese soups
+  if (normalized.includes('pho') || normalized.includes('phở') || 
+      normalized.includes('bun bo') || normalized.includes('bún bò')) {
+    return 'Vietnamese';
+  }
+  
+  // Japanese soups
+  if (normalized.includes('ramen') || normalized.includes('miso') || 
+      normalized.includes('udon') || normalized.includes('tonkotsu') ||
+      normalized.includes('shoyu') || normalized.includes('shio')) {
+    return 'Japanese';
+  }
+  
+  // Chinese soups
+  if (normalized.includes('wonton') || normalized.includes('won ton') ||
+      normalized.includes('hot and sour') || normalized.includes('hot & sour') ||
+      normalized.includes('egg drop') || normalized.includes('egg flower') ||
+      normalized.includes('szechuan') || normalized.includes('sichuan')) {
+    return 'Chinese';
+  }
+  
+  // Thai soups
+  if (normalized.includes('tom yum') || normalized.includes('tom yam') ||
+      normalized.includes('tom kha') || normalized.includes('tom ka')) {
+    return 'Thai';
+  }
+  
+  // Korean soups
+  if (normalized.includes('kimchi') || normalized.includes('kimchee') ||
+      normalized.includes('jjigae') || normalized.includes('sul lung tang') ||
+      normalized.includes('kalguksu')) {
+    return 'Korean';
+  }
+  
+  // Mexican soups
+  if (normalized.includes('pozole') || normalized.includes('posole') ||
+      normalized.includes('tortilla') || normalized.includes('caldo')) {
+    return 'Mexican';
+  }
+  
+  // Italian soups
+  if (normalized.includes('minestrone') || normalized.includes('stracciatella') ||
+      normalized.includes('pasta fagioli')) {
+    return 'Italian';
+  }
+  
+  // French soups
+  if (normalized.includes('french onion') || normalized.includes('bouillabaisse') ||
+      normalized.includes('bisque') || normalized.includes('vichyssoise')) {
+    return 'French';
+  }
+  
+  // American soups
+  if (normalized.includes('chicken noodle') || normalized.includes('clam chowder') ||
+      normalized.includes('corn chowder') || normalized.includes('gumbo') ||
+      normalized.includes('chili') || normalized.includes('chowder')) {
+    return 'American';
+  }
+  
+  // Spanish soups
+  if (normalized.includes('gazpacho') || normalized.includes('paella')) {
+    return 'Spanish';
+  }
+  
+  // Return null if no match - these will be grouped separately or not shown
+  return null;
+};
+
+// Get brief description for soup types
+const getSoupDescription = (soupType) => {
+  if (!soupType) return '';
+  
+  const normalized = soupType.toLowerCase().trim();
+  
+  // Vietnamese
+  if (normalized.includes('pho')) return 'Traditional Vietnamese noodle soup with aromatic beef or chicken broth, rice noodles, fresh herbs, and tender meat. Often served with bean sprouts, lime, and hoisin sauce.';
+  if (normalized.includes('bun bo')) return 'Spicy Vietnamese beef noodle soup from Hue, featuring lemongrass, shrimp paste, and a complex broth with beef shank and pork knuckle.';
+  
+  // Japanese
+  if (normalized.includes('ramen')) return 'Japanese noodle soup with rich, umami-packed broth made from pork, chicken, or fish bones. Served with wheat noodles, soft-boiled eggs, nori, and various toppings.';
+  if (normalized.includes('miso')) return 'Japanese soup made with fermented soybean paste, dashi stock, and seaweed. Often includes tofu, wakame, and scallions. A staple of Japanese cuisine.';
+  if (normalized.includes('udon')) return 'Japanese soup featuring thick, chewy wheat noodles in a mild, savory broth. Typically served with tempura, fish cakes, or vegetables.';
+  if (normalized.includes('tonkotsu')) return 'Rich Japanese ramen with creamy pork bone broth that\'s simmered for hours. Known for its milky appearance and intense umami flavor.';
+  
+  // Chinese
+  if (normalized.includes('wonton')) return 'Chinese soup with delicate, paper-thin dumplings filled with seasoned pork or shrimp. Served in a clear, light broth with bok choy and scallions.';
+  if (normalized.includes('hot and sour') || normalized.includes('hot & sour')) return 'Tangy Chinese soup balancing spicy chili heat with vinegar sourness. Features tofu, mushrooms, bamboo shoots, and egg ribbons in a complex, flavorful broth.';
+  if (normalized.includes('egg drop') || normalized.includes('egg flower')) return 'Silky Chinese soup with ribbons of beaten egg swirled into hot chicken broth. Often includes corn, peas, and green onions for texture and flavor.';
+  
+  // Thai
+  if (normalized.includes('tom yum') || normalized.includes('tom yam')) return 'Spicy and sour Thai soup with lemongrass, kaffir lime leaves, galangal, and chili. Often includes shrimp, chicken, or mushrooms in a fragrant, tangy broth.';
+  if (normalized.includes('tom kha') || normalized.includes('tom ka')) return 'Creamy Thai coconut soup with galangal, lemongrass, and lime leaves. Sweet, tangy, and aromatic, typically made with chicken or seafood.';
+  
+  // Korean
+  if (normalized.includes('kimchi')) return 'Korean stew featuring fermented kimchi vegetables in a spicy, tangy broth. Often includes pork, tofu, and vegetables, creating a deeply flavorful and warming dish.';
+  if (normalized.includes('jjigae')) return 'Korean spicy stew with a bold, savory broth. Variations include kimchi, soybean paste, or spicy pepper paste, typically served with rice and banchan.';
+  
+  // Mexican
+  if (normalized.includes('pozole') || normalized.includes('posole')) return 'Traditional Mexican hominy soup with pork or chicken, simmered with chilies and spices. Served with radishes, cabbage, lime, and oregano for a festive, hearty meal.';
+  if (normalized.includes('tortilla')) return 'Mexican soup with crispy fried tortilla strips, often topped with avocado, cheese, and sour cream. Can be made with chicken, vegetables, or a tomato-based broth.';
+  if (normalized.includes('caldo')) return 'Hearty Mexican broth soup with chunks of meat, vegetables, and aromatic spices. A comforting, nourishing dish often served with rice and warm tortillas.';
+  
+  // Italian
+  if (normalized.includes('minestrone')) return 'Italian vegetable soup with pasta or rice, beans, and seasonal vegetables. A hearty, nutritious dish that varies by region and season, often finished with fresh herbs and Parmesan.';
+  
+  // French
+  if (normalized.includes('french onion')) return 'Classic French soup with deeply caramelized onions in rich beef broth, topped with crusty bread and melted Gruyère cheese. A decadent, satisfying comfort food.';
+  if (normalized.includes('bouillabaisse')) return 'Traditional Provençal fish stew from Marseille, featuring multiple types of fish and shellfish in a saffron-infused broth. Served with rouille and crusty bread.';
+  if (normalized.includes('bisque')) return 'Rich and creamy French soup, typically made with shellfish like lobster or crab. Known for its smooth, velvety texture and luxurious flavor profile.';
+  
+  // American
+  if (normalized.includes('chicken noodle')) return 'Classic American comfort soup with tender chicken, egg noodles, carrots, celery, and herbs in a warm, savory broth. The ultimate feel-good meal.';
+  if (normalized.includes('clam chowder')) return 'Creamy New England soup with fresh clams, potatoes, onions, and bacon in a rich, milky broth. A beloved coastal specialty, often served in a bread bowl.';
+  if (normalized.includes('corn chowder')) return 'Creamy soup featuring sweet corn kernels, potatoes, and bacon in a rich, velvety broth. A summertime favorite that celebrates fresh, sweet corn.';
+  if (normalized.includes('gumbo')) return 'Louisiana stew with seafood, sausage, and okra in a dark roux-based broth. Thickened with filé powder and served over rice, representing Creole and Cajun traditions.';
+  if (normalized.includes('chili')) return 'Hearty American stew with ground or chunks of meat, beans, tomatoes, and a blend of spices including chili powder and cumin. A warming, satisfying dish.';
+  
+  // Spanish
+  if (normalized.includes('gazpacho')) return 'Cold Spanish tomato soup originating from Andalusia. Made with fresh tomatoes, cucumbers, bell peppers, garlic, and olive oil. Refreshing and perfect for warm weather.';
+  
+  // Default
+  return 'Delicious soup from our collection, crafted with care and authentic flavors.';
+};
 
 export default function SoupTypes() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [soupCounts, setSoupCounts] = useState({});
+  const [viewMode, setViewMode] = useState('cuisine'); // 'cuisine' or 'soupType'
+  const [soupTypes, setSoupTypes] = useState([]);
+  const [cuisines, setCuisines] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Comprehensive soup types organized by category
-  const soupCategories = useMemo(() => ({
-    asian: {
-      name: 'Asian Soups',
-      description: 'Rich broths and noodles from East and Southeast Asia',
-      color: 'from-red-500 to-orange-500',
-      soups: [
-        { 
-          name: 'Ramen', 
-          description: 'Japanese noodle soup with rich pork or chicken broth',
-          origin: 'Japan',
-          popular: true,
-          count: 234
-        },
-        { 
-          name: 'Pho', 
-          description: 'Vietnamese beef or chicken noodle soup with herbs',
-          origin: 'Vietnam',
-          popular: true,
-          count: 198
-        },
-        { 
-          name: 'Miso Soup', 
-          description: 'Japanese soup with fermented soybean paste',
-          origin: 'Japan',
-          aliases: ['Miso'],
-          count: 156
-        },
-        { 
-          name: 'Wonton Soup', 
-          description: 'Chinese soup with meat-filled dumplings',
-          origin: 'China',
-          aliases: ['Wonton'],
-          count: 143
-        },
-        { 
-          name: 'Tom Yum', 
-          description: 'Spicy and sour Thai soup with lemongrass',
-          origin: 'Thailand',
-          count: 89
-        },
-        { 
-          name: 'Tom Kha', 
-          description: 'Thai coconut soup with galangal and lime',
-          origin: 'Thailand',
-          aliases: ['Tom Kha Gai'],
-          count: 76
-        },
-        { 
-          name: 'Udon Soup', 
-          description: 'Japanese soup with thick wheat noodles',
-          origin: 'Japan',
-          count: 67
-        },
-        { 
-          name: 'Hot and Sour Soup', 
-          description: 'Chinese soup with vinegar, spices, and tofu',
-          origin: 'China',
-          aliases: ['Hot and Sour'],
-          count: 54
-        },
-      ]
-    },
-    american: {
-      name: 'American Classics',
-      description: 'Comfort soups from across the United States',
-      color: 'from-blue-500 to-indigo-500',
-      soups: [
-        { 
-          name: 'Clam Chowder', 
-          description: 'Creamy New England soup with clams and potatoes',
-          origin: 'United States',
-          popular: true,
-          count: 187
-        },
-        { 
-          name: 'Chicken Noodle', 
-          description: 'Classic American soup with chicken, vegetables, and noodles',
-          origin: 'United States',
-          popular: true,
-          count: 234
-        },
-        { 
-          name: 'Tomato Soup', 
-          description: 'Smooth and creamy tomato-based soup',
-          origin: 'United States',
-          aliases: ['Tomato'],
-          count: 145
-        },
-        { 
-          name: 'Corn Chowder', 
-          description: 'Creamy soup with sweet corn and bacon',
-          origin: 'United States',
-          count: 98
-        },
-        { 
-          name: 'Gumbo', 
-          description: 'Louisiana stew with seafood, sausage, and okra',
-          origin: 'United States',
-          count: 76
-        },
-      ]
-    },
-    seafood: {
-      name: 'Seafood Soups',
-      description: 'Fresh from the ocean to your bowl',
-      color: 'from-teal-500 to-cyan-500',
-      soups: [
-        { 
-          name: 'Lobster Bisque', 
-          description: 'Rich and creamy French soup with lobster',
-          origin: 'France',
-          popular: true,
-          count: 123
-        },
-        { 
-          name: 'Cioppino', 
-          description: 'Italian-American seafood stew from San Francisco',
-          origin: 'United States',
-          count: 87
-        },
-        { 
-          name: 'Bouillabaisse', 
-          description: 'Traditional Provençal fish stew',
-          origin: 'France',
-          count: 65
-        },
-        { 
-          name: 'Seafood Chowder', 
-          description: 'Creamy soup with mixed seafood',
-          origin: 'United States',
-          count: 98
-        },
-      ]
-    },
-    european: {
-      name: 'European Soups',
-      description: 'Traditional recipes from across Europe',
-      color: 'from-purple-500 to-pink-500',
-      soups: [
-        { 
-          name: 'French Onion', 
-          description: 'Caramelized onions in beef broth with cheese',
-          origin: 'France',
-          popular: true,
-          count: 156
-        },
-        { 
-          name: 'Borscht', 
-          description: 'Eastern European beet soup',
-          origin: 'Ukraine',
-          count: 67
-        },
-        { 
-          name: 'Minestrone', 
-          description: 'Italian vegetable soup with pasta or rice',
-          origin: 'Italy',
-          count: 112
-        },
-        { 
-          name: 'Gazpacho', 
-          description: 'Cold Spanish tomato soup',
-          origin: 'Spain',
-          count: 89
-        },
-        { 
-          name: 'Vichyssoise', 
-          description: 'Cold French potato and leek soup',
-          origin: 'France',
-          count: 45
-        },
-      ]
-    },
-    latin: {
-      name: 'Latin American',
-      description: 'Bold flavors from Mexico and South America',
-      color: 'from-green-500 to-lime-500',
-      soups: [
-        { 
-          name: 'Chicken Tortilla', 
-          description: 'Mexican soup with tortilla strips and avocado',
-          origin: 'Mexico',
-          popular: true,
-          count: 134
-        },
-        { 
-          name: 'Pozole', 
-          description: 'Mexican hominy soup with pork or chicken',
-          origin: 'Mexico',
-          count: 87
-        },
-        { 
-          name: 'Caldo de Res', 
-          description: 'Mexican beef soup with vegetables',
-          origin: 'Mexico',
-          count: 76
-        },
-        { 
-          name: 'Ajiaco', 
-          description: 'Colombian chicken and potato soup',
-          origin: 'Colombia',
-          count: 43
-        },
-      ]
-    },
-    vegetarian: {
-      name: 'Vegetarian & Vegan',
-      description: 'Plant-based soups full of flavor',
-      color: 'from-emerald-500 to-green-500',
-      soups: [
-        { 
-          name: 'Lentil Soup', 
-          description: 'Hearty soup with lentils and vegetables',
-          origin: 'Various',
-          aliases: ['Lentil'],
-          popular: true,
-          count: 145
-        },
-        { 
-          name: 'Split Pea', 
-          description: 'Thick and creamy pea soup',
-          origin: 'Various',
-          count: 98
-        },
-        { 
-          name: 'Butternut Squash', 
-          description: 'Creamy roasted squash soup',
-          origin: 'Various',
-          count: 112
-        },
-        { 
-          name: 'Vegetable Soup', 
-          description: 'Classic mixed vegetable soup',
-          origin: 'Various',
-          aliases: ['Vegetable'],
-          count: 167
-        },
-        { 
-          name: 'Mushroom Soup', 
-          description: 'Creamy soup with various mushrooms',
-          origin: 'Various',
-          aliases: ['Mushroom'],
-          count: 123
-        },
-      ]
-    },
-  }), []);
-
-  const soupDefinitions = useMemo(() => {
-    const definitions = [];
-
-    Object.entries(soupCategories).forEach(([categoryKey, category]) => {
-      category.soups.forEach((soup) => {
-        const slugVariants = new Set();
-        const baseSlug = slugifySoupName(soup.name);
-        if (baseSlug) slugVariants.add(baseSlug);
-
-        if (!baseSlug.includes('soup')) {
-          const withSuffix = slugifySoupName(`${soup.name} Soup`);
-          if (withSuffix) slugVariants.add(withSuffix);
-        }
-
-        (soup.aliases || []).forEach((alias) => {
-          const aliasSlug = slugifySoupName(alias);
-          if (aliasSlug) slugVariants.add(aliasSlug);
-          if (!aliasSlug.includes('soup')) {
-            const aliasWithSuffix = slugifySoupName(`${alias} Soup`);
-            if (aliasWithSuffix) slugVariants.add(aliasWithSuffix);
-          }
-        });
-
-        if (baseSlug.includes('-soup')) {
-          const withoutSuffix = baseSlug.replace(/-soup$/, '');
-          if (withoutSuffix) slugVariants.add(withoutSuffix);
-        }
-
-        definitions.push({
-          name: soup.name,
-          categoryKey,
-          slugVariants,
-        });
-      });
-    });
-
-    return definitions;
-  }, [soupCategories]);
-
-  const slugToDisplayNames = useMemo(() => {
-    const map = new Map();
-    soupDefinitions.forEach((definition) => {
-      definition.slugVariants.forEach((slug) => {
-        if (!map.has(slug)) {
-          map.set(slug, new Set());
-        }
-        map.get(slug).add(definition.name);
-      });
-    });
-    return map;
-  }, [soupDefinitions]);
-
-  const slugKeys = useMemo(() => Array.from(slugToDisplayNames.keys()), [slugToDisplayNames]);
-
-  const definitionByName = useMemo(() => {
-    const map = new Map();
-    soupDefinitions.forEach((definition) => {
-      map.set(definition.name, definition);
-    });
-    return map;
-  }, [soupDefinitions]);
-
-  const enhanceSoup = useCallback((soup) => {
-    const variants = [
-      soup.name,
-      ...(soup.aliases || []),
-    ];
-
-    if (/\b(soup|stew)\b$/i.test(soup.name.trim())) {
-      variants.push(soup.name.replace(/\s+(soup|stew)\s*$/i, '').trim());
-    } else {
-      variants.push(`${soup.name} Soup`);
-    }
-
-    const slugs = Array.from(
-      new Set(
-        variants
-          .map(slugifySoupName)
-          .filter(Boolean)
-      )
-    );
-
-    let resolvedCount = soupCounts[soup.name];
-    if (typeof resolvedCount !== 'number') {
-      const values = slugs
-        .map((slug) => soupCounts[slug])
-        .filter((value) => typeof value === 'number');
-
-      if (values.length > 0) {
-        resolvedCount = values.reduce((sum, value) => sum + value, 0);
-      } else {
-        resolvedCount = 0;
-      }
-    }
-
-    return {
-      ...soup,
-      count: resolvedCount,
-      slugs,
-    };
-  }, [soupCounts]);
-
-  const enhancedCategories = useMemo(() => {
-    return Object.fromEntries(
-      Object.entries(soupCategories).map(([key, category]) => [
-        key,
-        {
-          ...category,
-          soups: category.soups.map(enhanceSoup),
-        },
-      ])
-    );
-  }, [soupCategories, enhanceSoup]);
-
+  // Fetch actual data from database
   useEffect(() => {
-    const loadCounts = async () => {
+    const loadData = async () => {
       try {
-        const response = await fetch('/api/restaurants?soupTypes=all&limit=1000');
+        setLoading(true);
+        const response = await fetch('/api/soup-types/counts');
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`);
         }
         const data = await response.json();
 
-        const countsByName = new Map();
+        const counts = data?.counts || {};
+        const namesMap = data?.names || {};
+        const displayCounts = new Map();
 
-        (data.restaurants || []).forEach((restaurant) => {
-          const restaurantId = restaurant.id;
-          if (!restaurantId) return;
+        if (data?.displayCounts) {
+          Object.entries(data.displayCounts).forEach(([name, count]) => {
+            if (typeof count !== 'number') return;
+            const normalizedName = (name || '').toString().trim();
+            const displayName = normalizedName
+              .split(' ')
+              .filter(Boolean)
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join(' ');
+            if (!displayName) return;
+            displayCounts.set(displayName, count);
+          });
+        } else {
+          Object.entries(counts).forEach(([slug, count]) => {
+            if (typeof count !== 'number') return;
+            const rawName = namesMap[slug] || slug.replace(/-/g, ' ');
+            const displayName = rawName
+              .split(' ')
+              .filter(Boolean)
+              .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+              .join(' ');
+            if (!displayName) return;
+            const existing = displayCounts.get(displayName) || 0;
+            displayCounts.set(displayName, Math.max(existing, count));
+          });
+        }
 
-          const matchedNames = new Set();
+        const soupTypesArray = Array.from(displayCounts.entries())
+          .map(([name, count]) => ({
+            name,
+            count,
+            description: getSoupDescription(name)
+          }))
+          .filter((item) => item.count > 0)
+          .sort((a, b) => b.count - a.count);
 
-          (restaurant.soups || []).forEach((soup) => {
-            const slug = slugifySoupName(soup?.soup_type);
-            if (!slug) return;
+        const cuisineMap = new Map();
+        soupTypesArray.forEach((item) => {
+          const cuisine = getCuisineForSoupType(item.name) || 'Other Favorites';
+          if (!cuisineMap.has(cuisine)) {
+            cuisineMap.set(cuisine, []);
+          }
+          cuisineMap.get(cuisine).push(item);
+        });
 
-            const directMatches = slugToDisplayNames.get(slug);
-            if (directMatches?.size) {
-              directMatches.forEach((name) => matchedNames.add(name));
-              return;
-            }
-
-            slugKeys.forEach((key) => {
-              if (slug.startsWith(key) || key.startsWith(slug)) {
-                const names = slugToDisplayNames.get(key);
-                names?.forEach((name) => matchedNames.add(name));
+        const cuisinesArray = Array.from(cuisineMap.entries())
+          .map(([cuisineName, soupList]) => {
+            const uniqueSoups = new Map();
+            soupList.forEach((soup) => {
+              if (!uniqueSoups.has(soup.name) || uniqueSoups.get(soup.name).count < soup.count) {
+                uniqueSoups.set(soup.name, soup);
               }
             });
-          });
+            const ordered = Array.from(uniqueSoups.values()).sort((a, b) => b.count - a.count);
+            return {
+              name: cuisineName,
+              soupTypes: ordered,
+              totalCount: ordered.reduce((sum, st) => sum + st.count, 0)
+            };
+          })
+          .filter((cuisine) => cuisine.soupTypes.length > 0)
+          .sort((a, b) => b.totalCount - a.totalCount);
 
-          matchedNames.forEach((name) => {
-            if (!countsByName.has(name)) {
-              countsByName.set(name, new Set());
-            }
-            countsByName.get(name).add(restaurantId);
-          });
-        });
-
-        const nextCounts = {};
-        countsByName.forEach((set, name) => {
-          const count = set.size;
-          nextCounts[name] = count;
-          const definition = definitionByName.get(name);
-          definition?.slugVariants.forEach((slug) => {
-            nextCounts[slug] = count;
-          });
-        });
-
-        setSoupCounts(nextCounts);
+        setSoupTypes(soupTypesArray);
+        setCuisines(cuisinesArray);
       } catch (error) {
-        console.error('Failed to load soup counts:', error);
+        console.error('Failed to load data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    loadCounts();
-  }, [definitionByName, slugKeys, slugToDisplayNames]);
+    loadData();
+  }, []);
 
-  // Get all soups in a flat array for searching
-  const allSoups = Object.entries(enhancedCategories).flatMap(([categoryKey, category]) =>
-    category.soups.map(soup => ({
-      ...soup,
-      category: category.name,
-      categoryKey,
-      categoryColor: category.color
-    }))
-  );
 
-  // Filter soups based on search and category
-  const filteredSoups = allSoups.filter(soup => {
-    const matchesSearch = searchQuery === '' || 
-      soup.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      soup.description.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = selectedCategory === 'all' || soup.categoryKey === selectedCategory;
-    
-    return matchesSearch && matchesCategory;
-  });
+  // Filter based on search query
+  const filteredSoupTypes = useMemo(() => {
+    if (!searchQuery) return soupTypes;
+    const query = searchQuery.toLowerCase();
+    return soupTypes.filter(soup => 
+      soup.name.toLowerCase().includes(query)
+    );
+  }, [soupTypes, searchQuery]);
 
-  // Get popular soups
-  const popularSoups = allSoups.filter(soup => soup.popular);
+  const filteredCuisines = useMemo(() => {
+    if (!searchQuery) return cuisines;
+    const query = searchQuery.toLowerCase();
+    return cuisines.map(cuisine => ({
+      ...cuisine,
+      soupTypes: cuisine.soupTypes.filter(soup => 
+        soup.name.toLowerCase().includes(query) || 
+        cuisine.name.toLowerCase().includes(query)
+      )
+    })).filter(cuisine => cuisine.soupTypes.length > 0);
+  }, [cuisines, searchQuery]);
+
+  const displayData = viewMode === 'cuisine' ? filteredCuisines : filteredSoupTypes;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[rgb(var(--bg))]">
       <Head>
         <title>Soup Types | FindSoupNearMe</title>
         <meta name="description" content="Explore different types of soup from around the world. Find restaurants serving ramen, pho, chowder, bisque, and more." />
       </Head>
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-orange-50 to-white pt-32 pb-20">
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-orange-200/30 rounded-full blur-3xl"></div>
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-orange-300/20 rounded-full blur-3xl"></div>
+      <section className="relative pt-12 md:pt-16 pb-16 md:pb-20 bg-gradient-to-br from-[rgb(var(--bg))] via-[rgb(var(--accent-light-light))] to-[rgb(var(--bg))] overflow-hidden">
+        {/* Decorative Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-[rgb(var(--accent))]/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-80 h-80 bg-[rgb(var(--primary))]/5 rounded-full blur-3xl"></div>
         </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-12">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-['Outfit'] font-bold text-neutral-900 mb-6 leading-tight">
+        
+        <div className="max-w-7xl mx-auto px-4 md:px-6 relative z-10">
+          {/* Main Content */}
+          <div className="text-center mb-10">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold tracking-tight text-[rgb(var(--ink))] mb-6 leading-[1.1]">
               Explore Soup Types
             </h1>
-            <p className="text-xl lg:text-2xl font-['Inter'] text-neutral-600 max-w-3xl mx-auto">
+            
+            <p className="text-xl md:text-2xl text-[rgb(var(--muted))] leading-relaxed max-w-3xl mx-auto mb-10">
               Discover soups from around the world and find restaurants near you serving your favorites
             </p>
+            
+            {/* Stats Row */}
+            <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 mb-10">
+              <div className="text-center">
+                <div className="text-4xl md:text-5xl font-bold text-[rgb(var(--accent))] mb-2">
+                  {soupTypes.length}+
+                </div>
+                <div className="text-sm md:text-base text-[rgb(var(--muted))] font-medium">Soup Types</div>
+              </div>
+              <div className="w-px h-12 bg-black/10"></div>
+              <div className="text-center">
+                <div className="text-4xl md:text-5xl font-bold text-[rgb(var(--primary))] mb-2">
+                  {cuisines.length}+
+                </div>
+                <div className="text-sm md:text-base text-[rgb(var(--muted))] font-medium">Cuisines</div>
+              </div>
+              <div className="w-px h-12 bg-black/10"></div>
+              <div className="text-center">
+                <div className="text-4xl md:text-5xl font-bold text-[rgb(var(--accent))] mb-2">
+                  Global
+                </div>
+                <div className="text-sm md:text-base text-[rgb(var(--muted))] font-medium">Flavors</div>
+              </div>
+            </div>
           </div>
 
           {/* Search Bar */}
           <div className="max-w-2xl mx-auto mb-8">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-neutral-400" />
+              <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[rgb(var(--accent))]" />
               <input
                 type="text"
-                placeholder="Search soup types..."
+                placeholder="Search soup types or cuisines..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-14 pr-4 py-4 text-lg font-['Inter'] rounded-2xl border-2 border-neutral-200 focus:border-orange-500 focus:ring-4 focus:ring-orange-100 outline-none transition-all shadow-sm"
+                className="w-full h-14 pl-12 pr-4 rounded-2xl bg-[rgb(var(--surface))] ring-2 ring-[rgb(var(--accent-light))]/30 focus:ring-2 focus:ring-[rgb(var(--accent))]/50 outline-none placeholder:text-[rgb(var(--muted))] transition shadow-lg text-base"
               />
             </div>
           </div>
 
-          {/* Category Filter */}
+          {/* View Mode Toggle */}
           <div className="flex flex-wrap justify-center gap-3">
             <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-4 py-2 rounded-lg font-['Inter'] font-medium transition-all ${
-                selectedCategory === 'all'
-                  ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-white text-neutral-700 border border-neutral-200 hover:border-orange-300'
+              onClick={() => setViewMode('cuisine')}
+              className={`inline-flex items-center justify-center h-11 px-5 rounded-xl transition focus:outline-none focus:ring-2 focus:ring-offset-0 ${
+                viewMode === 'cuisine'
+                  ? 'bg-[rgb(var(--primary))] text-white hover:opacity-90 focus:ring-[rgb(var(--primary))]/40'
+                  : 'border border-black/10 text-[rgb(var(--ink))] bg-[rgb(var(--surface))] hover:bg-black/5 focus:ring-[rgb(var(--primary))]/30'
               }`}
             >
-              All Types
+              Browse by Cuisine
             </button>
-            {Object.entries(enhancedCategories).map(([key, category]) => (
-              <button
-                key={key}
-                onClick={() => setSelectedCategory(key)}
-                className={`px-4 py-2 rounded-lg font-['Inter'] font-medium transition-all ${
-                  selectedCategory === key
-                    ? 'bg-orange-500 text-white shadow-md'
-                    : 'bg-white text-neutral-700 border border-neutral-200 hover:border-orange-300'
-                }`}
-              >
-                {category.name}
-              </button>
-            ))}
+            <button
+              onClick={() => setViewMode('soupType')}
+              className={`inline-flex items-center justify-center h-11 px-5 rounded-xl transition focus:outline-none focus:ring-2 focus:ring-offset-0 ${
+                viewMode === 'soupType'
+                  ? 'bg-[rgb(var(--primary))] text-white hover:opacity-90 focus:ring-[rgb(var(--primary))]/40'
+                  : 'border border-black/10 text-[rgb(var(--ink))] bg-[rgb(var(--surface))] hover:bg-black/5 focus:ring-[rgb(var(--primary))]/30'
+              }`}
+            >
+              Browse by Soup Type
+            </button>
           </div>
         </div>
       </section>
 
-      {/* Popular Soups Section */}
-      {searchQuery === '' && selectedCategory === 'all' && (
-        <section className="py-12 bg-gradient-to-b from-white to-orange-50/30">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-12">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-orange-100 rounded-full mb-4">
-                <span className="text-sm font-['Inter'] font-semibold text-orange-700">Most Popular</span>
-              </div>
-              <h2 className="text-3xl lg:text-4xl font-['Outfit'] font-bold text-neutral-900 mb-4">
-                Fan Favorites
-              </h2>
-              <p className="text-lg font-['Inter'] text-neutral-600">
-                The most searched soup types on FindSoupNearMe
-              </p>
+      {/* Content Section */}
+      <section className="py-16 md:py-24 bg-[rgb(var(--surface))]">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-[rgb(var(--primary))] border-r-transparent"></div>
+              <p className="mt-4 text-[rgb(var(--muted))]">Loading soup types...</p>
             </div>
+          ) : viewMode === 'cuisine' ? (
+            // Browse by Cuisine
+            filteredCuisines.length > 0 ? (
+              <div className="space-y-16">
+                {filteredCuisines.map((cuisine) => (
+                  <div key={cuisine.name} className="mb-16 last:mb-0">
+                    <div className="mb-8">
+                      <div className="inline-flex items-center gap-2 mb-2">
+                        <span className="inline-block w-1 h-6 bg-[rgb(var(--accent))] rounded-full"></span>
+                        <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[rgb(var(--ink))]">
+                          {cuisine.name}
+                        </h2>
+                      </div>
+                      <p className="text-base md:text-[17px] leading-7 text-[rgb(var(--muted))]">
+                        {cuisine.soupTypes.length} {cuisine.soupTypes.length === 1 ? 'soup type' : 'soup types'} available
+                      </p>
+                    </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {popularSoups.map((soup, index) => (
-                <Link
-                  key={index}
-                  href={{ pathname: '/restaurants', query: { soupType: soup.name } }}
-                  className="group relative bg-white rounded-2xl p-6 shadow-sm border border-neutral-100 hover:shadow-lg hover:border-orange-200 transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${soup.categoryColor} rounded-t-2xl`}></div>
-                  <div className="pt-2">
-                    <h3 className="text-xl font-['Outfit'] font-bold text-neutral-900 mb-2 group-hover:text-orange-600 transition-colors">
-                      {soup.name}
-                    </h3>
-                    <p className="text-sm font-['Inter'] text-neutral-600 mb-3">
-                      {soup.description}
-                    </p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-['Inter'] font-medium text-neutral-500">
-                        {soup.origin}
-                      </span>
-                      <span className="text-sm font-['Inter'] font-semibold text-orange-600">
-                        {soup.count} spots
-                      </span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
+                      {cuisine.soupTypes.map((soup) => (
+                        <Link
+                          key={soup.name}
+                          href={`/restaurants?soupType=${encodeURIComponent(soup.name)}`}
+                          className="group rounded-2xl bg-[rgb(var(--surface))] ring-1 ring-black/5 hover:ring-[rgb(var(--accent-light))]/40 shadow-sm hover:shadow-lg transition-all duration-300 p-5 hover:p-6 hover:scale-105 hover:z-10 relative focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent))]/40 focus:ring-offset-0"
+                        >
+                          <h3 className="text-lg font-semibold text-[rgb(var(--ink))] mb-2 group-hover:text-[rgb(var(--accent))] transition-colors line-clamp-1">
+                            {soup.name}
+                          </h3>
+                          {soup.description && (
+                            <p className="text-sm text-[rgb(var(--muted))] mb-3 line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
+                              {soup.description}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between text-sm mt-4">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-[rgb(var(--accent-light))]/30 text-[rgb(var(--muted))] text-xs font-medium">{cuisine.name}</span>
+                            <span className="font-medium text-[rgb(var(--accent))]">{soup.count} {soup.count === 1 ? 'spot' : 'spots'}</span>
+                          </div>
+                        </Link>
+                      ))}
                     </div>
                   </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* All Soup Types by Category */}
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {searchQuery === '' && selectedCategory === 'all' ? (
-            // Show by category
-            Object.entries(enhancedCategories).map(([categoryKey, category]) => (
-              <div key={categoryKey} className="mb-16 last:mb-0">
-                <div className="mb-8">
-                  <div className={`inline-block px-4 py-1 bg-gradient-to-r ${category.color} text-white rounded-full text-sm font-['Inter'] font-semibold mb-3`}>
-                    {category.name}
-                  </div>
-                  <h2 className="text-3xl font-['Outfit'] font-bold text-neutral-900 mb-2">
-                    {category.name}
-                  </h2>
-                  <p className="text-lg font-['Inter'] text-neutral-600">
-                    {category.description}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {category.soups.map((soup, index) => (
-                    <Link
-                      key={index}
-                      href={{ pathname: '/restaurants', query: { soupType: soup.name } }}
-                      className="group bg-white rounded-xl p-6 border border-neutral-200 hover:border-orange-300 hover:shadow-md transition-all duration-200"
-                    >
-                      <h3 className="text-lg font-['Outfit'] font-bold text-neutral-900 mb-2 group-hover:text-orange-600 transition-colors">
-                        {soup.name}
-                      </h3>
-                      <p className="text-sm font-['Inter'] text-neutral-600 mb-3">
-                        {soup.description}
-                      </p>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-['Inter'] text-neutral-500">{soup.origin}</span>
-                        <span className="font-['Inter'] font-semibold text-orange-600">{soup.count} spots</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                ))}
               </div>
-            ))
-          ) : (
-            // Show filtered results
-            <div>
-              <div className="mb-8">
-                <h2 className="text-2xl font-['Outfit'] font-bold text-neutral-900 mb-2">
-                  {filteredSoups.length} {filteredSoups.length === 1 ? 'Result' : 'Results'}
-                </h2>
+            ) : (
+              <div className="text-center py-16">
+                <h3 className="text-2xl md:text-3xl font-semibold tracking-tight text-[rgb(var(--ink))] mb-2">
+                  No cuisines found
+                </h3>
+                <p className="text-base md:text-[17px] leading-7 text-[rgb(var(--muted))] mb-6">
+                  {searchQuery ? 'Try adjusting your search' : 'No cuisine data available'}
+                </p>
                 {searchQuery && (
-                  <p className="text-lg font-['Inter'] text-neutral-600">
-                    Searching for &ldquo;{searchQuery}&rdquo;
-                  </p>
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-[rgb(var(--primary))] text-white hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:ring-offset-0"
+                  >
+                    Clear Search
+                  </button>
                 )}
               </div>
-
-              {filteredSoups.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {filteredSoups.map((soup, index) => (
-                    <Link
-                      key={index}
-                      href={{ pathname: '/restaurants', query: { soupType: soup.name } }}
-                      className="group bg-white rounded-xl p-6 border border-neutral-200 hover:border-orange-300 hover:shadow-md transition-all duration-200"
-                    >
-                      <div className={`inline-block px-2 py-1 bg-gradient-to-r ${soup.categoryColor} text-white rounded text-xs font-['Inter'] font-semibold mb-3`}>
-                        {soup.category}
-                      </div>
-                      <h3 className="text-lg font-['Outfit'] font-bold text-neutral-900 mb-2 group-hover:text-orange-600 transition-colors">
-                        {soup.name}
-                      </h3>
-                      <p className="text-sm font-['Inter'] text-neutral-600 mb-3">
+            )
+          ) : (
+            // Browse by Soup Type
+            filteredSoupTypes.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
+                {filteredSoupTypes.map((soup) => (
+                  <Link
+                    key={soup.name}
+                    href={`/restaurants?soupType=${encodeURIComponent(soup.name)}`}
+                    className="group rounded-2xl bg-[rgb(var(--surface))] ring-1 ring-black/5 hover:ring-[rgb(var(--accent-light))]/40 shadow-sm hover:shadow-lg transition-all duration-300 p-5 hover:p-6 hover:scale-105 hover:z-10 relative focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent))]/40 focus:ring-offset-0"
+                  >
+                    <h3 className="text-lg font-semibold text-[rgb(var(--ink))] mb-2 group-hover:text-[rgb(var(--accent))] transition-colors line-clamp-1">
+                      {soup.name}
+                    </h3>
+                    {soup.description && (
+                      <p className="text-sm text-[rgb(var(--muted))] mb-3 line-clamp-2 group-hover:line-clamp-none transition-all duration-300">
                         {soup.description}
                       </p>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-['Inter'] text-neutral-500">{soup.origin}</span>
-                        <span className="font-['Inter'] font-semibold text-orange-600">{soup.count} spots</span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-16">
-                  <div className="text-6xl mb-4">🔍</div>
-                  <h3 className="text-2xl font-['Outfit'] font-bold text-neutral-900 mb-2">
-                    No soup types found
-                  </h3>
-                  <p className="text-lg font-['Inter'] text-neutral-600 mb-6">
-                    Try adjusting your search or filters
-                  </p>
+                    )}
+                    <div className="flex items-center justify-end text-sm mt-4">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-md bg-[rgb(var(--accent-light))]/40 text-[rgb(var(--accent))] font-medium">{soup.count} {soup.count === 1 ? 'spot' : 'spots'}</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16">
+                <h3 className="text-2xl md:text-3xl font-semibold tracking-tight text-[rgb(var(--ink))] mb-2">
+                  No soup types found
+                </h3>
+                <p className="text-base md:text-[17px] leading-7 text-[rgb(var(--muted))] mb-6">
+                  {searchQuery ? 'Try adjusting your search' : 'No soup type data available'}
+                </p>
+                {searchQuery && (
                   <button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSelectedCategory('all');
-                    }}
-                    className="px-6 py-3 bg-orange-500 text-white font-['Inter'] font-semibold rounded-lg hover:bg-orange-600 transition-colors"
+                    onClick={() => setSearchQuery('')}
+                    className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-[rgb(var(--primary))] text-white hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:ring-offset-0"
                   >
-                    Clear Filters
+                    Clear Search
                   </button>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )
           )}
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full"
-               style={{
-                 backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-               }}
-          ></div>
-        </div>
-
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center text-white">
-          <h2 className="text-4xl lg:text-5xl font-['Outfit'] font-bold mb-6">
+      <section className="py-16 md:py-24 bg-[rgb(var(--bg))]">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[rgb(var(--ink))] mb-4">
             Ready to Find Your Soup?
           </h2>
-          <p className="text-xl font-['Inter'] mb-10 text-orange-50">
+          <p className="text-base md:text-[17px] leading-7 text-[rgb(var(--muted))] mb-8 max-w-2xl mx-auto">
             Search thousands of restaurants serving your favorite soups
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/restaurants"
-              className="px-8 py-4 bg-white text-orange-600 font-['Inter'] font-semibold rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 inline-flex items-center justify-center"
+              className="inline-flex items-center justify-center h-11 px-5 rounded-xl bg-[rgb(var(--accent))] text-white hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent))]/40 focus:ring-offset-0"
             >
-              <MagnifyingGlassIcon className="w-6 h-6 mr-2" />
+              <MagnifyingGlassIcon className="w-5 h-5 mr-2" />
               Search Restaurants
-            </Link>
-            <Link
-              href="/cities"
-              className="px-8 py-4 bg-orange-700/50 backdrop-blur-sm text-white font-['Inter'] font-semibold rounded-2xl border-2 border-white/30 hover:bg-orange-700/70 transition-all duration-300 inline-flex items-center justify-center"
-            >
-              Browse by City
             </Link>
           </div>
         </div>

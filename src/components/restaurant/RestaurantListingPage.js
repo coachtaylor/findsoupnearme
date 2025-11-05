@@ -1,5 +1,5 @@
 // src/components/restaurant/RestaurantListingPage.js
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import useRestaurants from '../../hooks/useRestaurants';
 import RestaurantCard from './RestaurantCard';
@@ -68,9 +68,9 @@ function CitiesSection({ currentCity, currentState, onCitySelect }) {
 
   return (
     <div className="mb-8">
-      <div className="flex items-center gap-2 mb-4">
-        <MapPinIcon className="h-5 w-5 text-orange-500" />
-        <h3 className="font-semibold text-gray-800">Browse by City</h3>
+      <div className="flex items-center justify-center gap-2 mb-4">
+        <MapPinIcon className="h-4 w-4 text-[rgb(var(--primary))]-500" />
+        <h3 className="text-base font-semibold text-gray-800">Browse by City</h3>
       </div>
       
       {loading ? (
@@ -87,7 +87,7 @@ function CitiesSection({ currentCity, currentState, onCitySelect }) {
                 onClick={() => onCitySelect(city.name, city.state)}
                 className={`w-full text-left px-3 py-2.5 rounded-lg border transition-all duration-200 ${
                   selected
-                    ? 'bg-orange-50 border-orange-300 text-orange-700 font-medium'
+                    ? 'bg-orange-100 border-orange-300 text-orange-900 font-semibold shadow-sm'
                     : 'bg-white border-gray-200 text-gray-700 hover:border-orange-200 hover:bg-orange-50'
                 }`}
               >
@@ -99,7 +99,7 @@ function CitiesSection({ currentCity, currentState, onCitySelect }) {
                   {restaurantCount > 0 && (
                     <div className="ml-2 flex-shrink-0">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded ${
-                        selected ? 'bg-orange-200 text-orange-800' : 'bg-gray-100 text-gray-600'
+                        selected ? 'bg-orange-200 text-orange-900' : 'bg-gray-100 text-gray-600'
                       }`}>
                         {restaurantCount}
                       </span>
@@ -146,6 +146,13 @@ export default function RestaurantListingPage({
   const soupTypeDropdownRef = useRef(null);
   const [pendingQuerySoupTypes, setPendingQuerySoupTypes] = useState([]);
   const [initialQuerySoupTypesApplied, setInitialQuerySoupTypesApplied] = useState(false);
+  const appliedSoupTypesRef = useRef('');
+  const selectedSoupTypesRef = useRef([]);
+  
+  // Keep ref in sync with state
+  useEffect(() => {
+    selectedSoupTypesRef.current = selectedSoupTypes;
+  }, [selectedSoupTypes]);
   
   // Initialize location from URL parameters
   useEffect(() => {
@@ -179,15 +186,26 @@ export default function RestaurantListingPage({
         .map((type) => type.trim())
         .filter(Boolean);
 
-      setPendingQuerySoupTypes(decodedTypes);
-      setInitialQuerySoupTypesApplied(false);
+      const newTypesString = decodedTypes.join(',');
+      
+      // Always apply if this is a new query parameter (not already applied)
+      // This handles the case when navigating from another page
+      if (appliedSoupTypesRef.current !== newTypesString) {
+        setPendingQuerySoupTypes(decodedTypes);
+        setInitialQuerySoupTypesApplied(false);
+        // Don't reset the ref here - let the application useEffect set it
+      }
     } else {
-      setPendingQuerySoupTypes([]);
-      setInitialQuerySoupTypesApplied(false);
-      setSelectedSoupTypes([]);
-      setSelectedSoupType(null);
+      // Only clear if soupType was removed from URL and we had something selected
+      if (pendingQuerySoupTypes.length > 0 || (appliedSoupTypesRef.current && selectedSoupTypesRef.current.length > 0)) {
+        setPendingQuerySoupTypes([]);
+        setInitialQuerySoupTypesApplied(false);
+        setSelectedSoupTypes([]);
+        setSelectedSoupType(null);
+        appliedSoupTypesRef.current = '';
+      }
     }
-  }, [router.isReady, router.query.location, router.query.soupType]);
+  }, [router.isReady, router.query.location, router.query.soupType, pendingQuerySoupTypes.length]);
 
   // Fetch soup types from database
   useEffect(() => {
@@ -266,15 +284,18 @@ export default function RestaurantListingPage({
     fetchSoupTypes();
   }, []);
   
+  const soupTypeFilter = selectedSoupTypes.length > 0 ? selectedSoupTypes : null;
+  const priceRangeFilter = selectedPriceRanges.length > 0 ? selectedPriceRanges : null;
+
   // Fetch restaurants with the given filters
   const { restaurants, loading, error, totalCount, refetch } = useRestaurants({
     city,
     state,
     location: locationFilter,
     limit: 12,
-    soupType: selectedSoupTypes.length > 0 ? selectedSoupTypes : null,
+    soupType: soupTypeFilter,
     rating: selectedRatings.length > 0 ? Math.min(...selectedRatings) : null,
-    priceRange: selectedPriceRanges.length > 0 ? selectedPriceRanges : null,
+    priceRange: priceRangeFilter,
     page: currentPage
   });
   
@@ -349,45 +370,61 @@ export default function RestaurantListingPage({
     if (initialQuerySoupTypesApplied) return;
     if (!pendingQuerySoupTypes.length) return;
 
-    if (soupTypeCategories.length === 0) {
-      const normalizedTypes = pendingQuerySoupTypes.map((type) =>
-        type
-          .split(' ')
-          .filter(Boolean)
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(' ')
-      );
-      setSelectedSoupTypes(normalizedTypes);
-      setSelectedSoupType(normalizedTypes[0] || null);
+    // Normalize the soup types from query parameter
+    const normalizedTypes = pendingQuerySoupTypes.map((type) =>
+      type
+        .split(' ')
+        .filter(Boolean)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+        .join(' ')
+    );
+
+    const newTypesString = normalizedTypes.join(',');
+    
+    // Check if we've already applied these exact types
+    if (appliedSoupTypesRef.current === newTypesString) {
       setInitialQuerySoupTypesApplied(true);
       return;
     }
 
-    const availableSoupNames = soupTypeCategories.flatMap((category) =>
-      (category.types || []).map((type) => type.name)
-    );
-
-    const resolvedSelections = pendingQuerySoupTypes
-      .map((type) => {
-        const match = availableSoupNames.find((name) => name.toLowerCase() === type.toLowerCase());
-        if (match) {
-          return match;
-        }
-        const normalized = type
-          .split(' ')
-          .filter(Boolean)
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(' ');
-        return normalized;
-      })
-      .filter(Boolean);
-
-    if (!resolvedSelections.length) {
-      return;
-    }
-    setSelectedSoupTypes(resolvedSelections);
-    setSelectedSoupType(resolvedSelections[0] || null);
+    // Apply immediately - don't wait for soupTypeCategories to load
+    // Use a function form of setState to ensure we're working with the latest state
+    setSelectedSoupTypes(normalizedTypes);
+    setSelectedSoupType(normalizedTypes[0] || null);
+    appliedSoupTypesRef.current = newTypesString;
     setInitialQuerySoupTypesApplied(true);
+
+    // If soupTypeCategories are already loaded, try to match for better accuracy
+    if (soupTypeCategories.length > 0) {
+      const availableSoupNames = soupTypeCategories.flatMap((category) =>
+        (category.types || []).map((type) => type.name)
+      );
+
+      const resolvedSelections = pendingQuerySoupTypes
+        .map((type) => {
+          const match = availableSoupNames.find((name) => name.toLowerCase() === type.toLowerCase());
+          if (match) {
+            return match;
+          }
+          // Fallback to normalized version
+          return type
+            .split(' ')
+            .filter(Boolean)
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+        })
+        .filter(Boolean);
+
+      // Only update if we found valid matches and they're different
+      if (resolvedSelections.length > 0) {
+        const resolvedString = resolvedSelections.join(',');
+        if (resolvedString !== newTypesString && resolvedString !== appliedSoupTypesRef.current) {
+          setSelectedSoupTypes(resolvedSelections);
+          setSelectedSoupType(resolvedSelections[0] || null);
+          appliedSoupTypesRef.current = resolvedString;
+        }
+      }
+    }
   }, [initialQuerySoupTypesApplied, pendingQuerySoupTypes, soupTypeCategories]);
 
   // Filter soup types based on search term
@@ -478,9 +515,13 @@ export default function RestaurantListingPage({
     setLocationQuery('');
     setCurrentPage(1);
     
-    // Remove location from URL
+    // Remove location from URL, but preserve soupType
     const newQuery = { ...router.query };
     delete newQuery.location;
+    // Ensure soupType is preserved if it exists
+    if (router.query.soupType) {
+      newQuery.soupType = router.query.soupType;
+    }
     router.push({
       pathname: router.pathname,
       query: newQuery
@@ -495,8 +536,12 @@ export default function RestaurantListingPage({
       setLocationDisplay(newLocation);
       setCurrentPage(1); // Reset to page 1 when location changes
       
-      // Update URL with location parameter
+      // Update URL with location parameter, preserving soupType
       const newQuery = { ...router.query, location: newLocation };
+      // Ensure soupType is preserved if it exists
+      if (router.query.soupType) {
+        newQuery.soupType = router.query.soupType;
+      }
       router.push({
         pathname: router.pathname,
         query: newQuery
@@ -620,23 +665,23 @@ export default function RestaurantListingPage({
                       handleLocationSearch();
                     }
                   }}
-                  className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border-2 border-gray-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-300/40 focus:border-orange-400 text-lg transition-all duration-200 hover:border-gray-300 hover:shadow-xl"
+                  className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border-2 border-gray-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40-300/40 focus:border-[rgb(var(--primary))]/30-400 text-lg transition-all duration-200 hover:border-gray-300 hover:shadow-xl"
                 />
                 <button
                   onClick={handleLocationSearch}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-[rgb(var(--accent))] hover:opacity-90 text-white rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   Search
                 </button>
               </div>
               {locationFilter && (
                 <div className="flex items-center justify-center gap-2 mt-3">
-                  <span className="text-sm text-orange-600 bg-orange-50 px-3 py-1 rounded-full">
+                  <span className="text-sm text-[rgb(var(--primary))] bg-[rgb(var(--bg))] px-3 py-1 rounded-full">
                     📍 Filtering by: <strong>{locationDisplay}</strong>
                   </span>
                   <button
                     onClick={clearLocationFilter}
-                    className="text-xs text-orange-600 hover:text-orange-700 font-medium underline"
+                    className="text-xs text-[rgb(var(--primary))] hover:opacity-80 font-medium underline"
                   >
                     Clear
                   </button>
@@ -666,26 +711,33 @@ export default function RestaurantListingPage({
 
                 {/* Desktop Filters */}
                 <div className="hidden lg:block">
-                  <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-6">
-                    <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                      <AdjustmentsHorizontalIcon className="h-6 w-6 text-orange-500" />
-                      Filters
-                    </h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mt-4 mb-4 flex items-center gap-2">
+                    <AdjustmentsHorizontalIcon className="h-5 w-5 text-[rgb(var(--primary))]" />
+                    Filters
+                  </h2>
+                  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 pb-4">
                     
                     {/* Cities Section */}
                     <CitiesSection 
                       currentCity={city}
                       currentState={state}
                       onCitySelect={(selectedCity, selectedState) => {
-                        router.push(`/restaurants?location=${encodeURIComponent(selectedCity + (selectedState ? `, ${selectedState}` : ''))}`);
+                        const location = selectedCity + (selectedState ? `, ${selectedState}` : '');
+                        const queryParams = new URLSearchParams();
+                        queryParams.append('location', location);
+                        // Preserve soupType if it exists in the current query
+                        if (router.query.soupType) {
+                          queryParams.append('soupType', router.query.soupType);
+                        }
+                        router.push(`/restaurants?${queryParams.toString()}`);
                       }}
                     />
                     
                     {/* Soup Type Filter */}
                     <div className="mb-8">
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-lg">🍜</span>
-                        <h3 className="font-semibold text-gray-800">Soup Type</h3>
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <span className="text-base">🍜</span>
+                        <h3 className="text-base font-semibold text-gray-800">Soup Type</h3>
                       </div>
                       
                       {/* Selected Items Display */}
@@ -695,7 +747,7 @@ export default function RestaurantListingPage({
                             <span className="text-sm font-medium text-gray-700">Selected:</span>
                             <button
                               onClick={clearAllSoupTypes}
-                              className="text-xs text-orange-600 hover:text-orange-700 font-medium"
+                              className="text-xs text-[rgb(var(--primary))] hover:opacity-80 font-medium"
                             >
                               Clear All
                             </button>
@@ -704,12 +756,12 @@ export default function RestaurantListingPage({
                             {selectedSoupTypes.map((type) => (
                               <span
                                 key={type}
-                                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200"
+                                className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-[rgb(var(--bg))] text-[rgb(var(--primary))] border border-[rgb(var(--primary))]/30"
                               >
                                 {type}
                                 <button
                                   onClick={() => removeSoupType(type)}
-                                  className="ml-2 hover:text-orange-800"
+                                  className="ml-2 hover:opacity-80 text-[rgb(var(--primary))]"
                                   aria-label={`Remove ${type}`}
                                 >
                                   ✕
@@ -728,7 +780,7 @@ export default function RestaurantListingPage({
                           value={soupTypeSearchTerm}
                           onChange={(e) => setSoupTypeSearchTerm(e.target.value)}
                           onFocus={() => setIsSoupTypeDropdownOpen(true)}
-                          className="w-full pl-4 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-300/40 focus:border-orange-400 transition-all duration-200"
+                          className="w-full pl-4 pr-4 py-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40-300/40 focus:border-[rgb(var(--primary))]/30-400 transition-all duration-200"
                         />
                       </div>
 
@@ -738,7 +790,7 @@ export default function RestaurantListingPage({
                           <div className="max-h-80 overflow-y-auto">
                             {soupTypesLoading ? (
                               <div className="px-4 py-4 text-center text-gray-500">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mx-auto mb-2"></div>
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[rgb(var(--primary))]/30-500 mx-auto mb-2"></div>
                                 Loading soup types...
                               </div>
                             ) : filteredCategories.length > 0 ? (
@@ -756,7 +808,7 @@ export default function RestaurantListingPage({
                                         type="checkbox"
                                         checked={selectedSoupTypes.includes(type.name)}
                                         onChange={() => toggleSoupType(type.name)}
-                                        className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                        className="h-4 w-4 text-[rgb(var(--primary))]-600 focus:ring-[rgb(var(--primary))]/40-500 border-gray-300 rounded"
                                       />
                                       <span className="ml-3 text-sm text-gray-900 flex-1">
                                         {type.name}
@@ -780,15 +832,15 @@ export default function RestaurantListingPage({
 
                     {/* Rating Filter */}
                     <div className="mb-8">
-                      <div className="flex items-center gap-2 mb-4">
-                        <StarIcon className="h-5 w-5 text-yellow-500" />
-                        <h3 className="font-semibold text-gray-800">Minimum Rating</h3>
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <StarIcon className="h-4 w-4 text-yellow-500" />
+                        <h3 className="text-base font-semibold text-gray-800">Minimum Rating</h3>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
                           className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
                             selectedRatings.length === 0
-                              ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                              ? 'bg-[rgb(var(--primary))] text-white border-[rgb(var(--primary))] shadow-sm'
                               : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                           }`}
                           onClick={() => setSelectedRatings([])}
@@ -801,7 +853,7 @@ export default function RestaurantListingPage({
                             key={option.value}
                             className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
                               selectedRatings.includes(option.value)
-                                ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                                ? 'bg-[rgb(var(--primary))] text-white border-[rgb(var(--primary))] shadow-sm'
                                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                             }`}
                             onClick={() => {
@@ -819,16 +871,16 @@ export default function RestaurantListingPage({
                     </div>
 
                     {/* Price Range Filter */}
-                    <div className="mb-8">
-                      <div className="flex items-center gap-2 mb-4">
-                        <CurrencyDollarIcon className="h-5 w-5 text-green-500" />
-                        <h3 className="font-semibold text-gray-800">Price Range</h3>
+                    <div className="mb-0">
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <CurrencyDollarIcon className="h-4 w-4 text-green-500" />
+                        <h3 className="text-base font-semibold text-gray-800">Price Range</h3>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button
                           className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
                             selectedPriceRanges.length === 0
-                              ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                              ? 'bg-[rgb(var(--primary))] text-white border-[rgb(var(--primary))] shadow-sm'
                               : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                           }`}
                           onClick={() => setSelectedPriceRanges([])}
@@ -841,7 +893,7 @@ export default function RestaurantListingPage({
                             key={option.value}
                             className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
                               selectedPriceRanges.includes(option.value)
-                                ? 'bg-orange-500 text-white border-orange-500 shadow-sm'
+                                ? 'bg-[rgb(var(--primary))] text-white border-[rgb(var(--primary))] shadow-sm'
                                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                             }`}
                             onClick={() => {
@@ -897,7 +949,7 @@ export default function RestaurantListingPage({
               {/* No Results */}
               {!isLoading && restaurants.length === 0 && !error && (
                 <div className="text-center py-16">
-                  <div className="inline-flex items-center justify-center w-24 h-24 bg-orange-100 rounded-3xl mb-6">
+                  <div className="inline-flex items-center justify-center w-24 h-24 bg-[rgb(var(--primary))]-100 rounded-3xl mb-6">
                     <span className="text-5xl">🍲</span>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-900 mb-3">No restaurants found</h3>
@@ -920,7 +972,7 @@ export default function RestaurantListingPage({
 
               {/* Restaurant Grid */}
               {!isLoading && restaurants.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {restaurants.map((restaurant, index) => (
                     <RestaurantCard
                       key={restaurant.id}
@@ -936,7 +988,7 @@ export default function RestaurantListingPage({
 
               {/* Pagination */}
               {!isLoading && totalPages > 1 && (
-                <div className="flex justify-center mt-12">
+                <div className="flex justify-center mt-12 mb-16">
                   <div className="flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-6 py-4 shadow-sm">
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}

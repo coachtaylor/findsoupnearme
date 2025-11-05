@@ -154,14 +154,13 @@ export async function getRestaurants({
         query = query.in('id', restrictToIds);
       }
 
-      // Launch city filtering: Only show restaurants from launch cities
-      // Build OR condition for launch cities
-      const launchCityConditions = LAUNCH_CITIES.map(
-        (lc) => `(city.eq.${lc.name},state.eq.${lc.state})`
-      ).join(',');
+      // Launch city filtering: Filter by states first, then filter cities in JavaScript
+      // This avoids OR syntax issues with spaces in city names
+      const launchStates = [...new Set(LAUNCH_CITIES.map(lc => lc.state.toUpperCase()))];
       
-      // Apply launch city filter first
-      query = query.or(launchCityConditions);
+      if (launchStates.length > 0) {
+        query = query.in('state', launchStates);
+      }
 
       // Then apply additional filters
       if (city) {
@@ -268,8 +267,21 @@ export async function getRestaurants({
       return { data: [], totalCount: totalMatches, soupTypeFilterApplied };
     }
 
-    console.log(`Successfully fetched ${data?.length || 0} restaurants from Supabase (matches: ${totalMatches})`);
-    return { data: data || [], totalCount: totalMatches, soupTypeFilterApplied };
+    // Apply launch city filtering in JavaScript if needed (to handle spaces in city names)
+    let filteredData = data || [];
+    const launchCitySet = new Set(LAUNCH_CITIES.map(lc => 
+      `${lc.name.toLowerCase()}|${lc.state.toUpperCase()}`
+    ));
+    
+    if (launchCitySet.size > 0) {
+      filteredData = filteredData.filter(restaurant => {
+        const cityKey = `${(restaurant.city || '').toLowerCase()}|${(restaurant.state || '').toUpperCase()}`;
+        return launchCitySet.has(cityKey);
+      });
+    }
+
+    console.log(`Successfully fetched ${filteredData.length} restaurants from Supabase (matches: ${totalMatches})`);
+    return { data: filteredData, totalCount: totalMatches, soupTypeFilterApplied };
   } catch (err) {
     console.error('Exception when fetching restaurants:', err);
     const filterApplied = (Array.isArray(soupTypes) ? soupTypes : soupTypes ? [soupTypes] : []).length > 0;

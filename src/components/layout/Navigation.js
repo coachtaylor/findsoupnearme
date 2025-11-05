@@ -12,11 +12,11 @@ export default function Navigation() {
           
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group" aria-label="Go to homepage">
-            <div className="relative w-10 h-10 flex items-center justify-center">
+            <div className="relative w-[70px] h-[70px] flex items-center justify-center">
               <img 
                 src="/images/logo.svg" 
                 alt="FindSoup Logo" 
-                className="w-10 h-10 transition-transform duration-200 group-hover:scale-110"
+                className="w-[70px] h-[70px] transition-transform duration-200 group-hover:scale-110"
               />
             </div>
             <div className="flex flex-col">
@@ -36,12 +36,6 @@ export default function Navigation() {
               className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
             >
               Restaurants
-            </Link>
-            <Link 
-              href="/cities" 
-              className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
-            >
-              Cities
             </Link>
             <Link 
               href="/about" 
@@ -103,14 +97,6 @@ export default function Navigation() {
             onClick={() => setMobileMenuOpen(false)}
           >
             Restaurants
-          </Link>
-          
-          <Link 
-            href="/cities" 
-            className="block px-4 py-3 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-orange-600 hover:bg-orange-50/50 rounded-lg transition-all"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            Cities
           </Link>
           
           <Link 
