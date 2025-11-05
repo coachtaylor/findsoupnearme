@@ -110,6 +110,9 @@ const LoginPage = () => {
                 create a new account
               </button>
             </p>
+            <p className="mt-3 text-center text-sm text-gray-500">
+              Sign in to discover restaurants, favorite soups, and add reviews
+            </p>
           </div>
 
           {/* Login Form Card */}

@@ -1,105 +1,107 @@
 // src/pages/auth/callback.js
+/**
+ * OAuth Callback Handler
+ * Handles the redirect after OAuth authentication
+ * Routes users based on their type (customer or owner)
+ */
+
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '../../contexts/AuthContext';
-import Head from 'next/head';
+import { supabase } from '../../lib/supabase';
 
-const AuthCallback = () => {
+export default function AuthCallback() {
   const router = useRouter();
-  const { user, loading, error } = useAuth();
-  const [processing, setProcessing] = useState(true);
-  const [authError, setAuthError] = useState(null);
-
+  const [error, setError] = useState(null);
+  
   useEffect(() => {
     const handleCallback = async () => {
       try {
-        setProcessing(true);
+        // Check if this is an onboarding flow
+        const isOnboarding = router.query.onboarding === 'true';
         
-        // Wait for auth state to be initialized
-        if (!loading) {
-          if (user) {
-            // User is authenticated, redirect to home (or intended page)
-            const redirectTo = router.query.redirectTo || '/';
-            router.push(redirectTo);
-          } else if (error) {
-            // There was an authentication error
-            setAuthError(error);
-            setTimeout(() => {
-              router.push('/auth/login');
-            }, 3000);
+        // Get the session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+        
+        if (!session) {
+          // No session, redirect to login
+          router.push('/auth/login');
+          return;
+        }
+        
+        // If this is onboarding, get the user type from session storage
+        if (isOnboarding) {
+          const userType = sessionStorage.getItem('signup_user_type');
+          sessionStorage.removeItem('signup_user_type'); // Clean up
+          
+          if (userType === 'customer') {
+            router.push('/onboarding/customer');
+          } else if (userType === 'owner') {
+            router.push('/onboarding/owner');
           } else {
-            // No user and no error, redirect to login
-            router.push('/auth/login');
+            // No user type set, go to home
+            router.push('/');
           }
+        } else {
+          // Regular login, check if user has completed onboarding
+          const { data: userProfile } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          // Get redirect URL from query params or default to home
+          const redirectTo = router.query.redirectTo || '/';
+          router.push(redirectTo);
         }
       } catch (err) {
-        console.error('Auth callback error:', err);
-        setAuthError(err);
+        console.error('Callback error:', err);
+        setError(err.message);
+        
+        // Redirect to login after 3 seconds
         setTimeout(() => {
           router.push('/auth/login');
         }, 3000);
-      } finally {
-        setProcessing(false);
       }
     };
-
-    handleCallback();
-  }, [user, loading, error, router]);
-
-  if (processing || loading) {
+    
+    // Only run if router is ready
+    if (router.isReady) {
+      handleCallback();
+    }
+  }, [router, router.isReady, router.query]);
+  
+  if (error) {
     return (
-      <>
-        <Head>
-          <title>Processing Authentication - FindSoupNearMe</title>
-        </Head>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto mb-4"></div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Processing Authentication
-              </h2>
-              <p className="text-gray-600">
-                Please wait while we complete your sign-in...
-              </p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+            <div className="flex items-center mb-4">
+              <svg className="h-6 w-6 text-red-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <h2 className="text-lg font-semibold text-red-900">Authentication Error</h2>
             </div>
+            <p className="text-red-800 mb-4">{error}</p>
+            <p className="text-sm text-red-700">Redirecting to login page...</p>
           </div>
         </div>
-      </>
+      </div>
     );
   }
+  
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Completing sign in...</p>
+      </div>
+    </div>
+  );
+}
 
-  if (authError) {
-    return (
-      <>
-        <Head>
-          <title>Authentication Error - FindSoupNearMe</title>
-        </Head>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50">
-          <div className="max-w-md w-full bg-white rounded-lg shadow-md p-8">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                Authentication Failed
-              </h2>
-              <p className="text-gray-600 mb-4">
-                {authError.message || 'There was an error during authentication.'}
-              </p>
-              <p className="text-sm text-gray-500">
-                Redirecting to login page...
-              </p>
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  return null;
+// No layout for callback page
+AuthCallback.getLayout = function getLayout(page) {
+  return page;
 };
-
-export default AuthCallback; 
