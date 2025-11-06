@@ -315,8 +315,7 @@ export default function AdminClaimsDashboard() {
                     claimEvidence.user_phone ||
                     'Not provided';
                   const claimedRestaurant = restaurantName;
-                  const ridQuery =
-                    claim.restaurant?.slug ? '' : `?rid=${claim.restaurant_id}`;
+                  const ridQuery = `?rid=${claim.restaurant_id}`;
 
                   return (
                     <li

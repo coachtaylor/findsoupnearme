@@ -6,7 +6,8 @@ import Link from 'next/link';
 
 export default function RestaurantDetail() {
   const router = useRouter();
-  const { state, city, restaurant: slug } = router.query;
+  const { state, city, restaurant: slug, rid } = router.query;
+  const ridValue = Array.isArray(rid) ? rid[0] : rid;
   const [activeTab, setActiveTab] = useState('info');
   const [loading, setLoading] = useState(true);
   const [restaurantData, setRestaurantData] = useState(null);
@@ -89,8 +90,6 @@ export default function RestaurantDetail() {
   useEffect(() => {
     if (!slug) return;
     
-    const { rid } = router.query;
-
     const fetchById = async (restaurantId) => {
       if (!restaurantId) return null;
       try {
@@ -108,6 +107,15 @@ export default function RestaurantDetail() {
     async function fetchRestaurantData() {
       setLoading(true);
       try {
+        // When an explicit restaurant ID is provided, prefer it
+        if (ridValue) {
+          const byId = await fetchById(ridValue);
+          if (byId) {
+            setRestaurantData(byId);
+            return;
+          }
+        }
+
         // Try to fetch by slug first
         const response = await fetch(`/api/restaurants/by-slug?slug=${slug}`);
         
@@ -116,7 +124,7 @@ export default function RestaurantDetail() {
           const fallbackResponse = await fetch(`/api/restaurants?slug=${slug}`);
           
           if (!fallbackResponse.ok) {
-            const byId = await fetchById(rid);
+            const byId = await fetchById(ridValue);
             if (byId) {
               setRestaurantData(byId);
               return;
@@ -130,7 +138,7 @@ export default function RestaurantDetail() {
           if (fallbackData && fallbackData.restaurants && fallbackData.restaurants.length > 0) {
             setRestaurantData(fallbackData.restaurants[0]);
           } else {
-            const byId = await fetchById(rid);
+            const byId = await fetchById(ridValue);
             if (byId) {
               setRestaurantData(byId);
               return;
@@ -139,8 +147,8 @@ export default function RestaurantDetail() {
           }
         } else {
           const data = await response.json();
-          if (data?.isErrorData) {
-            const byId = await fetchById(rid);
+          if (data?.isErrorData || (ridValue && data?.id && data.id !== ridValue)) {
+            const byId = await fetchById(ridValue);
             if (byId) {
               setRestaurantData(byId);
               return;
@@ -158,7 +166,7 @@ export default function RestaurantDetail() {
     }
     
     fetchRestaurantData();
-  }, [slug, router.query]);
+  }, [slug, ridValue]);
   
   // Format address for Google Maps
   const getGoogleMapsUrl = (restaurant) => {
@@ -276,6 +284,27 @@ export default function RestaurantDetail() {
               </nav>
             </div>
           </div>
+          
+          {/* Admin/preview banner for pending restaurants */}
+          {(!restaurant.is_active || restaurant.status !== 'live' || !restaurant.is_verified) && (
+            <div className="bg-amber-50 border-b border-amber-200">
+              <div className="container mx-auto px-4 py-4">
+                <div className="flex items-start gap-3 text-sm text-amber-800">
+                  <svg className="w-5 h-5 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M4.318 4.318A4.5 4.5 0 0117.682 4.318l2 2A4.5 4.5 0 0120.182 17.682l-2 2a4.5 4.5 0 01-6.364 0l-2-2a4.5 4.5 0 010-6.364l2-2" />
+                  </svg>
+                  <div>
+                    <p className="font-semibold">
+                      This listing is pending verification and hidden from the public directory.
+                    </p>
+                    <p className="mt-1 text-amber-700">
+                      Once verification is complete, the page will be published automatically. You can continue reviewing or editing the submitted details.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* Hero Header - Modern Professional Design */}
           <section className="bg-white border-b border-neutral-200 shadow-sm">

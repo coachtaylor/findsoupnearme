@@ -88,6 +88,10 @@ export default async function handler(req, res) {
       rating: restaurant.rating || avgRating || 0,
       review_count: reviewCount,
       is_verified: restaurant.is_verified || false,
+      verified_at: restaurant.verified_at,
+      status: restaurant.status,
+      is_active: restaurant.is_active,
+      created_at: restaurant.created_at,
       soup_types,
       soups: restaurant.soups || [],
       reviews: reviews.map(review => ({
