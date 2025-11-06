@@ -125,40 +125,60 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        const userWithClaims = parseUserWithClaims(session);
-        setSession(session);
-        setUser(userWithClaims);
-        
-        // Load additional user profile data
-        if (userWithClaims) {
-          loadUserProfile(userWithClaims.id).then(setUserProfile);
-        }
+    if (session) {
+      const userWithClaims = parseUserWithClaims(session);
+      setSession(session);
+      setUser(userWithClaims);
+      
+      // Load additional user profile data
+      if (userWithClaims) {
+        loadUserProfile(userWithClaims.id).then((profile) => {
+          setUserProfile(profile);
+          
+          if (profile?.role_global) {
+            setUser((prev) => {
+              if (!prev) return prev;
+              if (prev.role_global === profile.role_global) return prev;
+              return { ...prev, role_global: profile.role_global };
+            });
+          }
+        });
       }
-      setLoading(false);
-    });
-    
+    }
+    setLoading(false);
+  });
+  
     // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        const userWithClaims = parseUserWithClaims(session);
-        setSession(session);
-        setUser(userWithClaims);
-        
-        // Load additional user profile data
-        if (userWithClaims) {
-          loadUserProfile(userWithClaims.id).then(setUserProfile);
-        }
-      } else {
-        setSession(null);
-        setUser(null);
-        setUserProfile(null);
+    if (session) {
+      const userWithClaims = parseUserWithClaims(session);
+      setSession(session);
+      setUser(userWithClaims);
+      
+      // Load additional user profile data
+      if (userWithClaims) {
+        loadUserProfile(userWithClaims.id).then((profile) => {
+          setUserProfile(profile);
+          
+          if (profile?.role_global) {
+            setUser((prev) => {
+              if (!prev) return prev;
+              if (prev.role_global === profile.role_global) return prev;
+              return { ...prev, role_global: profile.role_global };
+            });
+          }
+        });
       }
-      setLoading(false);
-    });
-    
+    } else {
+      setSession(null);
+      setUser(null);
+      setUserProfile(null);
+    }
+    setLoading(false);
+  });
+  
     return () => subscription.unsubscribe();
   }, []);
   
@@ -215,6 +235,10 @@ export function AuthProvider({ children }) {
       if (userWithClaims) {
         const profile = await loadUserProfile(userWithClaims.id);
         setUserProfile(profile);
+        
+        if (profile?.role_global && userWithClaims.role_global !== profile.role_global) {
+          setUser((prev) => (prev ? { ...prev, role_global: profile.role_global } : prev));
+        }
       }
       
       return { user: userWithClaims, session: data.session, error: null };
@@ -327,6 +351,10 @@ export function AuthProvider({ children }) {
         if (userWithClaims) {
           const profile = await loadUserProfile(userWithClaims.id);
           setUserProfile(profile);
+          
+          if (profile?.role_global && userWithClaims.role_global !== profile.role_global) {
+            setUser((prev) => (prev ? { ...prev, role_global: profile.role_global } : prev));
+          }
         }
       }
       

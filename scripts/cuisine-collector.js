@@ -189,6 +189,23 @@ const TIER2_CUISINES = {
     ],
     targetCities: ['New York, NY', 'Los Angeles, CA', 'San Francisco, CA', 'Chicago, IL'],
     perCityTarget: { min: 8, max: 12 }
+  },
+  
+  Filipino: {
+    priority: 2,
+    searchQueries: [
+      'filipino restaurant',
+      'filipino food near me',
+      'filipino noodle soup',
+      'sinigang restaurant',
+      'filipino turo turo',
+      'filipino comfort food',
+      'lugaw restaurant',
+      'arroz caldo',
+      'tinola'
+    ],
+    targetCities: ['San Diego, CA', 'Los Angeles, CA', 'Phoenix, AZ', 'Seattle, WA'],
+    perCityTarget: { min: 12, max: 18 }
   }
 };
 
@@ -285,7 +302,8 @@ function getDefaultSoupsForCuisine(cuisine) {
     'French': ['French Onion'],
     'Indian': ['Lentil'],
     'Jewish': ['Matzo Ball'],
-    'Mediterranean': ['Lentil']
+    'Mediterranean': ['Lentil'],
+    'Filipino': ['Sinigang', 'Arroz Caldo', 'Tinola']
   };
   
   return soupMap[cuisine] || ['House Special'];

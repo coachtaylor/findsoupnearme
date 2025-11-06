@@ -1,5 +1,5 @@
 // src/pages/auth/login.js
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import Head from 'next/head';
@@ -14,15 +14,41 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState('');
   
-  const { signIn, signInWithOAuth, error: authError, clearError, user, loading } = useAuth();
+  const { signIn, signInWithOAuth, error: authError, clearError, user, loading, orgs, isAdmin } = useAuth();
   const router = useRouter();
 
+  const userHasOwnerAccess = useCallback((targetUser, targetOrgs, adminFlag) => {
+    if (!targetUser) return false;
+    if (adminFlag) return true;
+    if (targetUser.user_metadata?.user_type === 'owner') return true;
+    const memberships = Array.isArray(targetOrgs) && targetOrgs.length > 0
+      ? targetOrgs
+      : targetUser.user_metadata?.orgs || [];
+    return memberships.some((membership) => {
+      if (!membership) return false;
+      const roles = Array.isArray(membership.roles)
+        ? membership.roles
+        : membership.role
+          ? [membership.role]
+          : [];
+      return roles.includes('owner');
+    });
+  }, []);
+
+  const ownerDashboardRedirect = useMemo(() => {
+    if (!user) return '/dashboard';
+    if (isAdmin) return '/admin/claims';
+    return userHasOwnerAccess(user, orgs, false) ? '/owner/dashboard' : '/dashboard';
+  }, [user, orgs, isAdmin, userHasOwnerAccess]);
+
   // Redirect if already authenticated
+  const redirectToParam = router.query?.redirectTo;
+
   useEffect(() => {
     if (user && !loading) {
-      router.push('/');
+      router.push(typeof redirectToParam === 'string' ? redirectToParam : ownerDashboardRedirect);
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, ownerDashboardRedirect, redirectToParam]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -41,17 +67,27 @@ const LoginPage = () => {
     setFormError('');
 
     try {
-      const { user, error } = await signIn({
+      const { user: signedInUser, error } = await signIn({
         email: formData.email,
         password: formData.password,
       });
 
       if (error) {
         setFormError(error.message || 'Login failed');
-      } else if (user) {
+      } else if (signedInUser) {
         // Redirect to dashboard or intended page
-        const redirectTo = router.query.redirectTo || '/';
-        router.push(redirectTo);
+        const adminFlag =
+          signedInUser?.role_global === 'admin' ||
+          signedInUser?.user_metadata?.role_global === 'admin';
+        const destination =
+          typeof redirectToParam === 'string'
+            ? redirectToParam
+            : adminFlag
+              ? '/admin/claims'
+              : userHasOwnerAccess(signedInUser, signedInUser?.orgs, false)
+                ? '/owner/dashboard'
+                : '/dashboard';
+        router.push(destination);
       }
     } catch (err) {
       setFormError('An unexpected error occurred');

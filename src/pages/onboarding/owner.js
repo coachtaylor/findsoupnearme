@@ -9,13 +9,15 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import Head from 'next/head';
+import slugify from 'slugify';
 
 export default function OwnerOnboarding() {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   const router = useRouter();
   
   const [step, setStep] = useState(1); // 1: Choose path, 2: Search/Create, 3: Confirmation
   const [path, setPath] = useState(null); // 'claim' or 'create'
+  const [editingRestaurantId, setEditingRestaurantId] = useState(null);
   
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,12 +38,58 @@ export default function OwnerOnboarding() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  
+  const isEditing = Boolean(editingRestaurantId);
+  const restaurantIdFromQuery = router.query?.restaurantId;
+
+  const handleBackToPrevious = () => {
+    if (isEditing) {
+      router.push('/admin/claims');
+    } else {
+      setStep(1);
+    }
+  };
+
+  const loadExistingRestaurant = async (restaurantId) => {
+    try {
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('*')
+        .eq('id', restaurantId)
+        .single();
+
+      if (error) throw error;
+      if (!data) return;
+
+      setNewRestaurantData({
+        name: data.name || '',
+        address: data.address || '',
+        city: data.city || '',
+        state: data.state || '',
+        zip_code: data.zip_code || '',
+        phone: data.phone || '',
+        website: data.website || '',
+      });
+    } catch (err) {
+      console.error('Failed to load restaurant for editing:', err);
+      setError('Unable to load restaurant details for editing.');
+    }
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/auth/login');
+      return;
     }
-  }, [user, loading, router]);
+
+    if (!loading && user) {
+      if (restaurantIdFromQuery && typeof restaurantIdFromQuery === 'string') {
+        setPath('create');
+        setStep(2);
+        setEditingRestaurantId(restaurantIdFromQuery);
+        loadExistingRestaurant(restaurantIdFromQuery);
+      }
+    }
+  }, [user, loading, restaurantIdFromQuery]);
   
   // Search for restaurants
   const handleSearch = async (e) => {
@@ -108,13 +156,21 @@ export default function OwnerOnboarding() {
   };
   
   // Create new restaurant
-  const handleCreateRestaurant = async (e) => {
-    e.preventDefault();
-    
+  const handleCreateRestaurant = async () => {
     setIsSubmitting(true);
     setError('');
     
     try {
+      const baseSlug = slugify(
+        `${newRestaurantData.name} ${newRestaurantData.city || ''} ${newRestaurantData.state || ''}`,
+        { lower: true, strict: true, trim: true }
+      );
+      const randomSegment =
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID().slice(0, 6)
+          : Math.random().toString(36).slice(2, 8);
+      const generatedSlug = `${baseSlug}-${randomSegment}`;
+      
       // Create restaurant as draft
       const { data: restaurant, error: createError } = await supabase
         .from('restaurants')
@@ -126,9 +182,11 @@ export default function OwnerOnboarding() {
           zip_code: newRestaurantData.zip_code,
           phone: newRestaurantData.phone,
           website: newRestaurantData.website,
+          slug: generatedSlug,
           status: 'draft',
           created_by: user.id,
           is_active: false,
+          owner_id: isAdmin ? null : user.id,
         })
         .select()
         .single();
@@ -158,6 +216,47 @@ export default function OwnerOnboarding() {
       setError(err.message || 'Failed to create restaurant');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdateRestaurant = async () => {
+    if (!editingRestaurantId) return;
+
+    setIsSubmitting(true);
+    setError('');
+
+    try {
+      const { error: updateError } = await supabase
+        .from('restaurants')
+        .update({
+          name: newRestaurantData.name,
+          address: newRestaurantData.address,
+          city: newRestaurantData.city,
+          state: newRestaurantData.state,
+          zip_code: newRestaurantData.zip_code,
+          phone: newRestaurantData.phone,
+          website: newRestaurantData.website,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editingRestaurantId);
+
+      if (updateError) throw updateError;
+
+      setStep(3);
+    } catch (err) {
+      console.error('Update restaurant error:', err);
+      setError(err.message || 'Failed to update restaurant');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitRestaurant = async (e) => {
+    e.preventDefault();
+    if (editingRestaurantId) {
+      await handleUpdateRestaurant();
+    } else {
+      await handleCreateRestaurant();
     }
   };
   
@@ -271,7 +370,7 @@ export default function OwnerOnboarding() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search by restaurant name, address, or city..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                   <button
                     type="submit"
@@ -379,18 +478,18 @@ export default function OwnerOnboarding() {
         <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-2xl mx-auto">
             <button
-              onClick={() => setStep(1)}
+              onClick={handleBackToPrevious}
               className="text-sm text-gray-600 hover:text-gray-900 mb-6"
             >
-              ← Back
+              {isEditing ? '← Back to Admin Console' : '← Back'}
             </button>
             
             <div className="bg-white rounded-lg shadow-md p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Add Your Restaurant
+                {isEditing ? 'Edit Restaurant' : 'Add Your Restaurant'}
               </h2>
               
-              <form onSubmit={handleCreateRestaurant} className="space-y-6">
+              <form onSubmit={handleSubmitRestaurant} className="space-y-6">
                 {/* Restaurant Name */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -401,7 +500,7 @@ export default function OwnerOnboarding() {
                     required
                     value={newRestaurantData.name}
                     onChange={(e) => setNewRestaurantData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="My Amazing Soup Restaurant"
                   />
                 </div>
@@ -416,7 +515,7 @@ export default function OwnerOnboarding() {
                     required
                     value={newRestaurantData.address}
                     onChange={(e) => setNewRestaurantData(prev => ({ ...prev, address: e.target.value }))}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                     placeholder="123 Main Street"
                   />
                 </div>
@@ -432,7 +531,7 @@ export default function OwnerOnboarding() {
                       required
                       value={newRestaurantData.city}
                       onChange={(e) => setNewRestaurantData(prev => ({ ...prev, city: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
                       placeholder="Los Angeles"
                     />
                   </div>
@@ -506,8 +605,15 @@ export default function OwnerOnboarding() {
                 {/* Info Box */}
                 <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
                   <p className="text-sm text-blue-800">
-                    <strong>Note:</strong> Your restaurant will be submitted for verification. 
-                    You'll be able to fully manage your listing once we verify your ownership (usually within 48 hours).
+                    {isEditing ? (
+                      <>
+                        <strong>Note:</strong> Updates are saved immediately. Our team may review changes for accuracy and completeness.
+                      </>
+                    ) : (
+                      <>
+                        <strong>Note:</strong> Your restaurant will be submitted for verification. You'll be able to fully manage your listing once we verify your ownership (usually within 48 hours).
+                      </>
+                    )}
                   </p>
                 </div>
                 
@@ -515,9 +621,19 @@ export default function OwnerOnboarding() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 font-medium"
+                  className="w-full px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 font-medium flex items-center justify-center gap-2"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit Restaurant for Verification'}
+                  {isSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      {isEditing ? 'Updating...' : 'Submitting...'}
+                    </>
+                  ) : (
+                    isEditing ? 'Update Restaurant' : 'Submit Restaurant for Verification'
+                  )}
                 </button>
               </form>
             </div>
@@ -529,6 +645,13 @@ export default function OwnerOnboarding() {
   
   // Step 3: Confirmation
   if (step === 3) {
+    const confirmationTitle = isEditing
+      ? 'Restaurant Updated! ✅'
+      : 'Claim Submitted Successfully! 🎉';
+    const confirmationMessage = isEditing
+      ? 'Your restaurant details have been saved. You can refresh the admin console to review the latest information.'
+      : "We've received your restaurant claim and will review it soon.";
+    const showNextSteps = !isEditing;
     return (
       <>
         <Head>
@@ -546,52 +669,52 @@ export default function OwnerOnboarding() {
             
             {/* Success Message */}
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Claim Submitted Successfully! 🎉
+              {confirmationTitle}
             </h1>
             
             <p className="text-xl text-gray-600 mb-8">
-              We've received your restaurant claim and will review it soon.
+              {confirmationMessage}
             </p>
             
-            {/* What's Next */}
-            <div className="bg-white rounded-lg shadow-md p-8 mb-8 text-left">
-              <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
-                What Happens Next?
-              </h2>
-              
-              <div className="space-y-4">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 text-2xl mr-4">1️⃣</div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Verification (24-48 hours)</h3>
-                    <p className="text-gray-600">Our team will review your claim and verify ownership</p>
-                  </div>
-                </div>
+            {showNextSteps && (
+              <div className="bg-white rounded-lg shadow-md p-8 mb-8 text-left">
+                <h2 className="text-2xl font-semibold text-gray-900 mb-6 text-center">
+                  What Happens Next?
+                </h2>
                 
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 text-2xl mr-4">2️⃣</div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Email Notification</h3>
-                    <p className="text-gray-600">You'll receive an email when your claim is approved</p>
+                <div className="space-y-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 text-2xl mr-4">1️⃣</div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Verification (24-48 hours)</h3>
+                      <p className="text-gray-600">Our team will review your claim and verify ownership</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-start">
-                  <div className="flex-shrink-0 text-2xl mr-4">3️⃣</div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Start Managing</h3>
-                    <p className="text-gray-600">Update your menu, hours, photos, and connect with customers</p>
+                  
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 text-2xl mr-4">2️⃣</div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Email Notification</h3>
+                      <p className="text-gray-600">You'll receive an email when your claim is approved</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 text-2xl mr-4">3️⃣</div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">Start Managing</h3>
+                      <p className="text-gray-600">Update your menu, hours, photos, and connect with customers</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
             
-            {/* CTA Button */}
             <button
-              onClick={() => router.push('/')}
+              onClick={() => router.push(isEditing ? '/admin/claims' : '/')}
               className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
             >
-              Browse Soup Restaurants
+              {isEditing ? 'Return to Admin Console' : 'Browse Soup Restaurants'}
               <svg className="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>

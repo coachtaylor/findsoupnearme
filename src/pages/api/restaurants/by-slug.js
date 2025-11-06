@@ -24,7 +24,9 @@ export default async function handler(req, res) {
         reviews (*)
       `)
       .eq('slug', slug)
-      .single();
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
     
     if (error) {
       console.error('Error fetching restaurant by slug:', error);
@@ -38,8 +40,9 @@ export default async function handler(req, res) {
           reviews (*)
         `)
         .ilike('slug', `%${slug}%`)
+        .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
         
       if (fallbackError || !fallbackRestaurant) {
         throw error; // No match found, use original error

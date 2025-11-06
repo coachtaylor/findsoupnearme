@@ -89,6 +89,22 @@ export default function RestaurantDetail() {
   useEffect(() => {
     if (!slug) return;
     
+    const { rid } = router.query;
+
+    const fetchById = async (restaurantId) => {
+      if (!restaurantId) return null;
+      try {
+        const response = await fetch(`/api/restaurants/${restaurantId}`);
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (data?.isErrorData) return null;
+        return data;
+      } catch (err) {
+        console.error('Fallback fetch by ID failed:', err);
+        return null;
+      }
+    };
+
     async function fetchRestaurantData() {
       setLoading(true);
       try {
@@ -100,6 +116,11 @@ export default function RestaurantDetail() {
           const fallbackResponse = await fetch(`/api/restaurants?slug=${slug}`);
           
           if (!fallbackResponse.ok) {
+            const byId = await fetchById(rid);
+            if (byId) {
+              setRestaurantData(byId);
+              return;
+            }
             throw new Error('Failed to fetch restaurant details');
           }
           
@@ -109,10 +130,23 @@ export default function RestaurantDetail() {
           if (fallbackData && fallbackData.restaurants && fallbackData.restaurants.length > 0) {
             setRestaurantData(fallbackData.restaurants[0]);
           } else {
+            const byId = await fetchById(rid);
+            if (byId) {
+              setRestaurantData(byId);
+              return;
+            }
             throw new Error('No restaurant found with that name');
           }
         } else {
           const data = await response.json();
+          if (data?.isErrorData) {
+            const byId = await fetchById(rid);
+            if (byId) {
+              setRestaurantData(byId);
+              return;
+            }
+            throw new Error('Restaurant not found');
+          }
           setRestaurantData(data);
         }
       } catch (err) {
@@ -124,7 +158,7 @@ export default function RestaurantDetail() {
     }
     
     fetchRestaurantData();
-  }, [slug]);
+  }, [slug, router.query]);
   
   // Format address for Google Maps
   const getGoogleMapsUrl = (restaurant) => {

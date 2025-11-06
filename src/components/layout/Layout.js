@@ -1,5 +1,5 @@
 // src/components/layout/Layout.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import Footer from './Footer';
@@ -8,7 +8,29 @@ import { useAuth } from '../../contexts/AuthContext';
 export default function Layout({ children, title, description }) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin, orgs, userProfile } = useAuth();
+  const hasOwnerDashboardAccess = useMemo(() => {
+    if (!user) return false;
+    if (isAdmin) return true;
+    const memberships = Array.isArray(orgs) && orgs.length > 0
+      ? orgs
+      : user.user_metadata?.orgs || [];
+    if (
+      user.user_metadata?.user_type === 'owner' ||
+      userProfile?.user_type === 'owner'
+    ) {
+      return true;
+    }
+    return memberships.some((membership) => {
+      if (!membership) return false;
+      const roles = Array.isArray(membership.roles)
+        ? membership.roles
+        : membership.role
+          ? [membership.role]
+          : [];
+      return roles.includes('owner');
+    });
+  }, [user, orgs, isAdmin, userProfile]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -112,6 +134,22 @@ export default function Layout({ children, title, description }) {
                 </>
               ) : (
                 <>
+                  {isAdmin && (
+                    <Link 
+                      href="/admin/claims" 
+                      className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-fuchsia-600 hover:text-fuchsia-700 transition-colors"
+                    >
+                      Admin Console
+                    </Link>
+                  )}
+                  {hasOwnerDashboardAccess && (
+                    <Link 
+                      href="/owner/dashboard" 
+                      className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-orange-600 hover:text-orange-700 transition-colors"
+                    >
+                      Owner Dashboard
+                    </Link>
+                  )}
                   <Link 
                     href="/dashboard" 
                     className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
@@ -196,6 +234,24 @@ export default function Layout({ children, title, description }) {
               </div>
             ) : (
               <div className="space-y-2 pt-2">
+                {isAdmin && (
+                  <Link 
+                    href="/admin/claims" 
+                    className="block w-full px-4 py-3 text-center text-[15px] font-['Inter'] font-medium text-fuchsia-600 hover:text-fuchsia-700 bg-fuchsia-50 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Admin Console
+                  </Link>
+                )}
+                {hasOwnerDashboardAccess && (
+                  <Link 
+                    href="/owner/dashboard" 
+                    className="block w-full px-4 py-3 text-center text-[15px] font-['Inter'] font-medium text-orange-600 hover:text-orange-700 bg-orange-50 rounded-lg transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Owner Dashboard
+                  </Link>
+                )}
                 <Link 
                   href="/dashboard" 
                   className="block w-full px-4 py-3 text-center text-[15px] font-['Inter'] font-medium text-neutral-700 hover:text-neutral-900 bg-neutral-50 rounded-lg transition-colors"
