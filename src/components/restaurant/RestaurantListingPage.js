@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useRouter } from 'next/router';
 import useRestaurants from '../../hooks/useRestaurants';
+import useDebouncedValue from '../../hooks/useDebouncedValue';
 import RestaurantCard from './RestaurantCard';
 import SkeletonLoader from '../ui/SkeletonLoader';
 import MobileFilterDrawer from './MobileFilterDrawer';
@@ -139,16 +140,26 @@ export default function RestaurantListingPage({
   const [locationQuery, setLocationQuery] = useState('');
   const [locationFilter, setLocationFilter] = useState(null);
   const [locationDisplay, setLocationDisplay] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [locationSuggestionsLoading, setLocationSuggestionsLoading] = useState(false);
+  const [locationDropdownOpen, setLocationDropdownOpen] = useState(false);
+  const [locationInputFocused, setLocationInputFocused] = useState(false);
+  const [locationSuggestionsError, setLocationSuggestionsError] = useState('');
   
   // Searchable dropdown state
   const [isSoupTypeDropdownOpen, setIsSoupTypeDropdownOpen] = useState(false);
   const [soupTypeSearchTerm, setSoupTypeSearchTerm] = useState('');
   const soupTypeDropdownRef = useRef(null);
+  const locationBlurTimeoutRef = useRef(null);
   const [pendingQuerySoupTypes, setPendingQuerySoupTypes] = useState([]);
   const [initialQuerySoupTypesApplied, setInitialQuerySoupTypesApplied] = useState(false);
   const appliedSoupTypesRef = useRef('');
   const selectedSoupTypesRef = useRef([]);
-  
+  const debouncedLocationQuery = useDebouncedValue(locationQuery, 300);
+  const trimmedSoupTypeSearch = soupTypeSearchTerm.trim().toLowerCase();
+  const soupTypeSearchHasMinChars = trimmedSoupTypeSearch.length >= 3;
+  const showSoupTypeSearchHint = trimmedSoupTypeSearch.length > 0 && !soupTypeSearchHasMinChars;
+
   // Keep ref in sync with state
   useEffect(() => {
     selectedSoupTypesRef.current = selectedSoupTypes;
@@ -286,6 +297,9 @@ export default function RestaurantListingPage({
   
   const soupTypeFilter = selectedSoupTypes.length > 0 ? selectedSoupTypes : null;
   const priceRangeFilter = selectedPriceRanges.length > 0 ? selectedPriceRanges : null;
+  const trimmedLocationQuery = locationQuery.trim();
+  const locationQueryHasMinChars = trimmedLocationQuery.length >= 3;
+  const locationSuggestionList = locationSuggestions.slice(0, 8);
 
   // Fetch restaurants with the given filters
   const { restaurants, loading, error, totalCount, refetch } = useRestaurants({
@@ -428,12 +442,17 @@ export default function RestaurantListingPage({
   }, [initialQuerySoupTypesApplied, pendingQuerySoupTypes, soupTypeCategories]);
 
   // Filter soup types based on search term
-  const filteredCategories = soupTypeCategories.map(category => ({
-    ...category,
-    types: category.types.filter(type => 
-      type.name.toLowerCase().includes(soupTypeSearchTerm.toLowerCase())
-    )
-  })).filter(category => category.types.length > 0);
+  const filteredCategories = useMemo(() => {
+    if (!soupTypeSearchHasMinChars) return soupTypeCategories;
+    return soupTypeCategories
+      .map((category) => ({
+        ...category,
+        types: category.types.filter((type) =>
+          type.name.toLowerCase().includes(trimmedSoupTypeSearch),
+        ),
+      }))
+      .filter((category) => category.types.length > 0);
+  }, [soupTypeCategories, soupTypeSearchHasMinChars, trimmedSoupTypeSearch]);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -529,24 +548,35 @@ export default function RestaurantListingPage({
   };
   
   // Handle location search with URL update
-  const handleLocationSearch = () => {
-    if (locationQuery.trim()) {
-      const newLocation = locationQuery.trim();
-      setLocationFilter(newLocation);
-      setLocationDisplay(newLocation);
-      setCurrentPage(1); // Reset to page 1 when location changes
-      
-      // Update URL with location parameter, preserving soupType
-      const newQuery = { ...router.query, location: newLocation };
-      // Ensure soupType is preserved if it exists
-      if (router.query.soupType) {
-        newQuery.soupType = router.query.soupType;
-      }
-      router.push({
-        pathname: router.pathname,
-        query: newQuery
-      }, undefined, { shallow: true });
+  const handleLocationSearch = (overrideLocation) => {
+    const searchValue = typeof overrideLocation === 'string' ? overrideLocation : locationQuery;
+    const newLocation = (searchValue || '').trim();
+
+    if (!newLocation) {
+      return;
     }
+
+    setLocationQuery(newLocation);
+    setLocationFilter(newLocation);
+    setLocationDisplay(newLocation);
+    setCurrentPage(1); // Reset to page 1 when location changes
+    setLocationInputFocused(false);
+    setLocationDropdownOpen(false);
+
+    // Update URL with location parameter, preserving soupType
+    const newQuery = { ...router.query, location: newLocation };
+    if (router.query.soupType) {
+      newQuery.soupType = router.query.soupType;
+    }
+
+    router.push(
+      {
+        pathname: router.pathname,
+        query: newQuery,
+      },
+      undefined,
+      { shallow: true },
+    );
   };
 
   // Generate custom breadcrumbs
@@ -627,6 +657,84 @@ export default function RestaurantListingPage({
     }
   };
   
+  useEffect(() => {
+    const query = debouncedLocationQuery.trim();
+
+    if (!query) {
+      setLocationSuggestions([]);
+      setLocationSuggestionsLoading(false);
+      setLocationSuggestionsError('');
+      if (!locationInputFocused) {
+        setLocationDropdownOpen(false);
+      }
+      return;
+    }
+
+    if (query.length < 3) {
+      setLocationSuggestions([]);
+      setLocationSuggestionsLoading(false);
+      setLocationSuggestionsError('');
+      if (locationInputFocused) {
+        setLocationDropdownOpen(true);
+      }
+      return;
+    }
+
+    let isCancelled = false;
+    setLocationSuggestionsLoading(true);
+    setLocationSuggestionsError('');
+
+    fetch(`/api/search/locations?q=${encodeURIComponent(query)}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Request failed with status ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (isCancelled) return;
+        const suggestions = Array.isArray(data?.suggestions) ? data.suggestions : [];
+        setLocationSuggestions(suggestions);
+        setLocationDropdownOpen(locationInputFocused);
+        if (suggestions.length === 0) {
+          setLocationSuggestionsError('No matches yet. Try a different city, state, or restaurant.');
+        }
+      })
+      .catch((error) => {
+        if (isCancelled) return;
+        console.error('Error loading location suggestions:', error);
+        setLocationSuggestions([]);
+        setLocationSuggestionsError('We couldn’t load suggestions right now.');
+        setLocationDropdownOpen(locationInputFocused);
+      })
+      .finally(() => {
+        if (!isCancelled) {
+          setLocationSuggestionsLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [debouncedLocationQuery, locationInputFocused]);
+
+  const handleLocationSuggestionSelect = (suggestion) => {
+    if (!suggestion) return;
+    const value = (suggestion.value || '').trim();
+    if (!value) return;
+
+    if (locationBlurTimeoutRef.current) {
+      clearTimeout(locationBlurTimeoutRef.current);
+      locationBlurTimeoutRef.current = null;
+    }
+
+    setLocationInputFocused(false);
+    setLocationDropdownOpen(false);
+    setLocationSuggestions([]);
+    setLocationSuggestionsError('');
+    handleLocationSearch(value);
+  };
+  
   return (
     <>
       <Head>
@@ -659,20 +767,95 @@ export default function RestaurantListingPage({
                   type="text"
                   placeholder="Search by city, state, ZIP, or restaurant name..."
                   value={locationQuery}
-                  onChange={(e) => setLocationQuery(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      handleLocationSearch();
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setLocationQuery(value);
+                    setLocationSuggestionsError('');
+                    if (value.trim().length === 0) {
+                      setLocationDropdownOpen(false);
+                    } else {
+                      setLocationDropdownOpen(true);
                     }
                   }}
-                  className="w-full pl-12 pr-4 py-4 bg-white rounded-2xl border-2 border-gray-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40-300/40 focus:border-[rgb(var(--primary))]/30-400 text-lg transition-all duration-200 hover:border-gray-300 hover:shadow-xl"
+                  onFocus={(event) => {
+                    if (locationBlurTimeoutRef.current) {
+                      clearTimeout(locationBlurTimeoutRef.current);
+                      locationBlurTimeoutRef.current = null;
+                    }
+                    setLocationInputFocused(true);
+                    if (event.target.value.trim().length > 0) {
+                      setLocationDropdownOpen(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    locationBlurTimeoutRef.current = setTimeout(() => {
+                      setLocationInputFocused(false);
+                      setLocationDropdownOpen(false);
+                    }, 150);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleLocationSearch();
+                    }
+                    if (event.key === 'Escape') {
+                      setLocationDropdownOpen(false);
+                    }
+                  }}
+                  className="w-full pl-12 pr-24 py-4 bg-white rounded-2xl border-2 border-gray-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-[rgb(var(--primary))]/30 text-lg transition-all duration-200 hover:border-gray-300 hover:shadow-xl"
                 />
                 <button
-                  onClick={handleLocationSearch}
+                  type="button"
+                  onClick={() => handleLocationSearch()}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 px-6 py-2 bg-[rgb(var(--accent))] hover:opacity-90 text-white rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
                 >
                   Search
                 </button>
+
+                {locationDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl">
+                    {locationSuggestionsLoading ? (
+                      <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-500">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-[rgb(var(--primary))]/30 border-t-[rgb(var(--primary))]" />
+                        Searching…
+                      </div>
+                    ) : locationQueryHasMinChars ? (
+                      locationSuggestionList.length > 0 ? (
+                        <ul className="max-h-72 overflow-y-auto py-1">
+                          {locationSuggestionList.map((suggestion, index) => (
+                            <li key={`${suggestion.type}-${suggestion.value}-${index}`}>
+                              <button
+                                type="button"
+                                onMouseDown={(event) => {
+                                  event.preventDefault();
+                                  handleLocationSuggestionSelect(suggestion);
+                                }}
+                                className="flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-[rgb(var(--accent-light))]/20 focus:outline-none focus-visible:bg-[rgb(var(--accent-light))]/30"
+                              >
+                                <span className="text-sm font-semibold text-gray-900">{suggestion.label}</span>
+                                <span className="text-xs text-gray-500">
+                                  {suggestion.type === 'location'
+                                    ? 'Launch city'
+                                    : [suggestion.city, suggestion.state].filter(Boolean).join(', ')}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <div className="px-4 py-3 text-sm text-gray-500">
+                          {locationSuggestionsError || 'No matches yet. Try a different city, state, or restaurant.'}
+                        </div>
+                      )
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-gray-500">
+                        {trimmedLocationQuery.length > 0
+                          ? 'Type at least 3 characters to see suggestions.'
+                          : 'Start typing to search for a city, state, or restaurant.'}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               {locationFilter && (
                 <div className="flex items-center justify-center gap-2 mt-3">
@@ -790,8 +973,12 @@ export default function RestaurantListingPage({
                           <div className="max-h-80 overflow-y-auto">
                             {soupTypesLoading ? (
                               <div className="px-4 py-4 text-center text-gray-500">
-                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[rgb(var(--primary))]/30-500 mx-auto mb-2"></div>
+                                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[rgb(var(--primary))]/30 mx-auto mb-2"></div>
                                 Loading soup types...
+                              </div>
+                            ) : showSoupTypeSearchHint ? (
+                              <div className="px-4 py-4 text-center text-gray-500">
+                                Type at least 3 characters to filter soup types.
                               </div>
                             ) : filteredCategories.length > 0 ? (
                               filteredCategories.map((category) => (

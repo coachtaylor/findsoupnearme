@@ -1,14 +1,22 @@
 // src/pages/index.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 const SearchBar = dynamic(() => import('../components/search/SearchBar'), { ssr: false });
 import { useRouter } from 'next/router';
 import RestaurantCard from '../components/restaurant/RestaurantCard';
-import RestaurantSubmissionForm from '../components/forms/RestaurantSubmissionForm';
-import { MapPinIcon, Squares2X2Icon, StarIcon, UserGroupIcon } from '@heroicons/react/24/outline';
+import {
+  MapPinIcon,
+  Squares2X2Icon,
+  StarIcon,
+  UserGroupIcon,
+  PencilSquareIcon,
+  MegaphoneIcon,
+  SparklesIcon,
+} from '@heroicons/react/24/outline';
 import { LAUNCH_CITIES, getCityMapping } from '../lib/launch-cities';
+import { useAuth } from '../contexts/AuthContext';
 
 // State abbreviation to full name mapping
 const STATE_NAMES = {
@@ -45,6 +53,7 @@ const FALLBACK_CITY_STATS = {
 
 export default function Home() {
   const router = useRouter();
+  const { user } = useAuth();
   const [location, setLocation] = useState('');
   const [soupType, setSoupType] = useState('');
   const [popularCities, setPopularCities] = useState([]);
@@ -56,6 +65,71 @@ export default function Home() {
   const [featuredRestaurants, setFeaturedRestaurants] = useState([]);
   const [featuredLoading, setFeaturedLoading] = useState(true);
   const [featuredError, setFeaturedError] = useState(null);
+
+  const uniqueStatesCount = useMemo(
+    () => new Set(LAUNCH_CITIES.map((city) => city.state)).size,
+    []
+  );
+  const totalLaunchCities = useMemo(() => LAUNCH_CITIES.length, []);
+
+  const communityStats = useMemo(() => {
+    const restaurantsCount =
+      popularCityTotals.restaurants || FALLBACK_CITY_STATS.restaurants;
+
+    return [
+      {
+        value: restaurantsCount,
+        label: 'Restaurants mapped',
+      },
+      {
+        value: uniqueStatesCount,
+        label: 'States covered',
+      },
+      {
+        value: totalLaunchCities,
+        label: 'Launch cities in queue',
+      },
+    ];
+  }, [popularCityTotals, uniqueStatesCount, totalLaunchCities]);
+
+  const helpActions = useMemo(
+    () => [
+      {
+        title: 'Share your go-to spot',
+        description:
+          'Submit neighborhood soup shops, hidden gems, and seasonal pop-ups so we can add them to the directory.',
+        points: [
+          'Add photos or menu highlights',
+          'Tell us what to order and why it is special',
+          'Give owners a boost with accurate details',
+        ],
+        icon: PencilSquareIcon,
+      },
+      {
+        title: 'Leave tasting notes',
+        description:
+          'Sign in to review the soups you try and keep track of the bowls you love most.',
+        points: [
+          'Rate individual soups and overall vibe',
+          'Add tips for takeout, dietary options, or happy hour deals',
+          'Upload mouthwatering photos to inspire others',
+        ],
+        icon: SparklesIcon,
+      },
+      {
+        title: 'Rally the community',
+        description:
+          'Tell restaurant owners about FindSoupNearMe and invite friends to log their slurps.',
+        points: [
+          'Share the submission link with local owners',
+          'Invite fellow soup lovers to create free accounts',
+          'Follow along as we launch the next wave of cities',
+        ],
+        icon: MegaphoneIcon,
+      },
+    ],
+    []
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -610,22 +684,88 @@ export default function Home() {
       {/* Collaboration Section */}
       <section id="help-us-grow" className="py-12 lg:py-16 bg-[rgb(var(--bg))] scroll-mt-20">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-10">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-12">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-[rgb(var(--surface))] rounded-full mb-4">
                 <UserGroupIcon className="h-8 w-8 text-[rgb(var(--primary))]" />
-        </div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-[rgb(var(--ink))] mb-3 tracking-tight">
+              </div>
+              <h2 className="text-3xl lg:text-4xl font-bold text-[rgb(var(--ink))] mb-4 tracking-tight">
                 Help Us Grow
-            </h2>
-              <p className="text-lg text-[rgb(var(--muted))] max-w-2xl mx-auto">
-                We&apos;re a new website building the best soup restaurant directory. Know a great soup spot that should be listed?
-                <span className="font-semibold text-[rgb(var(--ink))]"> Customers and restaurant owners can submit restaurants below.</span>
+              </h2>
+              <p className="text-lg text-[rgb(var(--muted))] max-w-2xl mx-auto leading-relaxed">
+                FindSoupNearMe is powered by local soup lovers. Share the restaurants you adore, capture tasting notes, and invite owners so we can keep this directory fresh for every bowl hunter.
               </p>
             </div>
 
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+              {communityStats.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="rounded-2xl border border-black/5 bg-[rgb(var(--surface))] px-6 py-5 text-center shadow-sm"
+                >
+                  <p className="text-3xl font-bold text-[rgb(var(--primary))]">
+                    {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
+                  </p>
+                  <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-[rgb(var(--muted))]">
+                    {stat.label}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-3 mb-10">
+              {helpActions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <div
+                    key={action.title}
+                    className="h-full rounded-2xl border border-black/5 bg-[rgb(var(--surface))] p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                  >
+                    <div className="mb-4 inline-flex items-center justify-center rounded-full bg-[rgb(var(--accent-light))]/40 p-3">
+                      <Icon className="h-6 w-6 text-[rgb(var(--primary))]" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-[rgb(var(--ink))] mb-2">
+                      {action.title}
+                    </h3>
+                    <p className="text-sm text-[rgb(var(--muted))] mb-4 leading-relaxed">
+                      {action.description}
+                    </p>
+                    <ul className="space-y-2 text-sm text-[rgb(var(--ink))]">
+                      {action.points.map((point) => (
+                        <li key={point} className="flex items-start gap-2">
+                          <span className="mt-1 inline-block h-2 w-2 rounded-full bg-[rgb(var(--accent))]" />
+                          <span className="leading-snug">{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="bg-[rgb(var(--surface))] border border-black/5 rounded-2xl p-6 lg:p-8 shadow-sm">
-              <RestaurantSubmissionForm />
+              <div className="flex flex-col items-center gap-5 text-center">
+                <p className="text-[rgb(var(--ink))] text-lg leading-relaxed">
+                  Ready to lend a hand? Log in or create a free account to recommend restaurants, leave reviews, and keep soup culture thriving.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto justify-center">
+                  <Link
+                    href={user ? '/community/recommend' : '/auth/login?redirectTo=/community/recommend'}
+                    className="inline-flex items-center justify-center rounded-full bg-[rgb(var(--primary))] px-6 py-3 text-base font-semibold tracking-tight text-white shadow-sm transition hover:brightness-110 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent))]"
+                  >
+                    Recommend a Restaurant
+                  </Link>
+                  <Link
+                    href="/owner/submissions"
+                    className="group relative inline-flex items-center gap-3 rounded-full border border-[rgb(var(--primary))] px-5 py-3 text-sm font-semibold text-[rgb(var(--primary))] shadow-sm transition hover:bg-[rgba(var(--accent-light),0.5)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--accent))]"
+                  >
+                    I&apos;m a Restaurant Owner
+                  </Link>
+                </div>
+                <p className="text-sm text-[rgb(var(--muted))]">
+                  We ask for an account so we can follow up, highlight owners, and keep submissions spam-free.
+                </p>
+              </div>
             </div>
           </div>
         </div>

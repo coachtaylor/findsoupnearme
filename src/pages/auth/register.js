@@ -126,7 +126,8 @@ const RegisterPage = () => {
         if (userType === 'customer') {
           router.push('/onboarding/customer');
         } else {
-          router.push('/onboarding/owner');
+          router.push('/owner/submissions');
+          return;
         }
       }
     } catch (err) {

@@ -396,8 +396,8 @@ export default function AdminClaimsDashboard() {
                             View Listing
                           </Link>
                           <Link
-                            href={`/onboarding/owner?restaurantId=${claim.restaurant_id}`}
-                            className="inline-flex items-center gap-2 rounded-lg border border-neutral-200 px-4 py-2 font-medium text-neutral-600 transition hover:border-neutral-300"
+                            href={`/owner/claims`}
+                            className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-semibold text-orange-600 transition hover:bg-orange-100"
                           >
                             Edit Record
                           </Link>

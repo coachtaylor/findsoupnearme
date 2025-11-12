@@ -135,12 +135,20 @@ export default function Layout({ children, title, description }) {
               ) : (
                 <>
                   {isAdmin && (
-                    <Link 
-                      href="/admin/claims" 
-                      className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-fuchsia-600 hover:text-fuchsia-700 transition-colors"
-                    >
-                      Admin Console
-                    </Link>
+                    <>
+                      <Link 
+                        href="/admin/claims" 
+                        className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-fuchsia-600 hover:text-fuchsia-700 transition-colors"
+                      >
+                        Admin Claims
+                      </Link>
+                      <Link 
+                        href="/admin/submissions" 
+                        className="px-4 py-2 text-[15px] font-['Inter'] font-medium text-fuchsia-600 hover:text-fuchsia-700 transition-colors"
+                      >
+                        Admin Submissions
+                      </Link>
+                    </>
                   )}
                   {hasOwnerDashboardAccess && (
                     <Link 
@@ -235,13 +243,22 @@ export default function Layout({ children, title, description }) {
             ) : (
               <div className="space-y-2 pt-2">
                 {isAdmin && (
-                  <Link 
-                    href="/admin/claims" 
-                    className="block w-full px-4 py-3 text-center text-[15px] font-['Inter'] font-medium text-fuchsia-600 hover:text-fuchsia-700 bg-fuchsia-50 rounded-lg transition-colors"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Admin Console
-                  </Link>
+                  <>
+                    <Link 
+                      href="/admin/claims" 
+                      className="block w-full px-4 py-3 text-center text-[15px] font-['Inter'] font-medium text-fuchsia-600 hover:text-fuchsia-700 bg-fuchsia-50 rounded-lg transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Admin Claims
+                    </Link>
+                    <Link 
+                      href="/admin/submissions" 
+                      className="block w-full mt-2 px-4 py-3 text-center text-[15px] font-['Inter'] font-medium text-fuchsia-600 hover:text-fuchsia-700 bg-fuchsia-50 rounded-lg transition-colors"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                      Admin Submissions
+                    </Link>
+                  </>
                 )}
                 {hasOwnerDashboardAccess && (
                   <Link 

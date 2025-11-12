@@ -1,7 +1,63 @@
 // src/components/forms/RestaurantSubmissionForm.js
-import { useState } from 'react';
-import { MapPinIcon, BuildingOfficeIcon, EnvelopeIcon, PhoneIcon, GlobeAltIcon, UserIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
+import { BuildingOfficeIcon, EnvelopeIcon, PhoneIcon, GlobeAltIcon, UserIcon, PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '../../contexts/AuthContext';
+
+const CUISINE_OPTIONS = [
+  'American',
+  'Asian Fusion',
+  'Chinese',
+  'Filipino',
+  'French',
+  'Greek',
+  'Indian',
+  'Italian',
+  'Japanese',
+  'Korean',
+  'Mediterranean',
+  'Mexican',
+  'Middle Eastern',
+  'Thai',
+  'Vietnamese',
+  'Other',
+];
+
+const CUISINE_SOUP_TAGS = {
+  American: ['Clam Chowder', 'Chicken Noodle', 'Tomato Soup', 'Chili'],
+  Chinese: ['Wonton Soup', 'Hot and Sour', 'Congee'],
+  Filipino: ['Sinigang', 'Bulalo', 'Tinola'],
+  French: ['French Onion', 'Bouillabaisse'],
+  Greek: ['Avgolemono'],
+  Indian: ['Rasam', 'Mulligatawny', 'Dal'],
+  Italian: ['Minestrone', 'Ribollita', 'Pasta e Fagioli'],
+  Japanese: ['Ramen', 'Miso Soup', 'Udon'],
+  Korean: ['Kimchi Jjigae', 'Sundubu', 'Doenjang'],
+  Mediterranean: ['Lentil Soup', 'Harira'],
+  Mexican: ['Pozole', 'Menudo', 'Sopa de Tortilla'],
+  'Middle Eastern': ['Lentil Soup', 'Harira', 'Shorbat Adas'],
+  Thai: ['Tom Yum', 'Tom Kha'],
+  Vietnamese: ['Pho', 'Bun Bo Hue', 'Canh Chua'],
+};
+
+const INITIAL_FORM = {
+  restaurantName: '',
+  address: '',
+  city: '',
+  state: '',
+  zipCode: '',
+  phone: '',
+  website: '',
+  contactName: '',
+  contactEmail: '',
+  contactPhone: '',
+  cuisine: '',
+  cuisineOther: '',
+  soupTags: [],
+  soupTagsOther: '',
+  isRestaurantOwner: false,
+  submissionNotes: '',
+};
 
 // Create Supabase client for file uploads
 const getSupabaseClient = () => {
@@ -13,32 +69,49 @@ const getSupabaseClient = () => {
   return null;
 };
 
-export default function RestaurantSubmissionForm() {
-  const [formData, setFormData] = useState({
-    restaurantName: '',
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    phone: '',
-    website: '',
-    contactName: '',
-    contactEmail: '',
-    contactPhone: '',
-    isRestaurantOwner: false,
-    submissionNotes: '',
-  });
+export default function RestaurantSubmissionForm({ defaultValues = {}, submissionId = null, onSubmitted = () => {}, onCancelEdit = () => {}, requireOwnerConfirmation = false } = {}) {
+  const { session } = useAuth();
+  const isEditing = Boolean(submissionId);
+  const [formData, setFormData] = useState({ ...INITIAL_FORM, ...defaultValues });
   const [photos, setPhotos] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState(null); // 'success', 'error', null
 
+  useEffect(() => {
+    if (!defaultValues) return;
+
+    setFormData((prev) => {
+      const next = { ...INITIAL_FORM, ...prev, ...defaultValues };
+      if (defaultValues.state) {
+        next.state = String(defaultValues.state).toUpperCase();
+      }
+      if (!Array.isArray(next.soupTags)) {
+        next.soupTags = [];
+      }
+      return next;
+    });
+  }, [defaultValues]);
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]:
+        type === 'checkbox'
+          ? checked
+          : name === 'state'
+            ? String(value).toUpperCase()
+            : value,
     }));
+  };
+
+  const toggleSoupTag = (tag) => {
+    setFormData((prev) => {
+      const exists = prev.soupTags.includes(tag);
+      const soupTags = exists ? prev.soupTags.filter((item) => item !== tag) : [...prev.soupTags, tag];
+      return { ...prev, soupTags };
+    });
   };
 
   const handlePhotoChange = (e) => {
@@ -83,6 +156,13 @@ export default function RestaurantSubmissionForm() {
     setIsSubmitting(true);
     setSubmitStatus(null);
 
+    const required = (value) => (typeof value === 'string' ? value.trim() : '');
+    const optional = (value) => {
+      if (typeof value !== 'string') return null;
+      const trimmed = value.trim();
+      return trimmed.length > 0 ? trimmed : null;
+    };
+
     try {
       // Upload photos to Supabase Storage first
       const photoUrls = [];
@@ -123,39 +203,77 @@ export default function RestaurantSubmissionForm() {
         }
       }
 
-      // Send form data with photo URLs
-      const response = await fetch('/api/submit-restaurant', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          photoUrls: photoUrls,
-        }),
+      const tags = Array.isArray(formData.soupTags) ? formData.soupTags.filter(Boolean) : [];
+      if (tags.length === 0 && !formData.soupTagsOther.trim()) {
+        alert('Please select at least one signature soup or describe it under "Additional soup types".');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (tags.includes('Other') && !formData.soupTagsOther.trim()) {
+        alert('Please describe the other soup type.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (requireOwnerConfirmation && !formData.isRestaurantOwner) {
+        alert('Please confirm you are the restaurant owner or an authorized representative.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const normalizedState = formData.state ? String(formData.state).toUpperCase() : '';
+
+      const payload = {
+        restaurantName: required(formData.restaurantName),
+        address: required(formData.address),
+        cuisine: required(formData.cuisine === 'Other' ? formData.cuisineOther : formData.cuisine),
+        cuisineRaw: formData.cuisine,
+        cuisineOther: formData.cuisineOther,
+        soupTags: tags,
+        soupTagsOther: formData.soupTagsOther || null,
+        city: required(formData.city),
+        state: normalizedState,
+        zipCode: optional(formData.zipCode),
+        phone: optional(formData.phone),
+        website: optional(formData.website),
+        contactName: required(formData.contactName),
+        contactEmail: required(formData.contactEmail),
+        contactPhone: optional(formData.contactPhone),
+        isRestaurantOwner: !!formData.isRestaurantOwner,
+        submissionNotes: optional(formData.submissionNotes),
+        photoUrls,
+      };
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (session?.access_token) {
+        headers.Authorization = `Bearer ${session.access_token}`;
+      }
+
+      const endpoint = submissionId ? `/api/submissions/${submissionId}` : '/api/submissions';
+      const method = submissionId ? 'PATCH' : 'POST';
+
+      const response = await fetch(endpoint, {
+        method,
+        headers,
+        credentials: 'include',
+        body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => ({}));
 
       if (response.ok) {
         setSubmitStatus('success');
-        // Reset form
-        setFormData({
-          restaurantName: '',
-          address: '',
-          city: '',
-          state: '',
-          zipCode: '',
-          phone: '',
-          website: '',
-          contactName: '',
-          contactEmail: '',
-          contactPhone: '',
-          isRestaurantOwner: false,
-          submissionNotes: '',
-        });
+        setFormData({ ...INITIAL_FORM, ...defaultValues });
         setPhotos([]);
         setPhotoPreviews([]);
+        onSubmitted({ submission: data.submission || data, action: submissionId ? 'update' : 'create' });
+        if (submissionId) {
+          onCancelEdit();
+        }
       } else {
         setSubmitStatus('error');
         console.error('Submission error:', data.error);
@@ -242,6 +360,99 @@ export default function RestaurantSubmissionForm() {
             />
           </div>
         </div>
+
+        <div>
+          <label htmlFor="cuisine" className="block text-sm font-medium text-neutral-700 mb-2">
+            Primary cuisine <span className="text-[rgb(var(--primary))]">*</span>
+          </label>
+          <select
+            id="cuisine"
+            name="cuisine"
+            required
+            value={formData.cuisine || ''}
+            onChange={handleChange}
+            className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
+          >
+            <option value="" disabled>
+              Select cuisine type
+            </option>
+            {CUISINE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {formData.cuisine === 'Other' && (
+          <div>
+            <label htmlFor="cuisineOther" className="block text-sm font-medium text-neutral-700 mb-2">
+              Enter cuisine <span className="text-[rgb(var(--primary))]">*</span>
+            </label>
+            <input
+              type="text"
+              id="cuisineOther"
+              name="cuisineOther"
+              required
+              value={formData.cuisineOther || ''}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
+              placeholder="Describe the cuisine"
+            />
+          </div>
+        )}
+
+        <div>
+          <p className="block text-sm font-medium text-neutral-700 mb-2">
+            Signature soups (choose at least one) <span className="text-[rgb(var(--primary))]">*</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {CUISINE_SOUP_TAGS[formData.cuisine] &&
+              CUISINE_SOUP_TAGS[formData.cuisine].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => toggleSoupTag(tag)}
+                  className={`rounded-full px-4 py-2 text-xs font-semibold border transition ${
+                    formData.soupTags.includes(tag)
+                      ? 'bg-[rgb(var(--primary))] text-white border-[rgb(var(--primary))]'
+                      : 'border-neutral-300 text-neutral-600 hover:bg-neutral-100'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            <button
+              type="button"
+              onClick={() => toggleSoupTag('Other')}
+              className={`rounded-full px-4 py-2 text-xs font-semibold border transition ${
+                formData.soupTags.includes('Other')
+                  ? 'bg-[rgb(var(--primary))] text-white border-[rgb(var(--primary))]'
+                  : 'border-neutral-300 text-neutral-600 hover:bg-neutral-100'
+              }`}
+            >
+              Other
+            </button>
+          </div>
+        </div>
+
+        {formData.soupTags.includes('Other') && (
+          <div>
+            <label htmlFor="soupTagsOther" className="block text-sm font-medium text-neutral-700 mb-2">
+              Additional soup types <span className="text-[rgb(var(--primary))]">*</span>
+            </label>
+            <input
+              type="text"
+              id="soupTagsOther"
+              name="soupTagsOther"
+              value={formData.soupTagsOther || ''}
+              required
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-[rgb(var(--primary))]/40 focus:border-transparent transition-all"
+              placeholder="Describe other soups served"
+            />
+          </div>
+        )}
 
         <div>
           <label htmlFor="zipCode" className="block text-sm font-medium text-neutral-700 mb-2">
@@ -359,6 +570,9 @@ export default function RestaurantSubmissionForm() {
           />
           <label htmlFor="isRestaurantOwner" className="ml-3 text-sm text-neutral-700">
             I am the restaurant owner or an authorized representative
+            {requireOwnerConfirmation && (
+              <span className="text-[rgb(var(--primary))] font-semibold"> *</span>
+            )}
             <span className="block text-xs text-neutral-500 mt-1">
               If checked, we will mark your restaurant as verified when added to our platform
             </span>
@@ -450,8 +664,18 @@ export default function RestaurantSubmissionForm() {
             : 'hover:opacity-90 hover:shadow-md'
         }`}
       >
-        {isSubmitting ? 'Submitting...' : 'Submit Restaurant'}
+        {isSubmitting ? (isEditing ? 'Saving...' : 'Submitting...') : isEditing ? 'Save changes' : 'Submit Restaurant'}
       </button>
+
+      {isEditing && (
+        <button
+          type="button"
+          onClick={onCancelEdit}
+          className="w-full px-6 py-3 border border-neutral-300 text-neutral-700 font-medium rounded-lg transition-all hover:bg-neutral-50"
+        >
+          Cancel editing
+        </button>
+      )}
 
       {/* Status Messages */}
       {submitStatus === 'success' && (

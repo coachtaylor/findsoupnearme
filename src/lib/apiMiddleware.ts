@@ -16,7 +16,8 @@
  * }
  */
 
-import { createServerSupabaseClient } from '@supabase/auth-helpers-nextjs';
+import { createPagesServerClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@supabase/supabase-js';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { 
   AuthUser,
@@ -32,6 +33,35 @@ import {
 // HELPER FUNCTIONS
 // ============================================================================
 
+function decodeJwtClaims(token?: string | null): Record<string, unknown> {
+  if (!token) return {};
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return {};
+    const padded = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const decoded = Buffer.from(padded, 'base64').toString('utf8');
+    return JSON.parse(decoded) as Record<string, unknown>;
+  } catch (error) {
+    console.error('Failed to decode JWT claims:', error);
+    return {};
+  }
+}
+
+const hasServiceClient = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
+const supabaseService = hasServiceClient
+  ? createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    })
+  : null;
+
+function normalizeRole(value: unknown): AuthUser['role_global'] {
+  if (!value) return 'user';
+  const normalized = String(value).trim().toLowerCase().replace(/\s+/g, '_');
+  if (!normalized) return 'user';
+  if (normalized.includes('admin')) return 'admin';
+  return 'user';
+}
+
 /**
  * Gets authenticated user from request
  * Returns null if not authenticated
@@ -41,32 +71,97 @@ export async function getAuthUser(
   res: NextApiResponse
 ): Promise<AuthUser | null> {
   try {
-    const supabase = createServerSupabaseClient({ req, res });
+    const supabase = createPagesServerClient({ req, res });
     
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.getSession();
+    let user: AuthUser | null = null;
+    let jwtClaims: Record<string, unknown> = {};
     
-    if (error || !session) {
+    try {
+      const { data: sessionData, error } = await supabase.auth.getSession();
+      
+      if (!error && sessionData?.session?.user) {
+        user = sessionData.session.user as AuthUser;
+        jwtClaims = decodeJwtClaims(sessionData.session.access_token);
+      }
+    } catch (sessionError) {
+      console.error('Supabase session lookup failed:', sessionError);
+    }
+    
+    if (!user) {
+      const authHeader = req.headers.authorization as string | undefined;
+      
+      const token =
+        authHeader && authHeader.toLowerCase().startsWith('bearer ')
+          ? authHeader.slice(7).trim()
+          : null;
+      
+      if (token) {
+        try {
+          const { data: userData, error: userError } = await supabase.auth.getUser(token);
+          if (!userError && userData?.user) {
+            user = userData.user as AuthUser;
+            const tokenClaims = decodeJwtClaims(token);
+            jwtClaims = Object.keys(jwtClaims).length > 0
+              ? { ...jwtClaims, ...tokenClaims }
+              : tokenClaims;
+          }
+        } catch (tokenError) {
+          console.error('Supabase token lookup failed:', tokenError);
+        }
+      }
+    }
+    
+    if (!user) {
       return null;
     }
     
     // Parse user with custom claims
-    const user = session.user as AuthUser;
+    const claimsSource = {
+      ...(user.app_metadata ?? {}),
+      ...jwtClaims,
+    } as Record<string, unknown>;
+    const claimsRole = (claimsSource as { role_global?: unknown }).role_global;
+    const metadataRole =
+      (user.user_metadata?.role_global as string | undefined) ||
+      (user.user_metadata?.role as string | undefined);
+    const rawRole =
+      typeof claimsRole === 'string' && claimsRole
+        ? claimsRole
+        : metadataRole;
+    const resolvedRole = normalizeRole(rawRole);
     
-    // Try to get role from JWT claims
-    if (session.user.app_metadata?.role_global) {
-      user.role_global = session.user.app_metadata.role_global;
-    } else if (session.user.user_metadata?.role_global) {
-      user.role_global = session.user.user_metadata.role_global;
+    user.role_global = resolvedRole;
+    
+    const orgsClaim = (claimsSource as { orgs?: unknown }).orgs;
+    if (Array.isArray(orgsClaim)) {
+      user.orgs = orgsClaim as AuthUser['orgs'];
+    } else if (Array.isArray(user.user_metadata?.orgs)) {
+      user.orgs = user.user_metadata.orgs as AuthUser['orgs'];
+    } else {
+      user.orgs = [];
     }
-    
-    // Try to get orgs from JWT claims
-    if (session.user.app_metadata?.orgs) {
-      user.orgs = session.user.app_metadata.orgs;
-    } else if (session.user.user_metadata?.orgs) {
-      user.orgs = session.user.user_metadata.orgs;
+
+    if (!claimsRole || user.role_global === 'user') {
+      try {
+        const profileClient = supabaseService ?? supabase;
+
+        const { data: profile } = await profileClient
+          .from('users')
+          .select('role_global')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (profile?.role_global) {
+          const normalizedProfileRole = String(profile.role_global).trim().toLowerCase();
+          const resolvedProfileRole =
+            normalizedProfileRole && normalizedProfileRole.includes('admin')
+              ? 'admin'
+              : normalizedProfileRole;
+          user.role_global = (resolvedProfileRole || 'user') as AuthUser['role_global'];
+        }
+      } catch (profileError) {
+        console.error('Failed to load user role from profiles:', profileError);
+      }
     }
     
     return user;

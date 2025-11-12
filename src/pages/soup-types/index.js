@@ -1,8 +1,9 @@
 // src/pages/soup-types/index.js
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import useDebouncedValue from '../../hooks/useDebouncedValue';
 
 // Map soup types to their correct cuisines
 const getCuisineForSoupType = (soupType) => {
@@ -136,6 +137,10 @@ const getSoupDescription = (soupType) => {
 
 export default function SoupTypes() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [suggestionsOpen, setSuggestionsOpen] = useState(false);
+  const suggestionBlurTimeoutRef = useRef(null);
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const [viewMode, setViewMode] = useState('cuisine'); // 'cuisine' or 'soupType'
   const [soupTypes, setSoupTypes] = useState([]);
   const [cuisines, setCuisines] = useState([]);
@@ -233,27 +238,92 @@ export default function SoupTypes() {
 
 
   // Filter based on search query
+  const trimmedSearchQuery = searchQuery.trim();
+  const searchQueryHasMinChars = trimmedSearchQuery.length >= 3;
+
   const filteredSoupTypes = useMemo(() => {
-    if (!searchQuery) return soupTypes;
-    const query = searchQuery.toLowerCase();
-    return soupTypes.filter(soup => 
-      soup.name.toLowerCase().includes(query)
-    );
-  }, [soupTypes, searchQuery]);
+    if (!searchQueryHasMinChars) return soupTypes;
+    const query = trimmedSearchQuery.toLowerCase();
+    return soupTypes.filter((soup) => soup.name.toLowerCase().includes(query));
+  }, [soupTypes, trimmedSearchQuery, searchQueryHasMinChars]);
 
   const filteredCuisines = useMemo(() => {
-    if (!searchQuery) return cuisines;
-    const query = searchQuery.toLowerCase();
-    return cuisines.map(cuisine => ({
-      ...cuisine,
-      soupTypes: cuisine.soupTypes.filter(soup => 
-        soup.name.toLowerCase().includes(query) || 
-        cuisine.name.toLowerCase().includes(query)
-      )
-    })).filter(cuisine => cuisine.soupTypes.length > 0);
-  }, [cuisines, searchQuery]);
+    if (!searchQueryHasMinChars) return cuisines;
+    const query = trimmedSearchQuery.toLowerCase();
+    return cuisines
+      .map((cuisine) => ({
+        ...cuisine,
+        soupTypes: cuisine.soupTypes.filter(
+          (soup) =>
+            soup.name.toLowerCase().includes(query) ||
+            (cuisine.name || '').toLowerCase().includes(query),
+        ),
+      }))
+      .filter((cuisine) => cuisine.soupTypes.length > 0);
+  }, [cuisines, trimmedSearchQuery, searchQueryHasMinChars]);
 
   const displayData = viewMode === 'cuisine' ? filteredCuisines : filteredSoupTypes;
+
+  const searchSuggestions = useMemo(() => {
+    const term = debouncedSearchQuery.trim().toLowerCase();
+    if (term.length < 3) return [];
+
+    const matches = [];
+    const seen = new Set();
+
+    cuisines.forEach((cuisine) => {
+      const cuisineName = (cuisine?.name || '').trim();
+      if (cuisineName) {
+        const key = `cuisine:${cuisineName.toLowerCase()}`;
+        if (!seen.has(key) && cuisineName.toLowerCase().includes(term)) {
+          seen.add(key);
+          matches.push({ type: 'cuisine', label: cuisineName });
+        }
+      }
+
+      (cuisine?.soupTypes || []).forEach((soup) => {
+        const soupName = (soup?.name || '').trim();
+        if (!soupName) return;
+        const soupKey = `soup:${soupName.toLowerCase()}`;
+        if (seen.has(soupKey)) return;
+        if (soupName.toLowerCase().includes(term)) {
+          seen.add(soupKey);
+          matches.push({ type: 'soupType', label: soupName, cuisine: cuisine?.name || '' });
+        }
+      });
+    });
+
+    soupTypes.forEach((soup) => {
+      const soupName = (soup?.name || '').trim();
+      if (!soupName) return;
+      const soupKey = `soup:${soupName.toLowerCase()}`;
+      if (seen.has(soupKey)) return;
+      if (soupName.toLowerCase().includes(term)) {
+        seen.add(soupKey);
+        matches.push({ type: 'soupType', label: soupName });
+      }
+    });
+
+    return matches.slice(0, 10);
+  }, [debouncedSearchQuery, cuisines, soupTypes]);
+
+  const searchSuggestionList = searchSuggestions.slice(0, 8);
+
+  const handleSearchSuggestionSelect = (suggestion) => {
+    if (!suggestion) return;
+    if (suggestionBlurTimeoutRef.current) {
+      clearTimeout(suggestionBlurTimeoutRef.current);
+      suggestionBlurTimeoutRef.current = null;
+    }
+    setSearchQuery(suggestion.label);
+    setSuggestionsOpen(false);
+    setSearchFocused(false);
+    if (suggestion.type === 'cuisine') {
+      setViewMode('cuisine');
+    } else {
+      setViewMode('soupType');
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[rgb(var(--bg))]">
@@ -314,9 +384,82 @@ export default function SoupTypes() {
                 type="text"
                 placeholder="Search soup types or cuisines..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setSearchQuery(value);
+                  if (value.trim().length === 0) {
+                    setSuggestionsOpen(false);
+                  } else {
+                    setSuggestionsOpen(true);
+                  }
+                }}
+                onFocus={(event) => {
+                  if (suggestionBlurTimeoutRef.current) {
+                    clearTimeout(suggestionBlurTimeoutRef.current);
+                    suggestionBlurTimeoutRef.current = null;
+                  }
+                  setSearchFocused(true);
+                  if (event.target.value.trim().length > 0) {
+                    setSuggestionsOpen(true);
+                  }
+                }}
+                onBlur={() => {
+                  suggestionBlurTimeoutRef.current = setTimeout(() => {
+                    setSearchFocused(false);
+                    setSuggestionsOpen(false);
+                  }, 150);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    setSuggestionsOpen(false);
+                  }
+                }}
                 className="w-full h-14 pl-12 pr-4 rounded-2xl bg-[rgb(var(--surface))] ring-2 ring-[rgb(var(--accent-light))]/30 focus:ring-2 focus:ring-[rgb(var(--accent))]/50 outline-none placeholder:text-[rgb(var(--muted))] transition shadow-lg text-base"
               />
+
+              {suggestionsOpen && (
+                <div className="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-xl border border-[rgb(var(--accent-light))]/40 bg-white shadow-xl">
+                  {searchQueryHasMinChars ? (
+                    searchSuggestionList.length > 0 ? (
+                      <ul className="max-h-72 overflow-y-auto py-1">
+                        {searchSuggestionList.map((suggestion, index) => (
+                          <li key={`${suggestion.type}-${suggestion.label}-${index}`}>
+                            <button
+                              type="button"
+                              onMouseDown={(event) => {
+                                event.preventDefault();
+                                handleSearchSuggestionSelect(suggestion);
+                              }}
+                              className="flex w-full flex-col items-start gap-1 px-4 py-3 text-left transition hover:bg-[rgb(var(--accent-light))]/20 focus:outline-none focus-visible:bg-[rgb(var(--accent-light))]/30"
+                            >
+                              <span className="text-sm font-semibold text-[rgb(var(--ink))]">
+                                {suggestion.label}
+                              </span>
+                              <span className="text-xs text-[rgb(var(--muted))]">
+                                {suggestion.type === 'cuisine'
+                                  ? 'Cuisine'
+                                  : suggestion.cuisine
+                                    ? `${suggestion.cuisine} cuisine`
+                                    : 'Soup type'}
+                              </span>
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-[rgb(var(--muted))]">
+                        No matches yet. Try another soup or cuisine name.
+                      </div>
+                    )
+                  ) : (
+                    <div className="px-4 py-3 text-sm text-[rgb(var(--muted))]">
+                      {trimmedSearchQuery.length > 0
+                        ? 'Type at least 3 characters to see suggestions.'
+                        : 'Start typing to find a soup or cuisine.'}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 

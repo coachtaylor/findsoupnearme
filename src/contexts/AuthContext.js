@@ -441,16 +441,18 @@ export function useRequireAuth(redirectTo = '/auth/login') {
  * Redirects to home if not admin
  */
 export function useRequireAdmin(redirectTo = '/') {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, userProfile } = useAuth();
   const router = useRouter();
-  
+
+  const stillLoading = loading || (user && !userProfile);
+
   useEffect(() => {
-    if (!loading && (!user || !isAdmin)) {
+    if (!stillLoading && (!user || !isAdmin)) {
       router.push(redirectTo);
     }
-  }, [user, loading, isAdmin, router, redirectTo]);
-  
-  return { user, loading, isAdmin };
+  }, [user, stillLoading, isAdmin, router, redirectTo]);
+
+  return { user, loading: stillLoading, isAdmin };
 }
 
 /**

@@ -15,7 +15,7 @@ import { User } from '@supabase/supabase-js';
 // TYPE DEFINITIONS
 // ============================================================================
 
-export type RoleGlobal = 'admin' | 'user';
+export type RoleGlobal = 'admin' | 'super_admin' | 'user';
 
 export type RoleInOrg = 'owner' | 'worker';
 
@@ -93,16 +93,27 @@ export function isAuthenticated(user: User | null | undefined): user is User {
 /**
  * Checks if user has admin role
  */
+const ADMIN_ROLE_TAGS = new Set(['admin', 'administrator', 'super_admin', 'super-admin', 'superadmin']);
+
+function isAdminRole(value: unknown): boolean {
+  if (!value) return false;
+  const normalized = String(value).trim().toLowerCase();
+  return ADMIN_ROLE_TAGS.has(normalized);
+}
+
 export function isAdmin(user: AuthUser | null | undefined): boolean {
   if (!user) return false;
   
   // Check JWT custom claims
   const roleFromJWT = user.role_global;
-  if (roleFromJWT === 'admin') return true;
+  if (isAdminRole(roleFromJWT)) return true;
   
   // Check user metadata
   const roleFromMeta = user.user_metadata?.role_global;
-  if (roleFromMeta === 'admin') return true;
+  if (isAdminRole(roleFromMeta)) return true;
+  
+  const legacyRole = user.user_metadata?.role;
+  if (isAdminRole(legacyRole)) return true;
   
   return false;
 }

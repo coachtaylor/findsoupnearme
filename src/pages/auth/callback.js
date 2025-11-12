@@ -38,7 +38,7 @@ export default function AuthCallback() {
           if (userType === 'customer') {
             router.push('/onboarding/customer');
           } else if (userType === 'owner') {
-            router.push('/onboarding/owner');
+            router.push('/owner/submissions');
           } else {
             // No user type set, go to home
             router.push('/');
